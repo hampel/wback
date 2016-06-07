@@ -80,7 +80,7 @@ class FilesCommand extends BaseCommand
 
 		if ($input->getOption('dry-run'))
 		{
-			echo "{$cmd}" . PHP_EOL;
+			$output->writeln("<comment>Dry run only - no backup performed</comment>");
 		}
 		else
 		{
