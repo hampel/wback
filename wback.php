@@ -3,11 +3,7 @@
 <?php
 
 use WBack\ListCommand;
-use WBack\S3Command;
-use WBack\LogsCommand;
-use WBack\CleanCommand;
 use WBack\FilesCommand;
-use WBack\DatabaseCommand;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Output\ConsoleOutput;
