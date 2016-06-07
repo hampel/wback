@@ -1,0 +1,12 @@
+{
+	"require": {
+		"symfony/console": "~3.0",
+		"symfony/finder": "~3.0",
+		"vlucas/phpdotenv": "~2.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"WBack\\": "src"
+		}
+	}
+}
