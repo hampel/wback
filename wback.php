@@ -36,19 +36,8 @@ function loadConfig()
 		$config[basename($file->getRealPath(), '.php')] = require $file->getRealPath();
 	}
 
-	if (!array_key_exists('app', $config))
-	{
-		$out = new ConsoleOutput();
-		$out->writeln('<error>missing app config</error>');
-		exit;
-	}
-
-	if (!array_key_exists('sources', $config))
-	{
-		$out = new ConsoleOutput();
-		$out->writeln('<error>missing source config</error>');
-		exit;
-	}
+	if (!array_key_exists('app', $config)) fatal("missing app config");
+	if (!array_key_exists('sources', $config)) fatal("missing source config");
 
 	return $config;
 }
@@ -63,8 +52,13 @@ function loadEnv()
 	}
 	catch (Exception $e)
 	{
-		$out = new ConsoleOutput();
-		$out->writeln('<error>' . $e->getMessage() . '</error>');
-		exit;
+		fatal($e->getMessage());
 	}
+}
+
+function fatal($message)
+{
+	$out = new ConsoleOutput();
+	$out->writeln("<error>Error: {$message}</error>", OutputInterface::VERBOSITY_QUIET);
+	exit;
 }
