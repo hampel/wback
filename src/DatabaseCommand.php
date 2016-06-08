@@ -48,7 +48,13 @@ class DatabaseCommand extends BaseCommand
 		$username = empty($my['username']) ? '' : " -u{$my['username']}";
 		$password = empty($my['password']) ? '' : " -p{$my['password']}";
 
-		$cmd = "{$my['path']} --opt{$username}{$password} -h{$my['server']} {$db} | gzip -c -f > {$gz_filename}";
+		$verbosity = '';
+		if ($output->getVerbosity() > OutputInterface::VERBOSITY_NORMAL)
+		{
+			$verbosity = ' --verbose';
+		}
+
+		$cmd = "{$my['path']} --opt{$verbosity}{$username}{$password} -h{$my['server']} {$db} | gzip -c -f > {$gz_filename}";
 
 		$this->debug("executing command [{$cmd}]", $output);
 
