@@ -79,15 +79,10 @@ return [
 	's3_region' => getenv('S3_REGION'),
 
 	/**
-	 * Days to keep S3 content
+	 * Days to keep backup files
 	 *
-	 * Files in S3 bucket older than this will be removed
+	 * Files older than this will be removed
 	 */
-	's3_keeponly_days' => 90,
-
-	/**
-	 * Max execution time
-	 */
-	'max_execution_time' => 30,
+	'keeponly_days' => 7,
 
 ];

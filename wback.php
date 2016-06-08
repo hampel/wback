@@ -5,6 +5,7 @@
 use WBack\S3Command;
 use WBack\ListCommand;
 use WBack\LogsCommand;
+use WBack\CleanCommand;
 use WBack\FilesCommand;
 use WBack\DatabaseCommand;
 use Symfony\Component\Finder\Finder;
@@ -25,6 +26,7 @@ $app->add(new FilesCommand(null, $config));
 $app->add(new DatabaseCommand(null, $config));
 $app->add(new LogsCommand(null, $config));
 $app->add(new S3Command(null, $config));
+$app->add(new CleanCommand(null, $config));
 
 $app->setDefaultCommand($list->getName());
 
@@ -46,6 +48,8 @@ function loadConfig()
 	if (!array_key_exists('app', $config)) fatal("missing app config");
 	if (!array_key_exists('sources', $config)) fatal("missing source config");
 	if (!isset($config['app']['backup_location']) OR !file_exists($config['app']['backup_location'])) fatal("backup destination path [{$config['app']['backup_location']}] does not exist");
+
+	$config['app']['keeponly_days'] = isset($config['app']['keeponly_days']) ? $config['app']['keeponly_days'] : 7;
 
 	return $config;
 }
