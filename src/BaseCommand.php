@@ -75,6 +75,8 @@ abstract class BaseCommand extends Command
 				return false;
 			}
 		}
+
+		return $folder;
 	}
 
 	protected function error($message, OutputInterface $output)
