@@ -7,6 +7,7 @@ use WBack\FilesCommand;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 
 require 'vendor/autoload.php';
 
@@ -38,6 +39,7 @@ function loadConfig()
 
 	if (!array_key_exists('app', $config)) fatal("missing app config");
 	if (!array_key_exists('sources', $config)) fatal("missing source config");
+	if (!isset($config['app']['backup_location']) OR !file_exists($config['app']['backup_location'])) fatal("backup destination path [{$config['app']['backup_location']}] does not exist");
 
 	return $config;
 }

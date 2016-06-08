@@ -40,14 +40,6 @@ class FilesCommand extends BaseCommand
 			return;
 		}
 
-		$backup_path = $this->config['app']['backup_location'];
-
-		if (!file_exists($backup_path))
-		{
-			$this->error("backup destination path [{$backup_path}] does not exist", $output);
-			return;
-		}
-
 		$files_folder = $this->config['app']['backup_location'] . DIRECTORY_SEPARATOR . "{$source['url']}/files";
 
 		if (!file_exists($files_folder))
