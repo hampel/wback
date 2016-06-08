@@ -58,8 +58,8 @@ class LogsCommand extends BaseCommand
 
 		$this->rotateLogs($pid_path, $input, $output);
 
-		if (!empty($access_log)) $this->compressLogs($access_log, $input, $output);
-		if (!empty($error_log)) $this->compressLogs($error_log, $input, $output);
+		if (!empty($access_log)) $this->compressLogs($name, $access_log, 'access', $input, $output);
+		if (!empty($error_log)) $this->compressLogs($name, $error_log, 'error', $input, $output);
 	}
 
 	private function processLogs($name, $log_path, $url, $type, $destination, InputInterface $input, OutputInterface $output)
@@ -91,7 +91,13 @@ class LogsCommand extends BaseCommand
 
 		$output->writeln("Moving logs from [{$log_path}] to [{$dest_filename}]");
 
-		$cmd = "mv {$log_path} {$dest_filename}";
+		$verbosity = '';
+		if ($output->getVerbosity() > OutputInterface::VERBOSITY_NORMAL)
+		{
+			$verbosity = ' --verbose';
+		}
+
+		$cmd = "mv{$verbosity} {$log_path} {$dest_filename}";
 
 		$this->debug("executing command [{$cmd}]", $output);
 
@@ -120,6 +126,8 @@ class LogsCommand extends BaseCommand
 
 	private function rotateLogs($pid_path, InputInterface $input, OutputInterface $output)
 	{
+		$this->info("Instructing web server to open new log files", $output);
+
 		$cmd = "kill -USR1 `cat {$pid_path}`";
 
 		$this->debug("executing command [{$cmd}]", $output);
@@ -142,9 +150,21 @@ class LogsCommand extends BaseCommand
 		}
 	}
 
-	private function compressLogs($logpath, InputInterface $input, OutputInterface $output)
+	private function compressLogs($name, $logpath, $type, InputInterface $input, OutputInterface $output)
 	{
-		$cmd = "gzip {$logpath}";
+		$this->info("Compressing {$type} logs for source [{$name}]", $output);
+
+		$verbosity = '';
+		if ($output->getVerbosity() < OutputInterface::VERBOSITY_NORMAL)
+		{
+			$verbosity = ' --quiet';
+		}
+		elseif ($output->getVerbosity() > OutputInterface::VERBOSITY_NORMAL)
+		{
+			$verbosity = ' --verbose';
+		}
+
+		$cmd = "gzip{$verbosity} {$logpath}";
 
 		$this->debug("executing command [{$cmd}]", $output);
 
