@@ -32,8 +32,6 @@ class FilesCommand extends BaseCommand
 
 		$this->info("Processing files for source [{$name}]", $output);
 
-		$ymd = date("Ymd", time());
-
 		$source_path = $source['files'];
 
 		if (!file_exists($source_path))
@@ -60,6 +58,8 @@ class FilesCommand extends BaseCommand
 				return;
 			}
 		}
+
+		$ymd = date("Ymd", time());
 
 		$zip_filename_base = "{$files_folder}" . DIRECTORY_SEPARATOR . "{$source['url']}-{$ymd}";
 		$zip_filename = "{$zip_filename_base}.zip";
