@@ -37,7 +37,10 @@ class LogsCommand extends BaseCommand
 		}
 		else
 		{
-			$access_log = $this->processLogs($name, $source['access'], $source['url'], 'access', $logs_folder, $input, $output);
+			if (!$access_log = $this->processLogs($name, $source['access'], $source['url'], 'access', $logs_folder, $input, $output))
+			{
+				$source['access'] = '';
+			}
 		}
 
 		if (!array_key_exists('error', $source) OR empty($source['error']))
@@ -47,7 +50,10 @@ class LogsCommand extends BaseCommand
 		}
 		else
 		{
-			$error_log = $this->processLogs($name, $source['error'], $source['url'], 'error', $logs_folder, $input, $output);
+			if (!$error_log = $this->processLogs($name, $source['error'], $source['url'], 'error', $logs_folder, $input, $output))
+			{
+				$source['error'] = '';
+			}
 		}
 
 		if (empty($source['access']) AND empty($source['error']))
@@ -69,7 +75,7 @@ class LogsCommand extends BaseCommand
 		if (!file_exists($log_path))
 		{
 			$this->error("{$type} log path [{$log_path}] does not exist for source [{$name}]", $output);
-			return;
+			return false;
 		}
 
 		$ymd = date("Ymd", time());
@@ -107,17 +113,13 @@ class LogsCommand extends BaseCommand
 		}
 		else
 		{
-			$command_output = '';
 			$retvar = 0;
 
-			exec("{$cmd} 2>&1", $command_output, $retvar);
+			$command_output = system("{$cmd} 2>&1", $retvar);
 			if ($retvar != 0)
 			{
 				$this->error("non-zero return code executing [{$cmd}]", $output);
-				foreach ($command_output as $co)
-				{
-					$output->writeln("<error>$co</error>", OutputInterface::VERBOSITY_QUIET);
-				}
+				$this->error($command_output, $output);
 			}
 		}
 
@@ -134,17 +136,13 @@ class LogsCommand extends BaseCommand
 
 		if (!$input->getOption('dry-run'))
 		{
-			$command_output = '';
 			$retvar = 0;
 
-			exec("{$cmd} 2>&1", $command_output, $retvar);
+			$command_output = system("{$cmd} 2>&1", $retvar);
 			if ($retvar != 0)
 			{
 				$this->error("non-zero return code executing [{$cmd}]", $output);
-				foreach ($command_output as $co)
-				{
-					$output->writeln("<error>$co</error>", OutputInterface::VERBOSITY_QUIET);
-				}
+				$this->error($command_output, $output);
 			}
 			sleep(1);
 		}
@@ -170,17 +168,13 @@ class LogsCommand extends BaseCommand
 
 		if (!$input->getOption('dry-run'))
 		{
-			$command_output = '';
 			$retvar = 0;
 
-			exec("{$cmd} 2>&1", $command_output, $retvar);
+			$command_output = system("{$cmd} 2>&1", $retvar);
 			if ($retvar != 0)
 			{
 				$this->error("non-zero return code executing [{$cmd}]", $output);
-				foreach ($command_output as $co)
-				{
-					$output->writeln("<error>$co</error>", OutputInterface::VERBOSITY_QUIET);
-				}
+				$this->error($command_output, $output);
 			}
 		}
 	}

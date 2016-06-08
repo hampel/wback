@@ -71,20 +71,16 @@ class FilesCommand extends BaseCommand
 		}
 		else
 		{
-			$command_output = '';
 			$retvar = 0;
 
 			$curdir = getcwd();
 			chdir($source_path);
 
-			exec("{$cmd} 2>&1", $command_output, $retvar);
+			$command_output = system("{$cmd} 2>&1", $retvar);
 			if ($retvar != 0)
 			{
 				$this->error("non-zero return code executing [{$cmd}]", $output);
-				foreach ($command_output as $co)
-				{
-					$output->writeln("<error>$co</error>", OutputInterface::VERBOSITY_QUIET);
-				}
+				$this->error($command_output, $output);
 			}
 			chdir($curdir);
 		}
