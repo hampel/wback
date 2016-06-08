@@ -1,3 +1,4 @@
 .env
 config/app.php
 config/sources.php
+vendor/
