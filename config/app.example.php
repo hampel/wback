@@ -50,6 +50,11 @@ return [
 	'mysql_server' => getenv('MYSQL_SERVER'),
 
 	/**
+	 * Path to s3cmd executable
+	 */
+	's3cmd_path' => '/usr/bin/s3cmd',
+
+	/**
 	 * S3 Bucket
 	 */
 	's3_bucket' => getenv('S3_BUCKET'),
@@ -65,11 +70,13 @@ return [
 	's3_secret_key' => getenv('S3_SECRET_KEY'),
 
 	/**
-	 * S3 Endpoint
+	 * S3 Region
 	 *
-	 * eg. s3-ap-northeast-1.amazonaws.com
+	 * currently one of:
+	 * 	us-east-1, us-west-1, us-west-2, eu-west-1, eu-central-1,
+	 * 	ap-northeast-1, ap-southeast-1, ap-southeast-2, sa-east-1
 	 */
-	's3_endpoint' => getenv('S3_ENDPOINT'),
+	's3_region' => getenv('S3_REGION'),
 
 	/**
 	 * Days to keep S3 content

@@ -2,6 +2,7 @@
 
 <?php
 
+use WBack\S3Command;
 use WBack\ListCommand;
 use WBack\LogsCommand;
 use WBack\FilesCommand;
@@ -23,6 +24,7 @@ $app->add($list);
 $app->add(new FilesCommand(null, $config));
 $app->add(new DatabaseCommand(null, $config));
 $app->add(new LogsCommand(null, $config));
+$app->add(new S3Command(null, $config));
 
 $app->setDefaultCommand($list->getName());
 
@@ -54,7 +56,7 @@ function loadEnv()
 	{
 		$dotenv = new Dotenv\Dotenv(__DIR__);
 		$dotenv->load();
-		$dotenv->required(['MYSQL_SERVER', 'S3_BUCKET', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_ENDPOINT']);
+		$dotenv->required(['MYSQL_SERVER', 'S3_BUCKET']);
 	}
 	catch (Exception $e)
 	{
