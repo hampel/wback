@@ -52,11 +52,11 @@ class FilesCommand extends BaseCommand
 		if (file_exists("{$source_path}" . DIRECTORY_SEPARATOR . $this->config['app']['zip_exclude_file'])) $exclude = " -x@" . $this->config['app']['zip_exclude_file'];
 
 		$verbosity = '';
-		if ($output->getVerbosity() < OutputInterface::OUTPUT_NORMAL)
+		if ($output->getVerbosity() < OutputInterface::VERBOSITY_NORMAL)
 		{
 			$verbosity = ' --quiet';
 		}
-		elseif ($output->getVerbosity() > OutputInterface::OUTPUT_NORMAL)
+		elseif ($output->getVerbosity() > OutputInterface::VERBOSITY_NORMAL)
 		{
 			$verbosity = ' --verbose';
 		}
