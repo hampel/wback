@@ -3,6 +3,7 @@
 <?php
 
 use WBack\ListCommand;
+use WBack\LogsCommand;
 use WBack\FilesCommand;
 use WBack\DatabaseCommand;
 use Symfony\Component\Finder\Finder;
@@ -21,6 +22,7 @@ $list = new ListCommand(null, $config);
 $app->add($list);
 $app->add(new FilesCommand(null, $config));
 $app->add(new DatabaseCommand(null, $config));
+$app->add(new LogsCommand(null, $config));
 
 $app->setDefaultCommand($list->getName());
 
