@@ -13,24 +13,24 @@ class FilesCommand extends BaseCommand
 			->setDescription('Backup website files')
 			->addArgument('source', InputArgument::OPTIONAL, 'Website source')
 			->addOption('all', 'a', InputOption::VALUE_NONE, 'Process all sources')
-			->addOption('dry-run', 'dr', InputOption::VALUE_NONE, 'Dry run - don\'t actually do the work');
+			->addOption('dry-run', 'dr', InputOption::VALUE_NONE, "Dry run - don't actually do the work");
 	}
 
 	protected function processSource($name, array $source, InputInterface $input, OutputInterface $output)
 	{
 		if (!array_key_exists('url', $source))
 		{
-			$output->writeln("<error>Error: no source url specified for [{$name}]</error>");
+			$this->error("no url specified for source [{$name}]", $output);
 			return;
 		}
 
 		if (!array_key_exists('files', $source))
 		{
-			$output->writeln("<error>Error: no source file path specified for [{$name}]</error>");
+			$this->warning("no file path specified for source [{$name}]", $output);
 			return;
 		}
 
-		$output->writeln("<info>Processing source: {$name}</info>");
+		$this->info("Processing files for source [{$name}]", $output);
 
 		$ymd = date("Ymd", time());
 
@@ -38,7 +38,7 @@ class FilesCommand extends BaseCommand
 
 		if (!file_exists($source_path))
 		{
-			$output->writeln("<error>Error: source file path [{$source_path}] does not exist for [{$name}]</error>");
+			$this->error("file path [{$source_path}] does not exist for source [{$name}]", $output);
 			return;
 		}
 
@@ -46,7 +46,7 @@ class FilesCommand extends BaseCommand
 
 		if (!file_exists($backup_path))
 		{
-			$output->writeln("<error>Error: backup destination path [{$backup_path}] does not exist</error>");
+			$this->error("backup destination path [{$backup_path}] does not exist", $output);
 			return;
 		}
 
@@ -56,7 +56,7 @@ class FilesCommand extends BaseCommand
 		{
 			if (!mkdir($files_folder, 0775, true))
 			{
-				$output->writeln("<error>Could not create path [{$files_folder}]</error>");
+				$this->error("could not create path [{$files_folder}] for source [{$name}]", $output);
 				return;
 			}
 		}
@@ -69,18 +69,18 @@ class FilesCommand extends BaseCommand
 			$zip_filename = "{$zip_filename_base}-{$count}.zip";
 		}
 
-		$output->writeln("Backing up files from {$source_path} to {$zip_filename}");
+		$output->writeln("Backing up files from [{$source_path}] to [{$zip_filename}]");
 
 		$exclude = "";
 		if (file_exists("{$source_path}" . DIRECTORY_SEPARATOR . $this->config['app']['zip_exclude_file'])) $exclude = " -x@" . $this->config['app']['zip_exclude_file'];
 
 		$cmd = $this->config['app']['zip_path'] . " -r9qy {$zip_filename} .{$exclude}";
 
-		$output->writeln("Executing: {$cmd}", OutputInterface::VERBOSITY_DEBUG);
+		$this->debug("executing command [{$cmd}]", $output);
 
 		if ($input->getOption('dry-run'))
 		{
-			$output->writeln("<comment>Dry run only - no backup performed</comment>");
+			$this->comment("Dry run only - no backup performed", $output);
 		}
 		else
 		{
@@ -90,11 +90,14 @@ class FilesCommand extends BaseCommand
 			$curdir = getcwd();
 			chdir($source_path);
 
-			exec($cmd, $command_output, $retvar);
+			exec("{$cmd} 2>&1", $command_output, $retvar);
 			if ($retvar != 0)
 			{
-				$output->writeln("Error executing: {$cmd}");
-				if (!empty($command_output)) $output->writeln($command_output);
+				$this->error("non-zero return code executing [{$cmd}]", $output);
+				foreach ($command_output as $co)
+				{
+					$output->writeln("<error>$co</error>", OutputInterface::VERBOSITY_QUIET);
+				}
 			}
 			chdir($curdir);
 		}
