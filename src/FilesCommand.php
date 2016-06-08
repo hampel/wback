@@ -51,7 +51,17 @@ class FilesCommand extends BaseCommand
 		$exclude = "";
 		if (file_exists("{$source_path}" . DIRECTORY_SEPARATOR . $this->config['app']['zip_exclude_file'])) $exclude = " -x@" . $this->config['app']['zip_exclude_file'];
 
-		$cmd = $this->config['app']['zip_path'] . " -r9qy {$zip_filename} .{$exclude}";
+		$verbosity = '';
+		if ($output->getVerbosity() < OutputInterface::OUTPUT_NORMAL)
+		{
+			$verbosity = ' --quiet';
+		}
+		elseif ($output->getVerbosity() > OutputInterface::OUTPUT_NORMAL)
+		{
+			$verbosity = ' --verbose';
+		}
+
+		$cmd = $this->config['app']['zip_path'] . " -9{$verbosity} --recurse-paths --symlinks {$zip_filename} .{$exclude}";
 
 		$this->debug("executing command [{$cmd}]", $output);
 
