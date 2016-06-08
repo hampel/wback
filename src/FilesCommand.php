@@ -40,16 +40,7 @@ class FilesCommand extends BaseCommand
 			return;
 		}
 
-		$files_folder = $this->config['app']['backup_location'] . DIRECTORY_SEPARATOR . "{$source['url']}/files";
-
-		if (!file_exists($files_folder))
-		{
-			if (!mkdir($files_folder, 0775, true))
-			{
-				$this->error("could not create path [{$files_folder}] for source [{$name}]", $output);
-				return;
-			}
-		}
+		if (!$files_folder = $this->getDestination($name, $source['url'], 'files', $output)) return;
 
 		$ymd = date("Ymd", time());
 

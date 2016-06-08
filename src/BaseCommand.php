@@ -63,6 +63,20 @@ abstract class BaseCommand extends Command
 
 	abstract protected function processSource($name, array $source, InputInterface $input, OutputInterface $output);
 
+	protected function getDestination($name, $url, $type, OutputInterface $output)
+	{
+		$folder = $this->config['app']['backup_location'] . DIRECTORY_SEPARATOR . $url . DIRECTORY_SEPARATOR . $type;
+
+		if (!file_exists($folder))
+		{
+			if (!mkdir($folder, 0775, true))
+			{
+				$this->error("could not create path [{$folder}] for source [{$name}]", $output);
+				return false;
+			}
+		}
+	}
+
 	protected function error($message, OutputInterface $output)
 	{
 		$output->writeln("<error>Error: {$message}</error>", OutputInterface::VERBOSITY_QUIET);
