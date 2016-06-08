@@ -18,12 +18,6 @@ class FilesCommand extends BaseCommand
 
 	protected function processSource($name, array $source, InputInterface $input, OutputInterface $output)
 	{
-		if (!array_key_exists('url', $source))
-		{
-			$this->error("no url specified for source [{$name}]", $output);
-			return;
-		}
-
 		if (!array_key_exists('files', $source))
 		{
 			$this->warning("no file path specified for source [{$name}]", $output);

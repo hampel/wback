@@ -39,6 +39,12 @@ abstract class BaseCommand extends Command
 		{
 			foreach ($this->config['sources'] as $name => $source)
 			{
+				if (!array_key_exists('url', $source))
+				{
+					$this->error("no url specified for source [{$name}]", $output);
+					return;
+				}
+
 				$this->processSource($name, $source, $input, $output);
 			}
 		}
@@ -54,6 +60,12 @@ abstract class BaseCommand extends Command
 			if (!$this->sourceExists($name, $this->config['sources']))
 			{
 				$this->error("could not find definition for source [{$name}]", $output);
+				return;
+			}
+
+			if (!array_key_exists('url', $this->config['sources'][$name]))
+			{
+				$this->error("no url specified for source [{$name}]", $output);
 				return;
 			}
 
