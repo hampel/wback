@@ -11,8 +11,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 require 'vendor/autoload.php';
 
-$config = loadConfig();
 loadEnv();
+$config = loadConfig();
 
 $app = new Application('wback Website Backup', '1.0');
 
