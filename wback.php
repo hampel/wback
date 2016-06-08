@@ -4,6 +4,7 @@
 
 use WBack\ListCommand;
 use WBack\FilesCommand;
+use WBack\DatabaseCommand;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -19,6 +20,7 @@ $app = new Application('wback Website Backup', '1.0');
 $list = new ListCommand(null, $config);
 $app->add($list);
 $app->add(new FilesCommand(null, $config));
+$app->add(new DatabaseCommand(null, $config));
 
 $app->setDefaultCommand($list->getName());
 
@@ -50,7 +52,7 @@ function loadEnv()
 	{
 		$dotenv = new Dotenv\Dotenv(__DIR__);
 		$dotenv->load();
-		$dotenv->required(['MYSQL_USERNAME', 'MYSQL_PASSWORD', 'MYSQL_SERVER', 'S3_BUCKET', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_ENDPOINT']);
+		$dotenv->required(['MYSQL_SERVER', 'S3_BUCKET', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_ENDPOINT']);
 	}
 	catch (Exception $e)
 	{

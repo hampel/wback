@@ -32,7 +32,7 @@ return [
 	 * Path to mysqldump executable
 	 *
 	 */
-	'mysqldump_path' => '/usr/local/bin/mysqldump',
+	'mysqldump_path' => '/usr/bin/mysqldump',
 
 	/**
 	 * MySQL Username
