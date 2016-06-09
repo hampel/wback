@@ -1,4 +1,20 @@
 {
+    "description": "wback - backup website data using system tools",
+	"homepage" : "https://bitbucket.org/hampel/wback",
+	"authors": [{
+		"name": "Simon Hampel",
+		"email": "simon@hampelgroup.com",
+		"homepage": "http://hampelgroup.com/",
+		"role": "Developer"
+	}],
+	"support": {
+		"email": "support@hampelgroup.com",
+		"issues": "https://bitbucket.org/hampel/wback/issues",
+		"source": "https://bitbucket.org/hampel/wback/src"
+	},
+	"license" : [
+		"MIT"
+	],
 	"require": {
 		"symfony/console": "~3.0",
 		"symfony/finder": "~3.0",
