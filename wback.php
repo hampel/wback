@@ -19,6 +19,7 @@ loadEnv();
 $config = loadConfig();
 
 $app = new Application('wback Website Backup', '1.1');
+$app->setCatchExceptions(false);
 
 $list = new ListCommand(null, $config);
 $app->add($list);
@@ -30,7 +31,15 @@ $app->add(new CleanCommand(null, $config));
 
 $app->setDefaultCommand($list->getName());
 
-$app->run();
+try
+{
+	$app->run();
+}
+catch (Exception $e)
+{
+	fatal($e->getMessage(), $e->getCode());
+}
+
 
 /**
  * -------------------------------------------------------------------------------------------------------------------
@@ -68,9 +77,18 @@ function loadEnv()
 	}
 }
 
-function fatal($message)
+function fatal($message, $exitcode = 0)
 {
 	$out = new ConsoleOutput();
 	$out->writeln("<error>Error: {$message}</error>", OutputInterface::VERBOSITY_QUIET);
-	exit;
+
+	if (is_numeric($exitcode)) {
+		$exitCode = (int) $exitcode;
+		if (0 === $exitcode) {
+			$exitcode = 1;
+		}
+	} else {
+		$exitcode = 1;
+	}
+	exit($exitcode);
 }
