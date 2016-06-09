@@ -62,7 +62,11 @@ class LogsCommand extends BaseCommand
 			return;
 		}
 
-		$this->rotateLogs($pid_path, $input, $output);
+		if (!$this->rotateLogs($pid_path, $input, $output))
+		{
+			$this->info('aborting');
+			return;
+		}
 
 		if (!empty($access_log)) $this->compressLogs($name, $access_log, 'access', $input, $output);
 		if (!empty($error_log)) $this->compressLogs($name, $error_log, 'error', $input, $output);
@@ -120,6 +124,8 @@ class LogsCommand extends BaseCommand
 			{
 				$this->error("non-zero return code executing [{$cmd}]", $output);
 				$this->error($command_output, $output);
+
+				return false;
 			}
 		}
 
@@ -143,9 +149,13 @@ class LogsCommand extends BaseCommand
 			{
 				$this->error("non-zero return code executing [{$cmd}]", $output);
 				$this->error($command_output, $output);
+
+				return false;
 			}
 			sleep(1);
 		}
+
+		return true;
 	}
 
 	private function compressLogs($name, $logpath, $type, InputInterface $input, OutputInterface $output)
