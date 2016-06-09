@@ -10,7 +10,10 @@ return [
 	 * 		'database' => '<database name>',
 	 * 		'access' => '<path to web server access log>',
 	 * 		'error' => '<path to web server error log>',
-	 * ];
+	 * 		'sync' => [ // optional
+	 * 			'<relative path for additional files to sync>' // paths relative to 'files' above - no trailing slashes!
+	 * 		],
+	 * ],
 	 */
 
 	'example' => [
