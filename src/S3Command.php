@@ -74,7 +74,7 @@ class S3Command extends BaseCommand
 	{
 		$config = $this->config['app'];
 
-		$this->info("Syncing [{$source}] to [{$destination}]", $output);
+		$output->writeln("Syncing [{$source}] to [{$destination}]");
 
 		if (!file_exists($source))
 		{
