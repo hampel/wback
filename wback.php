@@ -2,6 +2,7 @@
 
 <?php
 
+use Dotenv\Dotenv;
 use WBack\S3Command;
 use WBack\ListCommand;
 use WBack\LogsCommand;
@@ -67,7 +68,7 @@ function loadEnv()
 {
 	try
 	{
-		$dotenv = new Dotenv\Dotenv(__DIR__);
+		$dotenv = new Dotenv(__DIR__);
 		$dotenv->load();
 		$dotenv->required(['S3_BUCKET_BACKUP', 'S3_BUCKET_SYNC']);
 	}
