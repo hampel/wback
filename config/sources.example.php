@@ -19,6 +19,9 @@ return [
 		'database' => 'example',
 		'access' => '/var/log/nginx/example.access.log',
 		'error' => '/var/log/nginx/example.error.log',
+		'sync' => [
+			'wp-content/uploads',
+		],
 	],
 
 ];

@@ -84,6 +84,5 @@ class FilesCommand extends BaseCommand
 			}
 			chdir($curdir);
 		}
-
 	}
 }
