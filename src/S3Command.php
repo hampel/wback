@@ -37,7 +37,6 @@ class S3Command extends BaseCommand
 
 		$access_key = empty($config['s3_access_key']) ? '' : " --access_key={$config['s3_access_key']}";
 		$secret_key = empty($config['s3_secret_key']) ? '' : " --secret_key={$config['s3_secret_key']}";
-		$region = empty($config['s3_region']) ? '' : " --region={$config['s3_region']}";
 
 		$destination_path = "s3://" . $config['s3_bucket'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR;
 
@@ -55,7 +54,7 @@ class S3Command extends BaseCommand
 			$verbosity = ' --verbose';
 		}
 
-		$cmd = $this->config['app']['s3cmd_path'] . " sync{$verbosity}{$region}{$access_key}{$secret_key} --reduced-redundancy {$source_path} {$destination_path}";
+		$cmd = $this->config['app']['s3cmd_path'] . " sync{$verbosity}{$access_key}{$secret_key} --reduced-redundancy {$source_path} {$destination_path}";
 
 		$this->debug("executing command [{$cmd}]", $output);
 
