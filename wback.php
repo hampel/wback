@@ -18,7 +18,7 @@ require 'vendor/autoload.php';
 loadEnv();
 $config = loadConfig();
 
-$app = new Application('wback Website Backup', '1.0');
+$app = new Application('wback Website Backup', '1.1');
 
 $list = new ListCommand(null, $config);
 $app->add($list);
