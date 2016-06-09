@@ -22,10 +22,10 @@ class S3Command extends BaseCommand
 
 		$this->info("Sending data to S3 for source [{$name}]", $output);
 
-		if (!array_key_exists('s3_bucket', $config) OR empty($config['s3_bucket']))
+		if (!array_key_exists('s3_bucket_backup', $config) OR empty($config['s3_bucket_backup']))
 		{
-			$this->error("s3_bucket not set", $output);
-			return false;
+			$this->error("s3_bucket_backup not set", $output);
+			return;
 		}
 
 		$sync_sources = ['files', 'database', 'logs'];
@@ -49,12 +49,18 @@ class S3Command extends BaseCommand
 			}
 
 			$source_path = $config['backup_location'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
-			$destination_path = "s3://" . $config['s3_bucket'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
+			$destination_path = "s3://" . $config['s3_bucket_backup'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
 			$this->sync($name, $source_path, $destination_path, $input, $output);
 		}
 
 		if (isset($source['sync']))
 		{
+			if (!array_key_exists('s3_bucket_sync', $config) OR empty($config['s3_bucket_sync']))
+			{
+				$this->error("s3_bucket_sync not set", $output);
+				return;
+			}
+
 			if (!array_key_exists('files', $source) OR empty($source['files']))
 			{
 				$this->error("no file path specified for source [{$name}] - can't sync files", $output);
@@ -64,7 +70,7 @@ class S3Command extends BaseCommand
 			foreach ($source['sync'] as $s)
 			{
 				$source_path = $source['files'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
-				$destination_path = $destination_path = "s3://" . $config['s3_bucket'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . 'sync' . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
+				$destination_path = $destination_path = "s3://" . $config['s3_bucket_sync'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
 				$this->sync($name, $source_path, $destination_path, $input, $output);
 			}
 		}

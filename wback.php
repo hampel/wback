@@ -69,7 +69,7 @@ function loadEnv()
 	{
 		$dotenv = new Dotenv\Dotenv(__DIR__);
 		$dotenv->load();
-		$dotenv->required(['MYSQL_SERVER', 'S3_BUCKET']);
+		$dotenv->required(['MYSQL_SERVER', 'S3_BUCKET_BACKUP', 'S3_BUCKET_SYNC']);
 	}
 	catch (Exception $e)
 	{

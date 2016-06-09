@@ -55,9 +55,14 @@ return [
 	's3cmd_path' => '/usr/bin/s3cmd',
 
 	/**
-	 * S3 Bucket
+	 * S3 Bucket for Backups
 	 */
-	's3_bucket' => getenv('S3_BUCKET'),
+	's3_bucket_backup' => getenv('S3_BUCKET_BACKUP'),
+
+	/**
+	 * S3 Bucket for Sync
+	 */
+	's3_bucket_sync' => getenv('S3_BUCKET_SYNC'),
 
 	/**
 	 * S3 Access Key
