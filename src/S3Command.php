@@ -31,6 +31,23 @@ class S3Command extends BaseCommand
 		$sync_sources = ['files', 'database', 'logs'];
 		foreach ($sync_sources as $s)
 		{
+			if ($s == 'logs')
+			{
+				if (!array_key_exists('access', $source) AND !array_key_exists('error', $source))
+				{
+					$this->info("Info: no [{$s}] definition for source [{$name}] - skipping", $output);
+					continue;
+				}
+			}
+			else
+			{
+				if (!array_key_exists($s, $source))
+				{
+					$this->info("Info: no [{$s}] definition for source [{$name}] - skipping", $output);
+					continue;
+				}
+			}
+
 			$source_path = $config['backup_location'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
 			$destination_path = "s3://" . $config['s3_bucket'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
 			$this->sync($name, $source_path, $destination_path, $input, $output);
@@ -40,7 +57,7 @@ class S3Command extends BaseCommand
 		{
 			if (!array_key_exists('files', $source) OR empty($source['files']))
 			{
-				$this->warning("no file path specified for source [{$name}]", $output);
+				$this->error("no file path specified for source [{$name}] - can't sync files", $output);
 				return;
 			}
 
