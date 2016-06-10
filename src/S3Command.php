@@ -31,24 +31,27 @@ class S3Command extends BaseCommand
 		$sync_sources = ['files', 'database', 'logs'];
 		foreach ($sync_sources as $s)
 		{
+			if (!array_key_exists($s, $source))
+			{
+				$this->info("Info: no [{$s}] definition for source [{$name}] - skipping", $output);
+				continue;
+			}
+
 			if ($s == 'logs')
 			{
-				if (!array_key_exists('access', $source) AND !array_key_exists('error', $source))
-				{
-					$this->info("Info: no [{$s}] definition for source [{$name}] - skipping", $output);
-					continue;
-				}
+				$source_path = $source['logs'];
 			}
 			else
 			{
-				if (!array_key_exists($s, $source))
+				$source_path = $config['backup_location'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
+
+				if (!file_exists($source_path))
 				{
-					$this->info("Info: no [{$s}] definition for source [{$name}] - skipping", $output);
+					$this->error("source path [{$source_path}] not found for source [{$name}]", $output);
 					continue;
 				}
 			}
 
-			$source_path = $config['backup_location'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
 			$destination_path = "s3://" . $config['s3_bucket_backup'] . DIRECTORY_SEPARATOR . $source['url'] . DIRECTORY_SEPARATOR . $s . DIRECTORY_SEPARATOR;
 			$this->sync($name, $source_path, $destination_path, $input, $output);
 		}
@@ -81,12 +84,6 @@ class S3Command extends BaseCommand
 		$config = $this->config['app'];
 
 		$output->writeln("Syncing [{$source}] to [{$destination}]");
-
-		if (!file_exists($source))
-		{
-			$this->error("source path [{$source}] not found for source [{$name}]", $output);
-			return;
-		}
 
 		$access_key = empty($config['s3_access_key']) ? '' : " --access_key={$config['s3_access_key']}";
 		$secret_key = empty($config['s3_secret_key']) ? '' : " --secret_key={$config['s3_secret_key']}";
