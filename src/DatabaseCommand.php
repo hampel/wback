@@ -48,8 +48,9 @@ class DatabaseCommand extends BaseCommand
 		$username = empty($my['username']) ? '' : " -u{$my['username']}";
 		$password = empty($my['password']) ? '' : " -p{$my['password']}";
 
-		$hostname = !empty($source['hostname']) ? " -h{$source['hostname']}" : '';
-		$hostname = empty($hostname) && !empty($my['server']) ? " -h{$my['server']}" : '';
+		$hostname = '';
+		$hostname = !empty($source['hostname']) ? " -h{$source['hostname']}" : $hostname;
+		$hostname = empty($hostname) && !empty($my['server']) ? " -h{$my['server']}" : $hostname;
 
 		$verbosity = '';
 		if ($output->getVerbosity() > OutputInterface::VERBOSITY_NORMAL)
