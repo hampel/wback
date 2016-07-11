@@ -48,5 +48,3 @@ class ListCommand extends BaseListCommand
 
 	}
 }
-
-?>

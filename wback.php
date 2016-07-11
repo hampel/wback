@@ -1,5 +1,4 @@
 #! /usr/bin/env php
-
 <?php
 
 use Dotenv\Dotenv;
@@ -19,7 +18,7 @@ require 'vendor/autoload.php';
 loadEnv();
 $config = loadConfig();
 
-$app = new Application('wback Website Backup', '1.4');
+$app = new Application('wback Website Backup', '1.5');
 $app->setCatchExceptions(false);
 
 $list = new ListCommand(null, $config);
