@@ -54,4 +54,6 @@ return [
 
 	'gzip_path' => '/bin/gzip',
 
+    'zip_path' => '/usr/bin/zip',
+
 ];
