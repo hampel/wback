@@ -3,6 +3,8 @@
 use Storage;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Helper\DescriptorHelper;
 
 abstract class BaseCommand extends Command
 {
@@ -55,7 +57,7 @@ abstract class BaseCommand extends Command
     {
     	$destination = $source['destination'];
 
-    	$this->info("Processing {$type} for {$name}");
+    	$this->info("Processing {$type} for {$name}", OutputInterface::VERBOSITY_VERBOSE);
 
     	if (!Storage::exists($destination))
 	    {
@@ -80,5 +82,26 @@ abstract class BaseCommand extends Command
 	    }
 
 	    return "{$basePath}{$filename}";
+    }
+
+    protected function executeCommand($command)
+    {
+		$this->info("executing command [{$command}]", OutputInterface::VERBOSITY_VERBOSE);
+
+		if ($this->option('dry-run'))
+		{
+			$this->comment("Dry run only - no backup performed");
+		}
+		else
+		{
+			$retvar = 0;
+
+			$command_output = system("{$command} 2>&1", $retvar);
+			if ($retvar != 0)
+			{
+				$this->error("non-zero return code executing [{$command}]");
+				$this->error($command_output);
+			}
+		}
     }
 }

@@ -22,7 +22,7 @@ class BackupDatabase extends BaseCommand
      */
     protected $description = 'Backup databases';
 
-	protected function handleSource($config, $name)
+	protected function handleSource($source, $name)
 	{
     	if (!isset($source['database']) || empty($source['database']))
 	    {
@@ -36,7 +36,7 @@ class BackupDatabase extends BaseCommand
 	    	return;
 	    }
 
-		return $this->backupDatabase($config, $name);
+		return $this->backupDatabase($source, $name);
 	}
 
     protected function backupDatabase($source, $name)
@@ -47,31 +47,15 @@ class BackupDatabase extends BaseCommand
 
     	$this->info("Backing up database [{$db}] to [{$destination}]");
 
-    	$hostname = isset($source['hostname']) ? " -h{$source['hostname']}" : '';
-		$verbosity = $this->output->isVerbose() ? ' --verbose' : '';
-		$charset = isset($source['charset']) ? " --default-character-set={$source['charset']}" : '';
-		$mysqldump = config('backup.mysql.dump_path');
+	    $mysqldump = config('backup.mysql.dump_path');
+	    $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
+	    $charset = isset($source['charset']) ? " --default-character-set={$source['charset']}" : '';
+	    $hostname = isset($source['hostname']) ? " -h{$source['hostname']}" : '';
 		$gzip = config('backup.gzip_path');
-		$outputPath = Storage::path($destination); // TODO: find base path of disk
+		$outputPath = Storage::path($destination);
 
 		$cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hostname} {$db} | {$gzip} -c -f > {$outputPath}";
 
-		$this->info("executing command [{$cmd}]");
-
-		if ($this->option('dry-run'))
-		{
-			$this->comment("Dry run only - no backup performed");
-		}
-		else
-		{
-			$retvar = 0;
-
-			$command_output = system("{$cmd} 2>&1", $retvar);
-			if ($retvar != 0)
-			{
-				$this->error("non-zero return code executing [{$cmd}]");
-				$this->error($command_output);
-			}
-		}
+		$this->executeCommand($cmd);
     }
 }
