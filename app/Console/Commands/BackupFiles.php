@@ -31,7 +31,7 @@ class BackupFiles extends BaseCommand
 	    	return;
 	    }
 
- 		if (!isset($source['destination']))
+ 		if (!isset($source['destination']) || empty($source['destination']))
 	    {
 	    	$this->error("No destination specified for {$name}");
 	    	return;
