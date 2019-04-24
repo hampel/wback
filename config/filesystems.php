@@ -67,6 +67,12 @@ return [
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
             'url' => env('AWS_URL'),
+
+		    'cache' => [
+		        'store' => env('S3_CACHE_STORE', 'file'),
+		        'expire' => 600,
+		        'prefix' => 'wback-s3',
+		    ],
         ],
 
     ],
