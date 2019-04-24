@@ -17,6 +17,11 @@ abstract class BaseCommand extends Command
     {
 	    $name = $this->argument('source');
 
+		if ($this->option('dry-run'))
+		{
+			$this->comment("Dry run only - no files copied");
+		}
+
 	    if (!empty($name))
 	    {
 	        $config = config("backup.sources.{$name}");
@@ -90,7 +95,7 @@ abstract class BaseCommand extends Command
 
 		if ($this->option('dry-run'))
 		{
-			$this->comment("Dry run only - no backup performed");
+			return;
 		}
 		else
 		{
