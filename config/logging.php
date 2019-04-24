@@ -36,14 +36,14 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['daily'],
-            'ignore_exceptions' => false,
+            'channels' => ['single', 'slack'],
+            'ignore_exceptions' => true,
         ],
 
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
-            'level' => 'debug',
+            'level' => env('LOG_LEVEL_SINGLE', 'info'),
         ],
 
         'daily' => [
@@ -56,9 +56,9 @@ return [
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => 'Laravel Log',
+            'username' => env('APP_NAME', 'Laravel Log'),
             'emoji' => ':boom:',
-            'level' => 'critical',
+            'level' => env('LOG_LEVEL_SLACK', 'critical'),
         ],
 
         'papertrail' => [
