@@ -53,7 +53,20 @@ class BackupFiles extends BaseCommand
     	$this->info("Backing up files from [{$files}] to [{$destination}]");
 
 	    $zip = config('backup.zip_path');
-	    $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
+
+	    if ($this->output->isVerbose())
+	    {
+	    	$verbosity = ' --verbose';
+	    }
+	    elseif ($this->output->isQuiet())
+	    {
+	    	$verbosity = ' --quiet';
+	    }
+	    else
+	    {
+	    	$verbosity = '';
+	    }
+
 	    $outputPath = Storage::path($destination);
 	    $exclude = $this->generateExcludes($source['exclude'] ?? []);
 
