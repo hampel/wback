@@ -26,13 +26,13 @@ class BackupDatabase extends BaseCommand
 	{
     	if (!isset($source['database']) || empty($source['database']))
 	    {
-	    	$this->info("No database specified for {$name}");
+	    	$this->log('notice', "No database specified for {$name}");
 	    	return;
 	    }
 
 		if (!isset($source['destination']) || empty($source['destination']))
 	    {
-	    	$this->error("No destination specified for {$name}");
+	    	$this->log('error', "No destination specified for {$name}");
 	    	return;
 	    }
 
@@ -41,11 +41,16 @@ class BackupDatabase extends BaseCommand
 
     protected function backupDatabase($source, $name)
     {
-    	$db = $source['database'];
+    	$database = $source['database'];
 
     	$destination = $this->getDestination($source, $name,'database', '.sql.gz');
 
-    	$this->info("Backing up database [{$db}] to [{$destination}]");
+    	$this->log(
+    	    'notice',
+	        "Backing up database [{$database}] to [{$destination}]",
+	        "Backing up database",
+	        compact('database', 'destination')
+	    );
 
 	    $mysqldump = config('backup.mysql.dump_path');
 	    $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
@@ -54,7 +59,7 @@ class BackupDatabase extends BaseCommand
 		$gzip = config('backup.gzip_path');
 		$outputPath = Storage::path($destination);
 
-		$cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hostname} {$db} | {$gzip} -c -f > {$outputPath}";
+		$cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
 
 		$this->executeCommand($cmd);
     }

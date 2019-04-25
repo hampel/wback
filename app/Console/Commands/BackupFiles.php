@@ -27,19 +27,24 @@ class BackupFiles extends BaseCommand
 	{
     	if (!isset($source['files']) || empty($source['files']))
 	    {
-	    	$this->info("No files specified for {$name}");
+	    	$this->log('notice', "No files specified for {$name}");
 	    	return;
 	    }
 
  		if (!isset($source['destination']) || empty($source['destination']))
 	    {
-	    	$this->error("No destination specified for {$name}");
+	    	$this->log('error', "No destination specified for {$name}");
 	    	return;
 	    }
 
 		if (!File::isDirectory($source['files']))
 		{
-			$this->error("File source [{$source['files']}] does not exist for {$name}");
+			$this->log(
+				'error',
+				"File source [{$source['files']}] does not exist for {$name}",
+				"File source does not exist for {$name}",
+				['source' => $source['files']]
+			);
 		}
 
 		return $this->backupFiles($source, $name);
@@ -50,7 +55,12 @@ class BackupFiles extends BaseCommand
     	$files = $source['files'];
     	$destination = $this->getDestination($source, $name,'files', '.zip');
 
-    	$this->info("Backing up files from [{$files}] to [{$destination}]");
+    	$this->log(
+    	    'notice',
+	        "Backing up files from [{$files}] to [{$destination}]",
+	        "Backing up files",
+	        compact('files', 'destination')
+	    );
 
 	    $zip = config('backup.zip_path');
 
@@ -78,7 +88,7 @@ class BackupFiles extends BaseCommand
     protected function generateExcludes(array $excludes)
     {
     	$ex = collect($excludes)->transform(function ($value, $key) {
-    		return preg_replace('/[\*]/', '\\\*', $value);
+    		return preg_replace('/[\*]/', '\*', $value);
 	    })->implode(' ');
 
     	return empty($ex) ? '' : " --exclude {$ex}";

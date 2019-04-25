@@ -27,7 +27,7 @@ class BackupS3 extends BaseCommand
 	{
  		if (!isset($source['destination']) || empty($source['destination']))
 	    {
-	    	$this->error("No destination specified for {$name}");
+	    	$this->log('error', "No destination specified for {$name}");
 	    	return;
 	    }
 
@@ -35,7 +35,13 @@ class BackupS3 extends BaseCommand
 
 		if (!File::isDirectory($backupPath))
 		{
-			$this->error("Backup path [{$backupPath}] does not exist for {$name}");
+			$this->log(
+				'error',
+				"Backup path [{$backupPath}] does not exist for {$name}",
+				"Backup path does not exist for {$name}",
+				['path' => $backupPath]
+			);
+			return;
 		}
 
 		return $this->backupS3($source, $name);
@@ -43,7 +49,12 @@ class BackupS3 extends BaseCommand
 
     protected function backupS3($source, $name)
     {
-	    $this->info("Backing up files from [{$source['destination']}] to S3");
+    	$this->log(
+    	    'notice',
+	        "Backing up files from [{$source['destination']}] to S3",
+	        "Backing up files to S3",
+	        ['source' => $source['destination']]
+	    );
 
 		$files = collect(Storage::allFiles($source['destination']));
 		$files->each(function ($file) {
@@ -53,17 +64,32 @@ class BackupS3 extends BaseCommand
 				{
 					if(Storage::disk('backup')->size($file) != Storage::disk('s3')->size($file))
 					{
-						$this->warn("File s3::[{$file}] exists, but file sizes do not match, skipping");
+						$this->log(
+							'warning',
+							"File s3::[{$file}] exists, but file sizes do not match, skipping",
+							"File exists on S3, but file sizes do not match, skipping",
+							compact('file')
+						);
 						return;
 					}
 					elseif (Storage::disk('backup')->lastModified($file) > Storage::disk('s3')->lastModified($file))
 					{
-						$this->warn("File s3::[{$file}] exists, but source has been modified since destination was uploaded, skipping");
+						$this->log(
+							'warning',
+							"File s3::[{$file}] exists, but source has been modified since destination was uploaded, skipping",
+							"File exists on S3, but source has been modified since destination was uploaded, skipping",
+							compact('file')
+						);
 						return;
 					}
 					else
 					{
-						$this->comment("File s3::[{$file}] exists, skipping");
+						$this->log(
+							'notice',
+							"File s3::[{$file}] exists, skipping",
+							"File exists on S3, skipping",
+							compact('file')
+						);
 						return;
 					}
 				}
@@ -73,7 +99,12 @@ class BackupS3 extends BaseCommand
 
 				if ($this->option('dry-run'))
 				{
-					$this->info("Sending file to S3: [{$file}] {$size_human}");
+					$this->log(
+						'notice',
+						"[Dry run] Sending file to S3: [{$file}] {$size_human}",
+						"Sending file to S3",
+						compact('file', 'size', 'size_human')
+					);
 				}
 				else
 				{
@@ -92,21 +123,19 @@ class BackupS3 extends BaseCommand
 						$speed_human = " (" . $this->human_filesize($speed) . "/s)";
 					}
 
-					$this->info("Sent file to S3: [{$file}] {$size_human} in {$time_human} seconds{$speed_human}");
+					$this->log(
+						'notice',
+						"Sent file to S3: [{$file}] {$size_human} in {$time_human} seconds{$speed_human}",
+						"Sent file to S3",
+						compact('file', 'size', 'size_human', 'time_human', 'speed_human')
+					);
+
 				}
 			}
 			catch (\Exception $e)
 			{
-				$this->error($e->getMessage() . ($e->getCode() ? " [" . $e->getCode() . "]" : ""));
+				$this->log('error', $e->getMessage() . ($e->getCode() ? " [" . $e->getCode() . "]" : ""));
 			}
 		});
     }
-
-	protected function human_filesize($bytes, $dec = 2)
-	{
-	    $size   = array('B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-	    $factor = floor((strlen($bytes) - 1) / 3);
-
-	    return sprintf("%.{$dec}f", $bytes / pow(1024, $factor)) . " " . @$size[$factor];
-	}
 }
