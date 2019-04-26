@@ -14,6 +14,7 @@ class BackupS3 extends BaseCommand
      */
     protected $signature = 'backup:s3 
                                 {source?} 
+                                {--f|force : Force run, regardless of last run time}
                                 {--a|all : Process all sources} 
                                 {--d|dry-run : Do everything except the actual backup}
                            ';
@@ -58,7 +59,7 @@ class BackupS3 extends BaseCommand
 	        ['source' => $source['destination']]
 	    );
 
-    	$lastUpdated = $this->lastUpdated($name);
+    	$lastUpdated = $this->option('force') ? 0 : $this->lastUpdated($name);
 
 		collect(Storage::allFiles($source['destination']))
 		->transform(function ($path) {
