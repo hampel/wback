@@ -56,6 +56,12 @@ return [
 
     'zip_path' => '/usr/bin/zip',
 
+    'awscli_path' => '/home/hampel/.local/bin/aws',
+
+    'sync_bucket' => env('BACKUP_SYNC_BUCKET'),
+
+    'sync_storage_class' => 'ONEZONE_IA',
+
     'last_update_cache' => 60 * 60 * 24 * 7, // cache for a week
 
 ];
