@@ -24,11 +24,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-    	$schedule->command('backup:database --quiet --all')->daily();
-    	$schedule->command('backup:files --quiet --all')->daily();
-        $schedule->command('backup:s3 --quiet --all')->daily();
-//        $schedule->command('backup:sync --quiet --all')->daily();
-//        $schedule->command('backup:clean --quiet --all')->daily();
+    	// TODO: make schedule configurable (twiceDaily ?)
+    	$schedule->command('backup:database --quiet --all')->name('Backup database')->daily();
+    	$schedule->command('backup:files --quiet --all')->name("Backup files")->daily();
+        $schedule->command('backup:s3 --quiet --all')->name("Backup S3")->daily();
+//        $schedule->command('backup:sync --quiet --all')->name("Backup sync")->daily();
+//        $schedule->command('backup:clean --quiet --all')->name("Clean up backups")->daily();
     }
 
     /**
