@@ -56,4 +56,6 @@ return [
 
     'zip_path' => '/usr/bin/zip',
 
+    'last_update_cache' => 60 * 60 * 24 * 7, // cache for a week
+
 ];
