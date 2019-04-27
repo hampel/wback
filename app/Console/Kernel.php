@@ -29,7 +29,7 @@ class Kernel extends ConsoleKernel
     	$schedule->command('backup:files --quiet --all')->name("Backup files")->daily();
         $schedule->command('backup:s3 --quiet --all')->name("Backup S3")->daily();
         $schedule->command('backup:sync --quiet --all')->name("Backup sync")->daily();
-//        $schedule->command('backup:clean --quiet --all')->name("Clean up backups")->daily();
+        $schedule->command('backup:clean --quiet --all')->name("Clean up old backups")->daily();
     }
 
     /**

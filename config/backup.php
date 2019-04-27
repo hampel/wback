@@ -64,4 +64,10 @@ return [
 
     'last_update_cache' => 60 * 60 * 24 * 7, // cache for a week
 
+	/**
+	 * Days to keep backup files
+	 *
+	 * Files older than this will be removed
+	 */
+	'keeponly_days' => 7,
 ];
