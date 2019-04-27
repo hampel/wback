@@ -26,7 +26,7 @@ class BackupDatabase extends BaseCommand
 	{
     	if (!isset($source['database']) || empty($source['database']))
 	    {
-	    	$this->log('notice', "No database specified for {$name}");
+	    	$this->log('notice', "No database source specified for {$name}");
 	    	return;
 	    }
 

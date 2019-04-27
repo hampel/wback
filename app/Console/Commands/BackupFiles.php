@@ -27,7 +27,7 @@ class BackupFiles extends BaseCommand
 	{
     	if (!isset($source['files']) || empty($source['files']))
 	    {
-	    	$this->log('notice', "No files specified for {$name}");
+	    	$this->log('notice', "No files source specified for {$name}");
 	    	return;
 	    }
 

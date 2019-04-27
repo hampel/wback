@@ -36,10 +36,18 @@ class BackupClean extends BaseCommand
 	    {
 		    $this->clean($source, $name, 'files');
 	    }
+ 		else
+	    {
+	    	$this->log('notice', "No files source specified for {$name}");
+	    }
 
  		if (isset($source['database']) && !empty($source['database']))
 	    {
 		    $this->clean($source, $name, 'database');
+	    }
+ 		else
+	    {
+	    	$this->log('notice', "No database source specified for {$name}");
 	    }
 	}
 
