@@ -34,7 +34,7 @@ class BackupS3 extends BaseCommand
 	    	return;
 	    }
 
- 		$backupPath = Storage::path($source['destination']);
+ 		$backupPath = Storage::disk('backup')->path($source['destination']);
 
 		if (!File::isDirectory($backupPath))
 		{
@@ -61,20 +61,20 @@ class BackupS3 extends BaseCommand
 
     	$lastUpdated = $this->option('force') ? 0 : $this->lastUpdated($name);
 
-		collect(Storage::allFiles($source['destination']))
-		->transform(function ($path) {
-			return ['path' => $path, 'modified' => Storage::disk('backup')->lastModified($path)];
-		})
-		->reject(function ($file) use ($lastUpdated) {
-			return $lastUpdated > 0 && $file['modified'] <= $lastUpdated; // remove from collection if true
-		})
-		->reject(function ($file) {
-			return $this->fileExists($file); // remove from collection if file already exists on S3
-		})
-		->sortBy('modified')
-		->each(function ($file) use (&$lastUpdated) {
-			return $this->uploadFile($file, $lastUpdated); // if upload fails, it will return false and we will stop
-		});
+		collect(Storage::disk('backup')->allFiles($source['destination']))
+			->transform(function ($path) {
+				return ['path' => $path, 'modified' => Storage::disk('backup')->lastModified($path)];
+			})
+			->reject(function ($file) use ($lastUpdated) {
+				return $lastUpdated > 0 && $file['modified'] <= $lastUpdated; // remove from collection if true
+			})
+			->reject(function ($file) {
+				return $this->fileExists($file); // remove from collection if file already exists on S3
+			})
+			->sortBy('modified')
+			->each(function ($file) use (&$lastUpdated) {
+				return $this->uploadFile($file, $lastUpdated); // if upload fails, it will return false and we will stop
+			});
 
 		if ($lastUpdated > 0)
 		{

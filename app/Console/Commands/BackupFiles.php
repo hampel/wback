@@ -77,7 +77,7 @@ class BackupFiles extends BaseCommand
 	    	$verbosity = '';
 	    }
 
-	    $outputPath = Storage::path($destination);
+	    $outputPath = Storage::disk('backup')->path($destination);
 	    $exclude = $this->generateExcludes($source['exclude'] ?? []);
 
 		$cmd = "cd {$files} && {$zip} -9{$verbosity} --recurse-paths --symlinks {$outputPath} .{$exclude}";
