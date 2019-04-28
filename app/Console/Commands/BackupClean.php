@@ -54,7 +54,7 @@ class BackupClean extends BaseCommand
     protected function clean($source, $name, $type)
     {
     	$path = $source['destination'] . DIRECTORY_SEPARATOR . $type;
-    	if (!Storage::disk('backup')->exists($path))
+    	if (!Storage::disk()->exists($path))
 	    {
 	    	$this->log(
 	    	    'error',
@@ -74,9 +74,9 @@ class BackupClean extends BaseCommand
 
     	$days = config('backup.keeponly_days');
 
-		collect(Storage::disk('backup')->allFiles($path))
+		collect(Storage::disk()->allFiles($path))
 			->reject(function ($path) use ($days) {
-				return Storage::disk('backup')->lastModified($path) > Carbon::now()->subDays($days)->timestamp;
+				return Storage::disk()->lastModified($path) > Carbon::now()->subDays($days)->timestamp;
 			})
 			->each(function ($path) {
 				$this->deleteFile($path);
@@ -103,7 +103,7 @@ class BackupClean extends BaseCommand
 				compact('path')
 			);
 
-	        Storage::disk('backup')->delete($path);
+	        Storage::disk()->delete($path);
 		}
     }
 }

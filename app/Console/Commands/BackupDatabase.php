@@ -57,7 +57,7 @@ class BackupDatabase extends BaseCommand
 	    $charset = isset($source['charset']) ? " --default-character-set={$source['charset']}" : '';
 	    $hostname = isset($source['hostname']) ? " -h{$source['hostname']}" : '';
 		$gzip = config('backup.gzip_path');
-		$outputPath = Storage::disk('backup')->path($destination);
+		$outputPath = Storage::disk()->path($destination);
 
 		$cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
 

@@ -70,7 +70,7 @@ abstract class BaseCommand extends Command
 
     	$this->log('info', "Processing {$type} for {$name}");
 
-    	if (!Storage::disk('backup')->exists($destination))
+    	if (!Storage::disk()->exists($destination))
 	    {
 	    	$this->log(
 	    	    'info',
@@ -78,11 +78,11 @@ abstract class BaseCommand extends Command
 		        "Creating directory",
 		        compact('destination')
 		    );
-	    	Storage::disk('backup')->makeDirectory($destination);
+	    	Storage::disk()->makeDirectory($destination);
 	    }
 
     	$destination_and_type = $destination . DIRECTORY_SEPARATOR . $type;
-    	if (!Storage::disk('backup')->exists($destination_and_type))
+    	if (!Storage::disk()->exists($destination_and_type))
 	    {
 	    	$this->log(
 	    	    'info',
@@ -90,7 +90,7 @@ abstract class BaseCommand extends Command
 		        "Creating directory",
 		        ['directory' => $destination_and_type]
 		    );
-	    	Storage::disk('backup')->makeDirectory($destination_and_type);
+	    	Storage::disk()->makeDirectory($destination_and_type);
 	    }
 
     	$basePath = $destination . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR;
@@ -99,7 +99,7 @@ abstract class BaseCommand extends Command
 
     	$filename = "{$filenameBase}{$suffix}";
     	$count = 1;
-    	while (Storage::disk('backup')->exists("{$basePath}{$filename}"))
+    	while (Storage::disk()->exists("{$basePath}{$filename}"))
 	    {
 	    	$this->log('debug', "[{$basePath}{$filename}] already exists, incrementing", "Destination already exists, incrementing", ['destination' => "{$basePath}{$filename}"]);
 	    	$count++;
