@@ -5,14 +5,14 @@ use Cache;
 use Storage;
 use Carbon\Carbon;
 
-class BackupS3 extends BaseCommand
+class BackupCloud extends BaseCommand
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'backup:s3 
+    protected $signature = 'backup:cloud 
                                 {source?} 
                                 {--f|force : Force run, regardless of last run time}
                                 {--a|all : Process all sources} 
@@ -24,7 +24,7 @@ class BackupS3 extends BaseCommand
      *
      * @var string
      */
-    protected $description = 'Send backup files to S3';
+    protected $description = 'Send backup files to cloud storage';
 
 	protected function handleSource($source, $name)
 	{
@@ -34,7 +34,7 @@ class BackupS3 extends BaseCommand
 	    	return;
 	    }
 
- 		$backupPath = Storage::disk('backup')->path($source['destination']);
+ 		$backupPath = Storage::disk()->path($source['destination']);
 
 		if (!File::isDirectory($backupPath))
 		{
@@ -47,29 +47,29 @@ class BackupS3 extends BaseCommand
 			return;
 		}
 
-		return $this->backupS3($source, $name);
+		return $this->backupCloud($source, $name);
 	}
 
-    protected function backupS3($source, $name)
+    protected function backupCloud($source, $name)
     {
     	$this->log(
     	    'notice',
-	        "Backing up files from [{$source['destination']}] to S3",
-	        "Backing up files to S3",
+	        "Sending backup files from [{$source['destination']}] to cloud storage",
+	        "Sending backup files to cloud storage",
 	        ['source' => $source['destination']]
 	    );
 
     	$lastUpdated = $this->option('force') ? 0 : $this->lastUpdated($name);
 
-		collect(Storage::disk('backup')->allFiles($source['destination']))
+		collect(Storage::disk()->allFiles($source['destination']))
 			->transform(function ($path) {
-				return ['path' => $path, 'modified' => Storage::disk('backup')->lastModified($path)];
+				return ['path' => $path, 'modified' => Storage::disk()->lastModified($path)];
 			})
 			->reject(function ($file) use ($lastUpdated) {
 				return $lastUpdated > 0 && $file['modified'] <= $lastUpdated; // remove from collection if true
 			})
 			->reject(function ($file) {
-				return $this->fileExists($file); // remove from collection if file already exists on S3
+				return $this->fileExists($file); // remove from collection if file already exists on cloud storage
 			})
 			->sortBy('modified')
 			->each(function ($file) use (&$lastUpdated) {
@@ -91,8 +91,8 @@ class BackupS3 extends BaseCommand
 
 	    $this->log(
 	        'info',
-	        "Last upload for {$name} to S3: {$last_upload}",
-	        "Last upload to S3",
+	        "Last upload for {$name} to cloud storage: {$last_upload}",
+	        "Last upload to cloud storage",
 	        compact('name', 'last_upload')
 	    );
 
@@ -105,23 +105,23 @@ class BackupS3 extends BaseCommand
 
 		try
 		{
-			if (Storage::disk('s3')->exists($path))
+			if (Storage::cloud()->exists($path))
 			{
-				if(Storage::disk('backup')->size($path) != Storage::disk('s3')->size($path))
+				if(Storage::disk()->size($path) != Storage::cloud()->size($path))
 				{
 					$this->log(
 						'warning',
-						"File s3::[{$path}] exists, but file sizes do not match, skipping",
-						"File exists on S3, but file sizes do not match, skipping",
+						"File cloud::[{$path}] exists, but file sizes do not match, skipping",
+						"File exists on cloud storage, but file sizes do not match, skipping",
 						compact('path')
 					);
 				}
-				elseif (Storage::disk('backup')->lastModified($path) > Storage::disk('s3')->lastModified($path))
+				elseif (Storage::disk()->lastModified($path) > Storage::cloud()->lastModified($path))
 				{
 					$this->log(
 						'warning',
-						"File s3::[{$path}] exists, but source has been modified since destination was uploaded, skipping",
-						"File exists on S3, but source has been modified since destination was uploaded, skipping",
+						"File cloud::[{$path}] exists, but source has been modified since destination was uploaded, skipping",
+						"File exists on cloud storage, but source has been modified since destination was uploaded, skipping",
 						compact('path')
 					);
 				}
@@ -129,8 +129,8 @@ class BackupS3 extends BaseCommand
 				{
 					$this->log(
 						'notice',
-						"File s3::[{$path}] exists, skipping",
-						"File exists on S3, skipping",
+						"File cloud::[{$path}] exists, skipping",
+						"File exists on cloud storage, skipping",
 						compact('path')
 					);
 				}
@@ -153,24 +153,24 @@ class BackupS3 extends BaseCommand
 
 	    try
 	    {
-		    $size = Storage::disk('backup')->size($path);
+		    $size = Storage::disk()->size($path);
 			$size_human = $this->human_filesize($size);
 
 			if ($this->option('dry-run'))
 			{
 				$this->log(
 					'notice',
-					"[Dry run] Sending file to S3: [{$path}] {$size_human}",
-					"[Dry run] Sending file to S3",
+					"[Dry run] Sending backup file to cloud storage: [{$path}] {$size_human}",
+					"[Dry run] Sending backup file to cloud storage",
 					compact('path', 'size', 'size_human')
 				);
 			}
 			else
 			{
 				$start = microtime(true);
-				Storage::disk('s3')->getDriver()->writeStream(
+				Storage::cloud()->getDriver()->writeStream(
 					$path,
-					Storage::disk('backup')->getDriver()->readStream($path)
+					Storage::disk()->getDriver()->readStream($path)
 				);
 				$time = microtime(true) - $start;
 				$time_human = number_format($time, 2);
@@ -184,8 +184,8 @@ class BackupS3 extends BaseCommand
 
 				$this->log(
 					'notice',
-					"Sent file to S3: [{$path}] {$size_human} in {$time_human} seconds{$speed_human}",
-					"Sent file to S3",
+					"Sent file to cloud storage: [{$path}] {$size_human} in {$time_human} seconds{$speed_human}",
+					"Sent file to cloud storage",
 					compact('path', 'size', 'size_human', 'time_human', 'speed_human')
 				);
 
