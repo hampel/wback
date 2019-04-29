@@ -15,7 +15,7 @@ return [
     'services' => [
         's3' => [
             'builder' => S3Cmd::class,
-            'awscli' => env('SYNC_AWS_CLI'),
+            'awscli' => env('SYNC_AWS_CLI', '~/.local/bin/aws'),
             'bucket' => env('SYNC_S3_BUCKET'),
             'storage_class' => env('SYNC_S3_STORAGE_CLASS', 'ONEZONE_IA'),
         ],
