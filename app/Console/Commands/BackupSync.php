@@ -2,6 +2,7 @@
 
 use File;
 use Storage;
+use App\Sync\SyncCmd;
 
 class BackupSync extends BaseCommand
 {
@@ -21,7 +22,7 @@ class BackupSync extends BaseCommand
      *
      * @var string
      */
-    protected $description = 'Sync data to S3';
+    protected $description = 'Sync data to cloud storage';
 
 	protected function handleSource($source, $name)
 	{
@@ -54,31 +55,28 @@ class BackupSync extends BaseCommand
 
 			$this->syncFiles($source, $path, $name);
 	    }
-
 	}
 
     protected function syncFiles($source, $path, $name)
     {
-    	$files = $source['files'];
+//    	$files = $source['files'];
     	$destination = "{$source['destination']}/{$path}";
+
+    	$dry = $this->option('dry-run') ? '[Dry run] ' : '';
 
     	$this->log(
     	    'notice',
-	        "Syncing files from [{$path}] to s3::[{$destination}]",
-	        "Backing up files to S3",
+	        "{$dry}Syncing files from [{$path}] to cloud::[{$destination}]",
+	        "{$dry}Backing up files to cloud storage",
 	        ['source' => $path, 'destination' => $destination]
 	    );
 
-    	$awscli = config('backup.awscli_path');
-    	$sync_bucket = config('backup.sync_bucket');
+    	/** @var SyncCmd $builder */
+    	$builder = app()->make(SyncCmd::class);
 
-    	$dryrun = $this->option('dry-run') ? ' --dryrun' : '';
- 	    $verbosity = $this->output->isQuiet() ? ' --quiet' : '';
- 	    $storage_class = ' --storage-class ' . config('backup.sync_storage_class');
-
- 	    $cmd = "cd {$files} && {$awscli} s3 sync {$path} s3://{$sync_bucket}/{$destination}{$dryrun}{$verbosity}{$storage_class}";
-
- 	    $this->executeCommand($cmd);
+ 	    $this->executeCommand(
+ 	        $builder->buildCmd($source['files'], $destination, $path, $this->option('dry-run'), $this->output),
+            $builder->canDryRun()
+        );
     }
-
 }
