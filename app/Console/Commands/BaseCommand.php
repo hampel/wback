@@ -109,13 +109,13 @@ abstract class BaseCommand extends Command
 	    return "{$basePath}{$filename}";
     }
 
-    protected function executeCommand($command)
+    protected function executeCommand($command, $override = false)
     {
     	$prefix = $this->option('dry-run') ? "[Dry run] " : "";
 
-		$this->log('info', "Executing command [{$command}]", "{$prefix}Executing command", compact('command'));
+		$this->log('info', "{$prefix}Executing command [{$command}]", "{$prefix}Executing command", compact('command'));
 
-		if ($this->option('dry-run'))
+		if ($this->option('dry-run') && !$override)
 		{
 			return;
 		}
