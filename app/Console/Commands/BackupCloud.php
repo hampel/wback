@@ -212,8 +212,6 @@ class BackupCloud extends BaseCommand
 	    	$this->setOption('filesystems.disks.s3.object_tags', 'Tagging', $options);
 	    	$this->setOption('filesystems.disks.s3.storage_class', 'StorageClass', $options);
 	    }
-
-    	dump($options);
     	return $options;
     }
 
