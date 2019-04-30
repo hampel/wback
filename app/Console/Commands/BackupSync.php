@@ -59,8 +59,7 @@ class BackupSync extends BaseCommand
 
     protected function syncFiles($source, $path, $name)
     {
-//    	$files = $source['files'];
-    	$destination = "{$source['destination']}/{$path}";
+    	$destination = $this->buildDestination($source, $path);
 
     	$dry = $this->option('dry-run') ? '[Dry run] ' : '';
 
@@ -78,5 +77,16 @@ class BackupSync extends BaseCommand
  	        $builder->buildCmd($source['files'], $destination, $path, $this->option('dry-run'), $this->output),
             $builder->canDryRun()
         );
+    }
+
+    protected function buildDestination($source, $path)
+    {
+    	$destination = $source['destination'] . DIRECTORY_SEPARATOR . 'sync' . DIRECTORY_SEPARATOR . $path;
+    	$prefix = config('sync.prefix');
+    	if (!empty($prefix))
+	    {
+	    	$destination = $prefix . DIRECTORY_SEPARATOR . $destination;
+	    }
+    	return $destination;
     }
 }
