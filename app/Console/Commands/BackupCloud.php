@@ -170,7 +170,8 @@ class BackupCloud extends BaseCommand
 				$start = microtime(true);
 				Storage::cloud()->getDriver()->writeStream(
 					$path,
-					Storage::disk()->getDriver()->readStream($path)
+					Storage::disk()->getDriver()->readStream($path),
+					$this->getUploadOptions()
 				);
 				$time = microtime(true) - $start;
 				$time_human = number_format($time, 2);
@@ -200,5 +201,34 @@ class BackupCloud extends BaseCommand
 		}
 
 		return true; // continue
+    }
+
+    protected function getUploadOptions()
+    {
+    	$options = [];
+
+    	if ($this->isS3())
+	    {
+	    	$this->setOption('filesystems.disks.s3.object_tags', 'Tagging', $options);
+	    	$this->setOption('filesystems.disks.s3.storage_class', 'StorageClass', $options);
+	    }
+
+    	dump($options);
+    	return $options;
+    }
+
+    protected function isS3()
+    {
+		$cloud = config('filesystems.cloud');
+		return config("filesystems.disks.{$cloud}.driver") == 's3';
+    }
+
+    protected function setOption($configKey, $optionKey, array &$options)
+    {
+    	$config = config($configKey);
+    	if (!empty($config))
+	    {
+	    	$options[$optionKey] = $config;
+	    }
     }
 }

@@ -66,7 +66,10 @@ return [
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
+            'root' => env('AWS_PATH_PREFIX'),
             'url' => env('AWS_URL'),
+            'storage_class' => env('AWS_STORAGE_CLASS'),
+            'object_tags' => env('AWS_OBJECT_TAGS'),
 
 		    'cache' => [
 		        'store' => env('S3_CACHE_STORE', 'file'),
