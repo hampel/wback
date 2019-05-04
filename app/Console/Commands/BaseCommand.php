@@ -74,7 +74,7 @@ abstract class BaseCommand extends Command
 	    {
 	    	$this->log(
 	    	    'info',
-		        "Creating directory {$destination}",
+		        "Creating directory [{$destination}]",
 		        "Creating directory",
 		        compact('destination')
 		    );
@@ -86,7 +86,7 @@ abstract class BaseCommand extends Command
 	    {
 	    	$this->log(
 	    	    'info',
-		        "Creating directory {$destination}",
+		        "Creating directory [{$destination}]",
 		        "Creating directory",
 		        ['directory' => $destination_and_type]
 		    );
@@ -101,7 +101,13 @@ abstract class BaseCommand extends Command
     	$count = 1;
     	while (Storage::disk()->exists("{$basePath}{$filename}"))
 	    {
-	    	$this->log('debug', "[{$basePath}{$filename}] already exists, incrementing", "Destination already exists, incrementing", ['destination' => "{$basePath}{$filename}"]);
+	    	$this->log(
+	    	    'debug',
+		        "[{$basePath}{$filename}] already exists, incrementing",
+		        "Destination already exists, incrementing",
+		        ['destination' => "{$basePath}{$filename}"]
+		    );
+
 	    	$count++;
 	    	$filename = "{$filenameBase}-{$count}{$suffix}";
 	    }
