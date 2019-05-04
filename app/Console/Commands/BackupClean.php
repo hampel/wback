@@ -72,11 +72,11 @@ class BackupClean extends BaseCommand
 	        compact('path')
 	    );
 
-    	$days = config('backup.keeponly_days');
+    	$cutoff = Carbon::now()->subDays(config('backup.keeponly_days', 7))->timestamp;
 
 		collect(Storage::disk()->allFiles($path))
-			->reject(function ($path) use ($days) {
-				return Storage::disk()->lastModified($path) > Carbon::now()->subDays($days)->timestamp;
+			->reject(function ($path) use ($cutoff) {
+				return Storage::disk()->lastModified($path) > $cutoff;
 			})
 			->each(function ($path) {
 				$this->deleteFile($path);
