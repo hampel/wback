@@ -32,7 +32,24 @@ class BackupSync extends BaseCommand
 	    	return;
 	    }
 
- 		if (!isset($source['destination']))
+    	if (!isset($source['files']) || empty($source['files']))
+	    {
+	    	$this->log('error', "No files source specified for {$name}");
+	    	return;
+	    }
+
+		if (!File::isDirectory($source['files']))
+		{
+			$this->log(
+				'error',
+				"Sync source [{$source['files']}] does not exist for {$name}",
+				"File source does not exist for {$name}",
+				['source' => $source['files']]
+			);
+			return;
+		}
+
+ 		if (!isset($source['destination']) || empty($source['destination']))
 	    {
 	    	$this->log('error', "No destination specified for {$name}");
 	    	return;
@@ -42,17 +59,6 @@ class BackupSync extends BaseCommand
 
  		foreach ($sync as $path)
 	    {
-			if (!File::isDirectory($source['files']))
-			{
-				$this->log(
-					'error',
-					"Sync source [{$path}] does not exist for {$name}",
-					"File source does not exist for {$name}",
-					['source' => $source['files']]
-				);
-				continue;
-			}
-
 			$this->syncFiles($source, $path, $name);
 	    }
 	}
