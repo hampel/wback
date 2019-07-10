@@ -83,6 +83,7 @@ class BackupFiles extends BaseCommand
 		$cmd = "cd {$files} && {$zip} -9{$verbosity} --recurse-paths --symlinks {$outputPath} .{$exclude}";
 
 		$this->executeCommand($cmd);
+		$this->chmod($outputPath);
     }
 
     protected function generateExcludes(array $excludes)

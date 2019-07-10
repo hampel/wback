@@ -62,5 +62,6 @@ class BackupDatabase extends BaseCommand
 		$cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
 
 		$this->executeCommand($cmd);
+		$this->chmod($outputPath);
     }
 }

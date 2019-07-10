@@ -1,6 +1,7 @@
 <?php namespace App\Console\Commands;
 
 use Log;
+use File;
 use Storage;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -136,6 +137,20 @@ abstract class BaseCommand extends Command
 				$this->error($output);
 			}
 		}
+    }
+
+    protected function chmod($path, $mode = 0660)
+    {
+    	if (!File::exists($path))
+	    {
+	    	$this->log('warning', "Path does not exist when changing permissions [{$path}]", "Path does exist when changing permissions", compact('path'));
+	    	return;
+	    }
+
+    	if (!File::chmod($path, $mode))
+	    {
+	    	$this->log('warning', "Could not change permissions on [{$path}] to [{$mode}]", "Could not change permissions", compact('path', 'mode'));
+	    }
     }
 
 	protected function human_filesize($bytes, $dec = 2)
