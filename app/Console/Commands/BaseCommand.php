@@ -116,7 +116,7 @@ abstract class BaseCommand extends Command
 	    return "{$basePath}{$filename}";
     }
 
-    protected function executeCommand($command, $override = false)
+    protected function executeCommand($command, $override = false, $ignoreErrors = false)
     {
     	$prefix = $this->option('dry-run') ? "[Dry run] " : "";
 
@@ -131,7 +131,7 @@ abstract class BaseCommand extends Command
 			$retvar = 0;
 
 			$output = system("{$command} 2>&1", $retvar);
-			if ($retvar != 0)
+			if ($retvar != 0 && !$ignoreErrors)
 			{
 				$this->log('error', "Non-zero return code executing command [{$command}]", "Non-zero return code executing command", compact('command', 'output'));
 				$this->error($output);

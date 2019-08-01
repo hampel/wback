@@ -81,7 +81,8 @@ class BackupSync extends BaseCommand
 
  	    $this->executeCommand(
  	        $builder->buildCmd($source['files'], $destination, $path, $this->option('dry-run'), $this->output),
-            $builder->canDryRun()
+            $builder->canDryRun(),
+            true
         );
     }
 
