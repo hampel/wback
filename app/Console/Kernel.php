@@ -25,11 +25,11 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
     	// TODO: make schedule configurable (twiceDaily ?)
-    	$schedule->command('backup:database --quiet --all')->name('Backup database')->twiceDaily(5, 17);
-    	$schedule->command('backup:files --quiet --all')->name("Backup files")->twiceDaily(6, 18);
-        $schedule->command('backup:cloud --quiet --all')->name("Send backup files to the cloud")->twiceDaily(7, 19);
-        $schedule->command('backup:sync --quiet --all')->name("Cloud sync")->twiceDaily(8, 20);
-        $schedule->command('backup:clean --quiet --all')->name("Clean up old backups")->dailyAt('04:00');
+    	$schedule->command('backup:database --quiet --all')->name('Backup database')->dailyAt("3:00");
+    	$schedule->command('backup:files --quiet --all')->name("Backup files")->dailyAt("4:00");
+        $schedule->command('backup:cloud --quiet --all')->name("Send backup files to the cloud")->dailyAt("5:00");
+        $schedule->command('backup:sync --quiet --all')->name("Cloud sync")->dailyAt("6:00");
+        $schedule->command('backup:clean --quiet --all')->name("Clean up old backups")->dailyAt("7:00");
     }
 
     /**
