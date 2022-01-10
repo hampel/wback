@@ -1,7 +1,8 @@
 <?php namespace App\Console\Commands;
 
-use File;
-use Storage;
+
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class BackupFiles extends BaseCommand
 {
@@ -10,9 +11,9 @@ class BackupFiles extends BaseCommand
      *
      * @var string
      */
-    protected $signature = 'backup:files 
-                                {source?} 
-                                {--a|all : Process all sources} 
+    protected $signature = 'backup:files
+                                {source?}
+                                {--a|all : Process all sources}
                                 {--d|dry-run : Do everything except the actual backup}
                            ';
 

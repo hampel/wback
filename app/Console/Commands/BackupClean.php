@@ -1,8 +1,7 @@
 <?php namespace App\Console\Commands;
 
 use Carbon\Carbon;
-use File;
-use Storage;
+use Illuminate\Support\Facades\Storage;
 
 class BackupClean extends BaseCommand
 {
@@ -11,9 +10,9 @@ class BackupClean extends BaseCommand
      *
      * @var string
      */
-    protected $signature = 'backup:clean 
-                                {source?} 
-                                {--a|all : Process all sources} 
+    protected $signature = 'backup:clean
+                                {source?}
+                                {--a|all : Process all sources}
                                 {--d|dry-run : Do everything except the actual clean}
                            ';
 

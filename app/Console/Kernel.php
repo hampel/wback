@@ -8,15 +8,6 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     /**
-     * The Artisan commands provided by your application.
-     *
-     * @var array
-     */
-    protected $commands = [
-        //
-    ];
-
-    /**
      * Define the application's command schedule.
      *
      * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
@@ -24,9 +15,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-    	// TODO: make schedule configurable (twiceDaily ?)
-    	$schedule->command('backup:database --quiet --all')->name('Backup database')->dailyAt("3:00");
-    	$schedule->command('backup:files --quiet --all')->name("Backup files")->dailyAt("4:00");
+        // TODO: make schedule configurable (twiceDaily ?)
+        $schedule->command('backup:database --quiet --all')->name('Backup database')->dailyAt("3:00");
+        $schedule->command('backup:files --quiet --all')->name("Backup files")->dailyAt("4:00");
         $schedule->command('backup:cloud --quiet --all')->name("Send backup files to the cloud")->dailyAt("5:00");
         $schedule->command('backup:sync --quiet --all')->name("Cloud sync")->dailyAt("6:00");
         $schedule->command('backup:clean --quiet --all')->name("Clean up old backups")->dailyAt("7:00");

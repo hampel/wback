@@ -1,10 +1,9 @@
 <?php namespace App\Console\Commands;
 
-use Log;
-use File;
-use Storage;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\DescriptorHelper;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;

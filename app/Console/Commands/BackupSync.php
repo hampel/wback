@@ -1,8 +1,7 @@
 <?php namespace App\Console\Commands;
 
-use File;
-use Storage;
 use App\Sync\SyncCmd;
+use Illuminate\Support\Facades\File;
 
 class BackupSync extends BaseCommand
 {
@@ -11,9 +10,9 @@ class BackupSync extends BaseCommand
      *
      * @var string
      */
-    protected $signature = 'backup:sync 
-                                {source?} 
-                                {--a|all : Process all sources} 
+    protected $signature = 'backup:sync
+                                {source?}
+                                {--a|all : Process all sources}
                                 {--d|dry-run : Do everything except the actual backup}
                            ';
 

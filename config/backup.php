@@ -1,7 +1,5 @@
 <?php
 
-use Yosymfony\Toml\Toml;
-
 return [
 
     /*
@@ -15,7 +13,7 @@ return [
     |
     */
 
-    'sources' => Toml::parseFile(env('BACKUP_SOURCES_PATH', storage_path('app/sources.toml'))),
+    'sources' => Yosymfony\Toml\Toml::parseFile(env('BACKUP_SOURCES_PATH', storage_path('app/sources.toml'))),
 
 	/**
 	 * MySQL dump configuration

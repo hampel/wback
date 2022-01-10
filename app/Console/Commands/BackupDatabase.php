@@ -1,6 +1,7 @@
 <?php namespace App\Console\Commands;
 
-use Storage;
+
+use Illuminate\Support\Facades\Storage;
 
 class BackupDatabase extends BaseCommand
 {
@@ -9,9 +10,9 @@ class BackupDatabase extends BaseCommand
      *
      * @var string
      */
-    protected $signature = 'backup:database 
-                                {source?} 
-                                {--a|all : Process all sources} 
+    protected $signature = 'backup:database
+                                {source?}
+                                {--a|all : Process all sources}
                                 {--d|dry-run : Do everything except the actual backup}
                            ';
 

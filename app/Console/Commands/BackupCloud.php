@@ -1,9 +1,9 @@
 <?php namespace App\Console\Commands;
 
-use File;
-use Cache;
-use Storage;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class BackupCloud extends BaseCommand
 {
@@ -12,10 +12,10 @@ class BackupCloud extends BaseCommand
      *
      * @var string
      */
-    protected $signature = 'backup:cloud 
-                                {source?} 
+    protected $signature = 'backup:cloud
+                                {source?}
                                 {--f|force : Force run, regardless of last run time}
-                                {--a|all : Process all sources} 
+                                {--a|all : Process all sources}
                                 {--d|dry-run : Do everything except the actual backup}
                            ';
 
