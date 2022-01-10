@@ -14,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-    	$sync_service = config('sync.default');
+        $sync_service = config('sync.default');
         $this->app->bind(SyncCmd::class, config("sync.services.{$sync_service}.builder"));
     }
 
@@ -25,6 +25,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-		//
+        //
     }
 }
