@@ -48,7 +48,8 @@ class BackupDatabase extends BaseCommand
 
 	    $mysqldump = config('backup.mysql.dump_path');
 	    $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
-	    $charset = isset($source['charset']) ? " --default-character-set={$source['charset']}" : '';
+	    $charset = $source['charset'] ?? config('backup.mysql.default_charset');
+        $charset = empty($charset) ? '' : " --default-character-set={$charset}";
 	    $hostname = isset($source['hostname']) ? " -h{$source['hostname']}" : '';
 		$gzip = config('backup.gzip_path');
 		$outputPath = Storage::disk()->path($destination);

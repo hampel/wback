@@ -29,7 +29,7 @@ return [
 	     * default charset for dump operations
 	     * override for a specific database in the source configuration toml file
 	     */
-        'default_charset' => 'utf8mb4',
+        'default_charset' => env('BACKUP_DEFAULT_CHARSET', 'utf8mb4'),
     ],
 
     /**
