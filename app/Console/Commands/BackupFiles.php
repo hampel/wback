@@ -56,13 +56,6 @@ class BackupFiles extends BaseCommand
     	$files = $source['files'];
     	$destination = $this->getDestination($source, $name,'files', '.zip');
 
-    	$this->log(
-    	    'notice',
-	        "Backing up files from [{$files}] to [{$destination}]",
-	        "Backing up files",
-	        compact('files', 'destination')
-	    );
-
 	    $zip = config('backup.zip_path');
 
 	    if ($this->output->isVerbose())
@@ -82,6 +75,13 @@ class BackupFiles extends BaseCommand
 	    $exclude = $this->generateExcludes($source['exclude'] ?? []);
 
 		$cmd = "cd {$files} && {$zip} -9{$verbosity} --recurse-paths --symlinks {$outputPath} .{$exclude}";
+
+        $this->log(
+            'notice',
+            "Backing up files from [{$files}] to [{$destination}]",
+            "Backing up files",
+            compact('files', 'destination', 'cmd')
+        );
 
 		$this->executeCommand($cmd);
 		$this->chmod($outputPath);

@@ -46,13 +46,6 @@ class BackupDatabase extends BaseCommand
 
     	$destination = $this->getDestination($source, $name,'database', '.sql.gz');
 
-    	$this->log(
-    	    'notice',
-	        "Backing up database [{$database}] to [{$destination}]",
-	        "Backing up database",
-	        compact('database', 'destination')
-	    );
-
 	    $mysqldump = config('backup.mysql.dump_path');
 	    $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
 	    $charset = isset($source['charset']) ? " --default-character-set={$source['charset']}" : '';
@@ -61,6 +54,13 @@ class BackupDatabase extends BaseCommand
 		$outputPath = Storage::disk()->path($destination);
 
 		$cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
+
+        $this->log(
+            'notice',
+            "Backing up database [{$database}] to [{$destination}]",
+            "Backing up database",
+            compact('database', 'destination', 'cmd')
+        );
 
 		$this->executeCommand($cmd);
 		$this->chmod($outputPath);
