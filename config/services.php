@@ -31,9 +31,16 @@ return [
             'decode_content' => true,
         ],
         'options' => [
-            'open_tracking' => false,
-            'click_tracking' => false,
-            'transactional' => true,
+            // configure endpoint, if not default
+            'endpoint' => env('SPARKPOST_ENDPOINT'),
+
+            // optional Sparkpost API options go here
+            //'return_path' => 'mail@bounces.domain.com',
+            'options' => [
+                'open_tracking' => false,
+                'click_tracking' => false,
+                'transactional' => true,
+            ],
         ],
     ],
 
