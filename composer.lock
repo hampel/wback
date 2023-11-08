@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "feba2e6b53a6afbbd3ebe822ba14820d",
+    "content-hash": "4f21368952d984979e221b22f238d8c8",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -1036,20 +1036,21 @@
         },
         {
             "name": "hampel/systemtest",
-            "version": "1.10.0",
+            "version": "1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hampel/systemtest.git",
-                "reference": "07a4747870c195c0a382df3c90b32939c7db5ef4"
+                "reference": "053031377b22e9012c13f2d973dae80d0d8f1102"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hampel/systemtest/zipball/07a4747870c195c0a382df3c90b32939c7db5ef4",
-                "reference": "07a4747870c195c0a382df3c90b32939c7db5ef4",
+                "url": "https://api.github.com/repos/hampel/systemtest/zipball/053031377b22e9012c13f2d973dae80d0d8f1102",
+                "reference": "053031377b22e9012c13f2d973dae80d0d8f1102",
                 "shasum": ""
             },
             "require": {
-                "illuminate/support": "^8.0|^9.0|^10.0"
+                "guzzlehttp/guzzle": "^6.0|^7.0",
+                "illuminate/support": "5.5.*|5.6.*|5.7.*|5.8.*|^6.0|^7.0|^8.0"
             },
             "suggest": {
                 "laravel/slack-notification-channel": "Required to use the slack transport."
@@ -1078,8 +1079,8 @@
                     "role": "Developer"
                 }
             ],
-            "description": "Laravel package for testing or troublshooting various subsystems",
-            "homepage": "https://github.com/hampel/systemtest",
+            "description": "Package for testing various Laravel subsystems in production",
+            "homepage": "https://bitbucket.org/hampel/laravel-system-test",
             "keywords": [
                 "cache",
                 "email",
@@ -1090,10 +1091,10 @@
                 "test"
             ],
             "support": {
-                "issues": "https://github.com/hampel/systemtest/issues",
-                "source": "https://github.com/hampel/systemtest"
+                "issues": "https://bitbucket.org/hampel/laravel-system-test/src",
+                "source": "https://bitbucket.org/hampel/laravel-system-test/issues"
             },
-            "time": "2023-06-11T22:40:30+00:00"
+            "time": "2020-09-17T04:43:18+00:00"
         },
         {
             "name": "laravel/framework",
