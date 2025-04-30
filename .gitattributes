@@ -1,5 +1,6 @@
-* text=auto
-*.css linguist-vendored
-*.scss linguist-vendored
-*.js linguist-vendored
+* text=auto eol=lf
+/.github export-ignore
+.scrutinizer.yml export-ignore
+BACKERS.md export-ignore
+CONTRIBUTING.md export-ignore
 CHANGELOG.md export-ignore
