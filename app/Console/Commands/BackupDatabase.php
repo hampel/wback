@@ -54,6 +54,8 @@ class BackupDatabase extends BaseCommand
 		$gzip = config('backup.gzip_path');
 		$outputPath = Storage::disk()->path($destination);
 
+        // TODO: include --hex-blob
+
 		$cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
 
         $this->log(
