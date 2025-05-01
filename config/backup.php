@@ -13,8 +13,10 @@ return [
     |
     */
 
-    'sources' => file_exists(env('BACKUP_SOURCES_PATH', getcwd() . DIRECTORY_SEPARATOR . 'wback.toml')) ?
-        Yosymfony\Toml\Toml::parseFile(env('BACKUP_SOURCES_PATH', getcwd() . DIRECTORY_SEPARATOR . 'wback.toml')) :
+    'source_path' => env('BACKUP_SOURCES_PATH', storage_path('wback.toml')),
+
+    'sources' => file_exists(env('BACKUP_SOURCES_PATH', storage_path('wback.toml'))) ?
+        Yosymfony\Toml\Toml::parseFile(env('BACKUP_SOURCES_PATH', storage_path('wback.toml'))) :
         null,
 
 	/**
