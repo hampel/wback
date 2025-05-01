@@ -27,7 +27,7 @@ return [
 	    /**
 	     * Path to mysqldump binary
 	     */
-        'dump_path' => env('BACKUP_MYSQLDUMP_PATH', storage_path('/usr/bin/mysqldump')),
+        'dump_path' => env('BACKUP_MYSQLDUMP_PATH', '/usr/bin/mysqldump'),
 
 	    /**
 	     * default charset for dump operations
@@ -39,12 +39,12 @@ return [
     /**
      * Path to gzip binary for compressing database dumps
      */
-	'gzip_path' => env('BACKUP_GZIP_PATH', storage_path('/bin/gzip')),
+	'gzip_path' => env('BACKUP_GZIP_PATH', '/bin/gzip'),
 
     /**
      * Path to zip binary for compressing files
      */
-    'zip_path' => env('BACKUP_ZIP_PATH', storage_path('/usr/bin/zip')),
+    'zip_path' => env('BACKUP_ZIP_PATH', '/usr/bin/zip'),
 
 	/**
 	 * Days to keep local backup files
