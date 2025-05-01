@@ -11,10 +11,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (\Phar::running(false))
-        {
-            $this->app->useStoragePath(env('LARAVEL_STORAGE_PATH', getcwd()));
-        }
+        //
     }
 
     /**
