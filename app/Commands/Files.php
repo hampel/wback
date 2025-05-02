@@ -53,10 +53,10 @@ class Files extends BaseCommand
             return Command::FAILURE;
         }
 
-        return $this->backupFiles($source, $name);
+        return $this->backupFiles($source, $name) ? Command::SUCCESS : Command::FAILURE;
     }
 
-    protected function backupFiles($source, $name)
+    protected function backupFiles($source, $name) : bool
     {
         $files = $source['files'];
 
@@ -91,6 +91,9 @@ class Files extends BaseCommand
 
         $this->executeCommand($cmd);
         $this->chmod($outputPath);
+
+        // TODO: return success/fail code
+        return true;
     }
 
     protected function generateExcludes(array $excludes)

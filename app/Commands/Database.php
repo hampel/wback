@@ -2,9 +2,9 @@
 
 namespace App\Commands;
 
+use Illuminate\Console\Command;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Storage;
-use LaravelZero\Framework\Commands\Command;
 
 class Database extends BaseCommand
 {
@@ -49,10 +49,10 @@ class Database extends BaseCommand
             return;
         }
 
-        return $this->backupDatabase($source, $name);
+        return $this->backupDatabase($source, $name) ? Command::SUCCESS : Command::FAILURE;
     }
 
-    protected function backupDatabase($source, $name)
+    protected function backupDatabase($source, $name) : bool
     {
         $database = $source['database'];
 
@@ -77,6 +77,9 @@ class Database extends BaseCommand
 
         $this->executeCommand($cmd);
         $this->chmod($outputPath);
+
+        // TODO: return success/fail code
+        return true;
     }
 
     /**
