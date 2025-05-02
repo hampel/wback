@@ -14,7 +14,7 @@ return [
     */
 
     'default' => env('FILESYSTEM_DISK', 'backup'),
-    
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
