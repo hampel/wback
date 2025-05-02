@@ -14,7 +14,7 @@ class Clean extends BaseCommand
      *
      * @var string
      */
-    protected $signature = 'backup:clean
+    protected $signature = 'clean
                                 {source?}
                                 {--a|all : Process all sources}
                                 {--d|dry-run : Do everything except the actual clean}
