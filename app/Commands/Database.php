@@ -19,6 +19,15 @@ class Database extends BaseCommand
                                 {--d|dry-run : Do everything except the actual backup}
                             ';
 
+    protected function configure()
+    {
+        $this->setAliases([
+            'db',
+        ]);
+
+        parent::configure();
+    }
+
     /**
      * The console command description.
      *
