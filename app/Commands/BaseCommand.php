@@ -77,7 +77,7 @@ abstract class BaseCommand extends Command
         return Command::SUCCESS;
     }
 
-	abstract protected function handleSource($config, $name);
+	abstract protected function handleSource($source, $name);
 
     protected function getDestination($source, $name, $type, $suffix)
     {
