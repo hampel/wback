@@ -2,21 +2,16 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Sources
-    |--------------------------------------------------------------------------
-    |
-    | Backup source definitions
-    |
-    | Default: []
-    |
-    */
+    /**
+     * Backup source TOML file path
+     */
+    'sites_path' => env('SITES_TOML_PATH', storage_path('wback.toml')),
 
-    'source_path' => env('BACKUP_SOURCES_PATH', storage_path('wback.toml')),
-
-    'sources' => file_exists(env('BACKUP_SOURCES_PATH', storage_path('wback.toml'))) ?
-        Yosymfony\Toml\Toml::parseFile(env('BACKUP_SOURCES_PATH', storage_path('wback.toml'))) :
+    /**
+     * Backup source defnitions
+     */
+    'sites' => file_exists(env('SITES_TOML_PATH', storage_path('wback.toml'))) ?
+        Yosymfony\Toml\Toml::parseFile(env('SITES_TOML_PATH', storage_path('wback.toml'))) :
         null,
 
 	/**
@@ -34,6 +29,11 @@ return [
 	     * override for a specific database in the source configuration toml file
 	     */
         'default_charset' => env('BACKUP_DEFAULT_CHARSET', 'utf8mb4'),
+
+        /**
+         * use --hex-blob option to store blobs as hex to avoid cross-platform export/import issues
+         */
+        'hexblob' => env('BACKUP_MYSQLDUMP_HEXBLOB', true),
     ],
 
     /**
@@ -54,11 +54,8 @@ return [
 	 */
 	'keeponly_days' => env('BACKUP_KEEPONLY_DAYS', 7),
 
-	/**
-	 * Length of time (in seconds) to cache the last update data for sending backups to the cloud
-	 *
-	 * Default: 60 * 60 * 24 * 7 = 604800 = 1 week
-	 */
-    'last_update_cache' => env('BACKUP_LAST_UPDATE_CACHE', 60 * 60 * 24 * 7) , // cache for a week
-
+    /**
+     * rclone remote for cloud storage ("remote:path_prefix")
+     */
+    'rclone_remote' => env('BACKUP_CLOUD_REMOTE'),
 ];

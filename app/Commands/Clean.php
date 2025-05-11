@@ -3,7 +3,6 @@
 namespace App\Commands;
 
 use Carbon\Carbon;
-use Illuminate\Console\Command;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,8 +14,8 @@ class Clean extends BaseCommand
      * @var string
      */
     protected $signature = 'clean
-                                {source?}
-                                {--a|all : Process all sources}
+                                {site?}
+                                {--a|all : Process all sites}
                                 {--d|dry-run : Do everything except the actual clean}
                            ';
 
@@ -27,56 +26,30 @@ class Clean extends BaseCommand
      */
     protected $description = 'Clean up old backup files';
 
-    protected function handleSource($source, $name)
+    protected function handleSite(array $site, string $name) : void
     {
-        if (!isset($source['destination']) || empty($source['destination']))
+        if (!empty($site['files']))
         {
-            $this->log('error', "No destination specified for {$name}");
-            return Command::FAILURE;
+            $this->clean($site, $name, 'files');
+        }
+        else
+        {
+            $this->log('notice', "No files path specified for {$name}");
         }
 
-        try
+        if (!empty($site['database']))
         {
-            if (isset($source['files']) && !empty($source['files']))
-            {
-                $this->clean($source, $name, 'files');
-            }
-            else
-            {
-                $this->log('notice', "No files source specified for {$name}");
-            }
-
-            if (isset($source['database']) && !empty($source['database']))
-            {
-                $this->clean($source, $name, 'database');
-            }
-            else
-            {
-                $this->log('notice', "No database source specified for {$name}");
-            }
+            $this->clean($site, $name, 'database');
         }
-        catch (\RuntimeException $e)
+        else
         {
-            return Command::FAILURE;
+            $this->log('notice', "No database source specified for {$name}");
         }
-
-        return Command::SUCCESS;
     }
 
-    protected function clean($source, $name, $type)
+    protected function clean(array $site, string $name, string $type) : void
     {
-        $path = $source['destination'] . DIRECTORY_SEPARATOR . $type;
-        if (!Storage::disk()->exists($path))
-        {
-            $this->log(
-                'error',
-                "Path [{$path}] does not exist",
-                "Path does not exist",
-                compact('path')
-            );
-
-            throw new \RuntimeException("Path [{$path}] does not exist");
-        }
+        $path = $this->getDestinationPath($site, $name, $type, false);
 
         $this->log(
             'notice',
@@ -87,16 +60,16 @@ class Clean extends BaseCommand
 
         $cutoff = Carbon::now()->subDays(config('backup.keeponly_days', 7))->timestamp;
 
-        collect(Storage::disk()->allFiles($path))
+        collect(Storage::disk('backup')->allFiles($path))
             ->reject(function ($path) use ($cutoff) {
-                return Storage::disk()->lastModified($path) > $cutoff;
+                return Storage::disk('backup')->lastModified($path) > $cutoff;
             })
             ->each(function ($path) {
                 $this->deleteFile($path);
             });
     }
 
-    protected function deleteFile($path)
+    protected function deleteFile(string $path) : void
     {
         if ($this->option('dry-run'))
         {
@@ -116,7 +89,7 @@ class Clean extends BaseCommand
                 compact('path')
             );
 
-            Storage::disk()->delete($path);
+            Storage::disk('backup')->delete($path);
         }
     }
 

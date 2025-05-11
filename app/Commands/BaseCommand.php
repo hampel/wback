@@ -3,6 +3,7 @@
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
@@ -18,103 +19,139 @@ abstract class BaseCommand extends Command
      */
     public function handle()
     {
-        if (empty(config("backup.sources")))
-        {
-            $this->error("No sources configured - expecting a TOML file at: " . env('BACKUP_SOURCES_PATH', getcwd() . DIRECTORY_SEPARATOR . 'wback.toml'));
-            return Command::FAILURE;
-        }
-
- 	    $name = $this->argument('source');
+ 	    $site = $this->argument('site');
 
 		if ($this->option('dry-run'))
 		{
 			$this->comment("Dry run only - no action will be taken");
 		}
 
-        $sources = config("backup.sources");
-        if (empty($sources))
+        $sites = config("backup.sites");
+        if (empty($sites))
         {
-            $this->error("No sources found at: " . config("backup.source_path"));
+            $this->error("No sites found at: " . config("backup.sites_path"));
             return Command::FAILURE;
         }
 
-	    if (!empty($name))
-	    {
-	        $config = config("backup.sources.{$name}");
-	        if (is_null($config))
-		    {
-		    	$this->log(
-		    	    'error',
-			        "Could not find definition for source: {$name}",
-			        "Could not find definition for source",
-			        ['source' => $name]
-			    );
-		        return Command::FAILURE;
-		    }
-            $this->handleSource($config, $name);
-	    }
-        elseif ($this->option('all'))
-	    {
-	        foreach ($sources as $name => $config)
-	        {
-	        	$this->section($name);
-				$this->handleSource($config, $name);
-	        }
-	    }
-	    else
-	    {
-	    	$this->log('error', "No source provided - specify source name as parameter, or -a|--all to process all configured sources");
-	    	$this->section("Usage:");
+        try {
+            if (!empty($site)) {
+                $config = config("backup.sites.{$site}");
+                if (is_null($config)) {
+                    $this->log(
+                        'error',
+                        "Could not find definition for site: {$site}",
+                        "Could not find definition for site",
+                        ['site' => $site]
+                    );
+                    return Command::FAILURE;
+                }
 
-	        $helper = new DescriptorHelper();
-	        $helper->describe($this->output, $this);
+                $this->handleSite($config, $site);
 
-	        $this->section("Configured sources:");
+                return Command::SUCCESS;
+            }
 
-	        $this->call('sources');
-	    }
+            if ($this->option('all')) {
+                foreach ($sites as $name => $config) {
+                    $this->section($site);
 
-        return Command::SUCCESS;
+                    $this->handleSite($config, $name);
+                }
+
+                return Command::SUCCESS;
+            }
+        }
+        catch (\RuntimeException $e)
+        {
+            $this->log('error', $e->getMessage());
+            return Command::FAILURE;
+        }
+
+        // nothing to do - show usage information and return failure
+
+        $this->log('error', "No site provided - specify site name as parameter, or -a|--all to process all configured sites");
+        $this->section("Usage:");
+
+        $helper = new DescriptorHelper();
+        $helper->describe($this->output, $this);
+
+        $this->section("Configured sites:");
+
+        $this->call('sites');
+
+        return Command::FAILURE;
     }
 
-	abstract protected function handleSource($source, $name);
+    /**
+     * @param array $site
+     * @param string $name
+     * @return void
+     * @throws \RuntimeException
+     */
+	abstract protected function handleSite(array $site, string $name) : void;
 
-    protected function getDestination($source, $name, $type, $suffix)
+    /**
+     * @param array $site site config from toml
+     * @param string $name site short name
+     * @param string $type type of backup (files|database)
+     * @paran bool $createPaths set to true to create missing paths
+     * @return string destination path
+     * @throws \RuntimeException
+     */
+    protected function getDestinationPath(array $site, string $name, string $type, bool $createPaths = true) : string
     {
-    	$destination = $source['destination'];
+        if (empty($site['domain'])) {
+            throw new \RuntimeException("No domain specified for {$name}");
+        }
 
-    	$this->log('info', "Processing {$type} for {$name}");
+        $domain = $site['domain'];
 
-    	if (!Storage::disk()->exists($destination))
-	    {
-	    	$this->log(
-	    	    'info',
-		        "Creating directory [{$destination}]",
-		        "Creating directory",
-		        compact('destination')
-		    );
-	    	Storage::disk()->makeDirectory($destination);
-	    }
+        if ($createPaths)
+        {
+            if (!Storage::disk('backup')->exists($domain))
+            {
+                $this->log(
+                    'info',
+                    "Creating directory [{$domain}]",
+                    "Creating directory",
+                    compact('domain')
+                );
+                Storage::disk('backup')->makeDirectory($domain);
+            }
 
-    	$destination_and_type = $destination . DIRECTORY_SEPARATOR . $type;
-    	if (!Storage::disk()->exists($destination_and_type))
-	    {
-	    	$this->log(
-	    	    'info',
-		        "Creating directory [{$destination}]",
-		        "Creating directory",
-		        ['directory' => $destination_and_type]
-		    );
-	    	Storage::disk()->makeDirectory($destination_and_type);
-	    }
+            $typePath = $domain . DIRECTORY_SEPARATOR . $type;
+            if (!Storage::disk('backup')->exists($typePath))
+            {
+                $this->log(
+                    'info',
+                    "Creating directory [{$typePath}]",
+                    "Creating directory",
+                    ['directory' => $typePath]
+                );
+                Storage::disk('backup')->makeDirectory($typePath);
+            }
+        }
 
-    	$basePath = $destination . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR;
+        return $domain . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * @param array $site site config from toml
+     * @param string $name site short name
+     * @param string $type type of backup (files|database)
+     * @param string $suffix filename suffix (zip|gzip)
+     * @return string destination filename
+     * @throws \RuntimeException
+     */
+    protected function getDestinationFile(array $site, string $name, string $type, string $suffix) : string
+    {
+        $basePath = $this->getDestinationPath($site, $name, $type);
 
     	$filenameBase = "{$name}." . Carbon::today(new \DateTimeZone(config('app.timezone')))->format("Ymd");
 
     	$filename = "{$filenameBase}{$suffix}";
     	$count = 1;
-    	while (Storage::disk()->exists("{$basePath}{$filename}"))
+    	while (Storage::disk('backup')->exists("{$basePath}{$filename}"))
 	    {
 	    	$this->log(
 	    	    'debug',
@@ -130,27 +167,27 @@ abstract class BaseCommand extends Command
 	    return "{$basePath}{$filename}";
     }
 
-    protected function executeCommand($command, $override = false, $ignoreErrors = false)
+    protected function executeCommand(string $command, string $path = null, bool $override = false) : bool
     {
+        if (empty($path))
+        {
+            $path = storage_path();
+        }
+
     	$prefix = $this->option('dry-run') ? "[Dry run] " : "";
 
 		$this->log('info', "{$prefix}Executing command [{$command}]", "{$prefix}Executing command", compact('command'));
 
 		if ($this->option('dry-run') && !$override)
 		{
-			return;
+			return true;
 		}
-		else
-		{
-			$retvar = 0;
 
-			$output = system("{$command} 2>&1", $retvar);
-			if ($retvar != 0 && !$ignoreErrors)
-			{
-				$this->log('error', "Non-zero return code executing command [{$command}]", "Non-zero return code executing command", compact('command', 'output'));
-				$this->error($output);
-			}
-		}
+        $result = Process::forever()->path($path)->run($command, function (string $type, string $output) {
+            $this->getOutput()->write($output, false);
+        })->throw();
+
+        return $result->successful();
     }
 
     protected function chmod($path, $mode = 0660)
@@ -165,6 +202,15 @@ abstract class BaseCommand extends Command
 	    {
 	    	$this->log('warning', "Could not change permissions on [{$path}] to [{$mode}]", "Could not change permissions", compact('path', 'mode'));
 	    }
+    }
+
+    protected function getVerbosity() : string
+    {
+        return match (true) {
+            $this->output->isVerbose() => ' --verbose',
+            $this->output->isQuiet() => ' --quiet',
+            default => '',
+        };
     }
 
 	protected function human_filesize($bytes, $dec = 2)

@@ -2,7 +2,6 @@
 
 namespace App\Commands;
 
-use Illuminate\Console\Command;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -15,8 +14,8 @@ class Files extends BaseCommand
      * @var string
      */
     protected $signature = 'files
-                                {source?}
-                                {--a|all : Process all sources}
+                                {site?}
+                                {--a|all : Process all sites}
                                 {--d|dry-run : Do everything except the actual backup}
                             ';
 
@@ -28,75 +27,54 @@ class Files extends BaseCommand
     protected $description = 'Backup files';
 
 
-    protected function handleSource($source, $name)
+    protected function handleSite(array $site, string $name) : void
     {
-        if (!isset($source['files']) || empty($source['files']))
+        if (!empty($site['files']))
         {
-            $this->log('notice', "No files source specified for {$name}");
-            return Command::FAILURE;
-        }
-
-        if (!isset($source['destination']) || empty($source['destination']))
-        {
-            $this->log('error', "No destination specified for {$name}");
-            return Command::FAILURE;
-        }
-
-        if (!File::isDirectory($source['files']))
-        {
-            $this->log(
-                'error',
-                "File source [{$source['files']}] does not exist for {$name}",
-                "File source does not exist for {$name}",
-                ['source' => $source['files']]
-            );
-            return Command::FAILURE;
-        }
-
-        return $this->backupFiles($source, $name) ? Command::SUCCESS : Command::FAILURE;
-    }
-
-    protected function backupFiles($source, $name) : bool
-    {
-        $files = $source['files'];
-
-        $destination = $this->getDestination($source, $name,'files', '.zip');
-
-        $zip = config('backup.zip_path');
-
-        if ($this->output->isVerbose())
-        {
-            $verbosity = ' --verbose';
-        }
-        elseif ($this->output->isQuiet())
-        {
-            $verbosity = ' --quiet';
+            $source = $site['files'];
         }
         else
         {
-            $verbosity = '';
+            if (empty($site['domain'])) {
+                throw new \RuntimeException("No domain specified for {$name}");
+            }
+
+            $source = Storage::disk('files')->path($site['domain']);
         }
 
-        $outputPath = Storage::disk()->path($destination);
-        $exclude = $this->generateExcludes($source['exclude'] ?? []);
+        if (!File::isDirectory($source))
+        {
+            throw new \RuntimeException("Source path [{$source}] not found for {$name}");
+        }
 
-        $cmd = "cd {$files} && {$zip} -9{$verbosity} --recurse-paths --symlinks {$outputPath} .{$exclude}";
+        $this->backupFiles($site, $name, $source);
+    }
+
+    protected function backupFiles(array $site, string $name, string $source) : void
+    {
+        $destination = $this->getDestinationFile($site, $name,'files', '.zip');
+
+        $zip = config('backup.zip_path');
+
+        $verbosity = $this->getVerbosity();
+
+        $outputPath = Storage::disk('backup')->path($destination);
+        $exclude = $this->generateExcludes($site['exclude'] ?? []);
+
+        $cmd = "{$zip} -9{$verbosity} --recurse-paths --symlinks {$outputPath} .{$exclude}";
 
         $this->log(
             'notice',
-            "Backing up files from [{$files}] to [{$destination}]",
+            "Backing up files from [{$source}] to [{$destination}]",
             "Backing up files",
-            compact('files', 'destination', 'cmd')
+            compact('source', 'destination', 'cmd')
         );
 
-        $this->executeCommand($cmd);
+        $this->executeCommand($cmd, $source);
         $this->chmod($outputPath);
-
-        // TODO: return success/fail code
-        return true;
     }
 
-    protected function generateExcludes(array $excludes)
+    protected function generateExcludes(array $excludes) : string
     {
         $ex = collect($excludes)->transform(function ($value, $key) {
             return preg_replace('/[\*]/', '\*', $value);

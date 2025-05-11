@@ -2,63 +2,62 @@
 
 namespace App\Commands;
 
-use Illuminate\Console\Scheduling\Schedule;
 use LaravelZero\Framework\Commands\Command;
 
-class Sources extends Command
+class Sites extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'sources {source?}';
+    protected $signature = 'sites {site?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'List backup sources';
+    protected $description = 'List site backup configurations';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $source = $this->argument('source');
+        $site = $this->argument('site');
 
-        if (!empty($source))
+        if (!empty($site))
         {
-            $config = config("backup.sources.{$source}");
+            $config = config("backup.sites.{$site}");
             if (empty($config))
             {
-                $this->error("Could not find definition for source: {$source}");
+                $this->error("Could not find definition for site: {$site}");
                 return Command::FAILURE;
             }
             $this->outputSource($config);
         }
         else
         {
-            $sources = config("backup.sources");
-            if (empty($sources))
+            $sites = config("backup.sites");
+            if (empty($sites))
             {
                 $this->error("No sources found at: " . config("backup.source_path"));
                 return Command::FAILURE;
             }
-            foreach ($sources as $name => $source)
+            foreach ($sites as $name => $site)
             {
                 $this->info($name);
-                $this->outputSource($source);
+                $this->outputSource($site);
             }
         }
 
         return Command::SUCCESS;
     }
 
-    protected function outputSource($source)
+    protected function outputSource(array $site) : void
     {
-        foreach ($source as $key => $data)
+        foreach ($site as $key => $data)
         {
             if (!empty($data))
             {

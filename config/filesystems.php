@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DISK', 'backup'),
+    'default' => 'local',
 
     /*
     |--------------------------------------------------------------------------
@@ -35,11 +35,15 @@ return [
             'root' => storage_path(),
         ],
 
-        'backup' => [
+        'files' => [
             'driver' => 'local',
-            'root' => env('FILESYSTEM_LOCAL_BACKUP_PATH', storage_path('backup')),
+            'root' => env('FILES_ROOT', '/srv/www'),
         ],
 
+        'backup' => [
+            'driver' => 'local',
+            'root' => env('BACKUP_DEST_PATH', storage_path('backup')),
+        ],
     ],
 
 ];

@@ -2,7 +2,6 @@
 
 namespace App\Commands;
 
-use Illuminate\Console\Command;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,8 +13,8 @@ class Database extends BaseCommand
      * @var string
      */
     protected $signature = 'database
-                                {source?}
-                                {--a|all : Process all sources}
+                                {site?}
+                                {--a|all : Process all sites}
                                 {--d|dry-run : Do everything except the actual backup}
                             ';
 
@@ -35,38 +34,33 @@ class Database extends BaseCommand
      */
     protected $description = 'Backup databases';
 
-    protected function handleSource($source, $name)
+    protected function handleSite(array $site, string $name) : void
     {
-        if (!isset($source['database']) || empty($source['database']))
+        if (empty($site['database']))
         {
             $this->log('notice', "No database source specified for {$name}");
             return;
         }
 
-        if (!isset($source['destination']) || empty($source['destination']))
-        {
-            $this->log('error', "No destination specified for {$name}");
-            return;
-        }
-
-        return $this->backupDatabase($source, $name) ? Command::SUCCESS : Command::FAILURE;
+        $this->backupDatabase($site, $name);
     }
 
-    protected function backupDatabase($source, $name) : bool
+    protected function backupDatabase(array $site, string $name) : void
     {
-        $database = $source['database'];
+        $database = $site['database'];
 
-        $destination = $this->getDestination($source, $name,'database', '.sql.gz');
+        $destination = $this->getDestinationFile($site, $name,'database', '.sql.gz');
 
         $mysqldump = config('backup.mysql.dump_path');
         $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
-        $charset = $source['charset'] ?? config('backup.mysql.default_charset');
+        $charset = $site['charset'] ?? config('backup.mysql.default_charset');
         $charset = empty($charset) ? '' : " --default-character-set={$charset}";
-        $hostname = isset($source['hostname']) ? " -h{$source['hostname']}" : '';
+        $hexblob = config('backup.mysql.hexblob') ? ' --hex-blob' : '';
+        $hostname = isset($site['hostname']) ? " -h{$site['hostname']}" : '';
         $gzip = config('backup.gzip_path');
-        $outputPath = Storage::disk()->path($destination);
+        $outputPath = Storage::disk('backup')->path($destination);
 
-        $cmd = "{$mysqldump} --hex-blob --opt{$verbosity}{$charset}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
+        $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
 
         $this->log(
             'notice',
@@ -77,9 +71,6 @@ class Database extends BaseCommand
 
         $this->executeCommand($cmd);
         $this->chmod($outputPath);
-
-        // TODO: return success/fail code
-        return true;
     }
 
     /**
