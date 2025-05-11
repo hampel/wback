@@ -213,6 +213,18 @@ abstract class BaseCommand extends Command
         };
     }
 
+    /**
+     * @return int offset in hours to execute this command on schedule
+     */
+    abstract protected function scheduleOffset() : int;
+
+    protected function getScheduleTime() : string
+    {
+        $scheduleStart = config('backup.schedule_start');
+        $offset = $this->scheduleOffset();
+        return sprintf("%d:00", $scheduleStart + $offset);
+    }
+
 	protected function human_filesize($bytes, $dec = 2)
 	{
 	    $size   = array('B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');

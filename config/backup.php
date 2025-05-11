@@ -58,4 +58,9 @@ return [
      * rclone remote for cloud storage ("remote:path_prefix")
      */
     'rclone_remote' => env('BACKUP_CLOUD_REMOTE'),
+
+    /**
+     * Schedule start time - scheduled commands will run based on offset specified for each command starting at this time in local timezone
+     */
+    'schedule_start' => env('SCHEDULE_START', 3),
 ];

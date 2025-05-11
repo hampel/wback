@@ -94,10 +94,18 @@ class Clean extends BaseCommand
     }
 
     /**
+     * @return int offset (in hours) to run this command daily based on universal start time
+     */
+    protected function scheduleOffset() : int
+    {
+        return 4;
+    }
+
+    /**
      * Define the command's schedule.
      */
     public function schedule(Schedule $schedule): void
     {
-        // $schedule->command(static::class)->everyMinute();
+        $schedule->command(static::class, ['--quiet', '--all', 'clean'])->dailyAt($this->getScheduleTime());
     }
 }
