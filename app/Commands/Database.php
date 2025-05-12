@@ -36,19 +36,18 @@ class Database extends BaseCommand
 
     protected function handleSite(array $site, string $name) : void
     {
-        if (empty($site['database']))
+        $database = $site['database'] ?? $name;
+        if (empty($database))
         {
             $this->log('notice', "No database source specified for {$name}");
             return;
         }
 
-        $this->backupDatabase($site, $name);
+        $this->backupDatabase($site, $name, $database);
     }
 
-    protected function backupDatabase(array $site, string $name) : void
+    protected function backupDatabase(array $site, string $name, string $database) : void
     {
-        $database = $site['database'];
-
         $destination = $this->getDestinationFile($site, $name,'database', '.sql.gz');
 
         $mysqldump = config('backup.mysql.dump_path');
