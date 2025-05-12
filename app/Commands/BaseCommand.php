@@ -65,7 +65,7 @@ abstract class BaseCommand extends Command
 
             if ($this->option('all')) {
                 foreach ($sites as $name => $config) {
-                    $this->section($site);
+                    $this->section($name);
 
                     $this->handleSite($config, $name);
                 }
