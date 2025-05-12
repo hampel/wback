@@ -33,13 +33,16 @@ class Cloud extends BaseCommand
             throw new \RuntimeException("rclone remote cloud destination not specified in config");
         }
 
-        $this->backupCloud($site, $name, 'files');
-        $this->backupCloud($site, $name, 'database');
+        if (empty($site['domain'])) {
+            throw new \RuntimeException("No domain specified for {$name}");
+        }
+
+        $this->backupCloud($site, $name);
     }
 
-    protected function backupCloud(array $site, string $name, string $type) : void
+    protected function backupCloud(array $site, string $name) : void
     {
-        $path = $this->getDestinationPath($site, $name, $type, false);
+        $path = $site['domain']; // backup root
 
         if (!Storage::disk('backup')->exists($path))
         {
