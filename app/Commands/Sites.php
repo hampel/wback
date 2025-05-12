@@ -2,7 +2,11 @@
 
 namespace App\Commands;
 
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use LaravelZero\Framework\Commands\Command;
+use Yosymfony\Toml\Exception\ParseException;
+use Yosymfony\Toml\Toml;
 
 class Sites extends Command
 {
@@ -27,9 +31,22 @@ class Sites extends Command
     {
         $site = $this->argument('site');
 
+        try
+        {
+            $sitesPath = config('backup.sites_path');
+            $sites = File::exists($sitesPath) ? Toml::parseFile($sitesPath) : null;
+        }
+        catch (ParseException $e)
+        {
+            $message = $e->getMessage();
+            Log::error($message);
+            $this->error($message);
+            return Command::FAILURE;
+        }
+
         if (!empty($site))
         {
-            $config = config("backup.sites.{$site}");
+            $config = $sites[$site] ?? null;
             if (empty($config))
             {
                 $this->error("Could not find definition for site: {$site}");
@@ -39,10 +56,9 @@ class Sites extends Command
         }
         else
         {
-            $sites = config("backup.sites");
             if (empty($sites))
             {
-                $this->error("No sources found at: " . config("backup.source_path"));
+                $this->error("No sites found at: " . config("backup.source_path"));
                 return Command::FAILURE;
             }
             foreach ($sites as $name => $site)

@@ -7,13 +7,6 @@ return [
      */
     'sites_path' => env('SITES_TOML_PATH', storage_path('wback.toml')),
 
-    /**
-     * Backup source defnitions
-     */
-    'sites' => file_exists(env('SITES_TOML_PATH', storage_path('wback.toml'))) ?
-        Yosymfony\Toml\Toml::parseFile(env('SITES_TOML_PATH', storage_path('wback.toml'))) :
-        null,
-
 	/**
 	 * MySQL dump configuration
 	 */

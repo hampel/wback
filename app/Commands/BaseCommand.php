@@ -9,6 +9,8 @@ use LaravelZero\Framework\Commands\Command;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Helper\DescriptorHelper;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yosymfony\Toml\Exception\ParseException;
+use Yosymfony\Toml\Toml;
 
 abstract class BaseCommand extends Command
 {
@@ -26,17 +28,27 @@ abstract class BaseCommand extends Command
 			$this->comment("Dry run only - no action will be taken");
 		}
 
-        $sites = config("backup.sites");
+        try
+        {
+            $sitesPath = config('backup.sites_path');
+            $sites = File::exists($sitesPath) ? Toml::parseFile($sitesPath) : null;
+        }
+        catch (ParseException $e)
+        {
+            $this->log('error', $e->getMessage());
+            return Command::FAILURE;
+        }
+
         if (empty($sites))
         {
-            $this->error("No sites found at: " . config("backup.sites_path"));
+            $this->error("No sites found at: {$sitesPath}");
             return Command::FAILURE;
         }
 
         try {
             if (!empty($site)) {
-                $config = config("backup.sites.{$site}");
-                if (is_null($config)) {
+                $config = $sites[$site] ?? null;
+                if (empty($config)) {
                     $this->log(
                         'error',
                         "Could not find definition for site: {$site}",
