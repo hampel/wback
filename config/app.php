@@ -53,7 +53,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => 'Australia/Sydney', //env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------
