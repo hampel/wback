@@ -4,6 +4,7 @@ namespace App\Commands;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Str;
+use Illuminate\Support\Stringable;
 use LaravelZero\Framework\Commands\Command;
 
 class Config extends Command
@@ -160,6 +161,17 @@ class Config extends Command
             ->filter()
             ->map(fn ($only) => $this->toSearchKeyword($only))
             ->all();
+    }
+
+    /**
+     * Format the given string for searching.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function toSearchKeyword(string $value)
+    {
+        return (new Stringable($value))->lower()->snake()->value();
     }
 
     /**
