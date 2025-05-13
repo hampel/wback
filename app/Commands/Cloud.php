@@ -80,6 +80,6 @@ class Cloud extends BaseCommand
      */
     public function schedule(Schedule $schedule): void
     {
-        $schedule->command(static::class, ['--quiet', '--all', 'cloud'])->dailyAt($this->getScheduleTime());
+        $schedule->command(static::class, ['--quiet', '--all'])->dailyAt($this->getScheduleTime());
     }
 }
