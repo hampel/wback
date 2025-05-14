@@ -58,7 +58,7 @@ class Sites extends Command
         {
             if (empty($sites))
             {
-                $this->error("No sites found at: " . config("backup.source_path"));
+                $this->error("No sites found at: " . config("backup.sites_path"));
                 return Command::FAILURE;
             }
             foreach ($sites as $name => $site)
