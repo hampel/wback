@@ -15,7 +15,7 @@ class Sites extends Command
      *
      * @var string
      */
-    protected $signature = 'sites {site?}';
+    protected $signature = 'app:sites {site?}';
 
     /**
      * The console command description.

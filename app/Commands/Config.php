@@ -14,7 +14,7 @@ class Config extends Command
      *
      * @var string
      */
-    protected $signature = 'config {--only= : The section to display}';
+    protected $signature = 'app:config {--only= : The section to display}';
 
     /**
      * The console command description.
