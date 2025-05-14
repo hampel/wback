@@ -54,7 +54,7 @@ class Files extends BaseCommand
     {
         $destination = $this->getDestinationFile($site, $name,'files', '.zip');
 
-        $zip = config('backup.zip_path');
+        $zip = config('backup.zip_binary');
 
         $verbosity = $this->getVerbosity();
 

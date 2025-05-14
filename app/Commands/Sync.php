@@ -35,9 +35,9 @@ class Sync extends BaseCommand
             return;
         }
 
-        if (empty(config('backup.rclone_remote')))
+        if (empty(config('backup.rclone.sync_remote')))
         {
-            throw new \RuntimeException("rclone remote cloud destination not specified in config");
+            throw new \RuntimeException("rclone remote sync destination not specified in config");
         }
 
         if (!empty($site['files']))
@@ -71,8 +71,8 @@ class Sync extends BaseCommand
             return;
         }
 
-        $remotePath = rtrim(config('backup.rclone_remote'), '/') . "/{$site['domain']}/sync/{$path}";
         $rclone = config('backup.rclone.binary');
+        $remotePath = rtrim(config('backup.rclone.sync_remote'), '/') . "/{$site['domain']}/sync/{$path}";
         $verbosity = $this->getVerbosity();
         $dryrun = $this->option('dry-run') ? ' --dry-run' : '';
         $cmd = "{$rclone}{$verbosity}{$dryrun} --progress sync {$syncPath} {$remotePath}";

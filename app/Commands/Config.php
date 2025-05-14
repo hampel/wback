@@ -47,14 +47,15 @@ class Config extends Command
 
         static::addToSection('Backup', fn () => [
             'Sites Path' => config('backup.sites_path'),
-            'MySQL Dump Path' => config('backup.mysql.dump_path'),
+            'MySQL Dump Binary' => config('backup.mysql.dump_binary'),
             'MySQL Default Charset' => config('backup.mysql.default_charset'),
             'MySQL Hex Blob' => config('backup.mysql.hexblob') ? 'true' : 'false',
-            'GZip Path' => config('backup.gzip_path'),
-            'Zip Path' => config('backup.zip_path'),
+            'GZip Binary' => config('backup.gzip_binary'),
+            'Zip Binary' => config('backup.zip_binary'),
             'rclone Binary' => config('backup.rclone.binary'),
+            'rclone Cloud Remote' => config('backup.rclone.cloud_remote'),
+            'rclone Sync Remote' => config('backup.rclone.sync_remote'),
             'Keep Only Days' => config('backup.keep_only_days'),
-            'rClone Remote' => config('backup.rclone_remote'),
             'Schedule Start' => config('backup.schedule_start'),
         ]);
 

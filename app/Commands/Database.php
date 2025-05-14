@@ -50,13 +50,13 @@ class Database extends BaseCommand
     {
         $destination = $this->getDestinationFile($site, $name,'database', '.sql.gz');
 
-        $mysqldump = config('backup.mysql.dump_path');
+        $mysqldump = config('backup.mysql.dump_binary');
         $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
         $charset = $site['charset'] ?? config('backup.mysql.default_charset');
         $charset = empty($charset) ? '' : " --default-character-set={$charset}";
         $hexblob = config('backup.mysql.hexblob') ? ' --hex-blob' : '';
         $hostname = isset($site['hostname']) ? " -h{$site['hostname']}" : '';
-        $gzip = config('backup.gzip_path');
+        $gzip = config('backup.gzip_binary');
         $outputPath = Storage::disk('backup')->path($destination);
 
         $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";

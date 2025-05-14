@@ -28,7 +28,7 @@ class Cloud extends BaseCommand
 
     protected function handleSite(array $site, string $name) : void
     {
-        if (empty(config('backup.rclone_remote')))
+        if (empty(config('backup.rclone.cloud_remote')))
         {
             throw new \RuntimeException("rclone remote cloud destination not specified in config");
         }
@@ -52,7 +52,7 @@ class Cloud extends BaseCommand
 
         $rclone = config('backup.rclone.binary');
         $sourcePath = Storage::disk('backup')->path($path);
-        $remotePath = rtrim(config('backup.rclone_remote'), '/') . '/' . $path;
+        $remotePath = rtrim(config('backup.rclone.cloud_remote'), '/') . '/' . $path;
         $verbosity = $this->getVerbosity();
         $dryrun = $this->option('dry-run') ? ' --dry-run' : '';
         $cmd = "{$rclone}{$verbosity}{$dryrun} --progress copy {$sourcePath} {$remotePath}";

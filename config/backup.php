@@ -15,7 +15,7 @@ return [
 	    /**
 	     * Path to mysqldump binary
 	     */
-        'dump_path' => env('BACKUP_MYSQLDUMP_PATH', '/usr/bin/mysqldump'),
+        'dump_binary' => env('BACKUP_MYSQLDUMP_PATH', '/usr/bin/mysqldump'),
 
 	    /**
 	     * default charset for dump operations
@@ -32,20 +32,13 @@ return [
     /**
      * Path to gzip binary for compressing database dumps
      */
-	'gzip_path' => env('BACKUP_GZIP_PATH', '/bin/gzip'),
+	'gzip_binary' => env('BACKUP_GZIP_PATH', '/bin/gzip'),
 
     /**
      * Path to zip binary for compressing files
      */
-    'zip_path' => env('BACKUP_ZIP_PATH', '/usr/bin/zip'),
+    'zip_binary' => env('BACKUP_ZIP_PATH', '/usr/bin/zip'),
 
-	/**
-	 * Days to keep local backup files
-	 *
-	 * Files older than this will be removed from 'files' and 'database' directories
-     * other directories will be handled by logrotate
-	 */
-	'keeponly_days' => env('BACKUP_KEEPONLY_DAYS', 7),
     /**
      * rclone configuration
      */
@@ -68,9 +61,12 @@ return [
     ],
 
     /**
-     * rclone remote for cloud storage ("remote:path_prefix")
+     * Days to keep local backup files
+     *
+     * Files older than this will be removed from 'files' and 'database' directories
+     * other directories will be handled by logrotate
      */
-    'rclone_remote' => env('BACKUP_CLOUD_REMOTE'),
+    'keeponly_days' => env('BACKUP_KEEPONLY_DAYS', 7),
 
     /**
      * Schedule start time - scheduled commands will run based on offset specified for each command starting at this time in local timezone
