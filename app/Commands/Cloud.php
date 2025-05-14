@@ -50,11 +50,12 @@ class Cloud extends BaseCommand
             return;
         }
 
+        $rclone = config('backup.rclone.binary');
         $sourcePath = Storage::disk('backup')->path($path);
         $remotePath = rtrim(config('backup.rclone_remote'), '/') . '/' . $path;
         $verbosity = $this->getVerbosity();
         $dryrun = $this->option('dry-run') ? ' --dry-run' : '';
-        $cmd = "rclone{$verbosity}{$dryrun} --progress copy {$sourcePath} {$remotePath}";
+        $cmd = "{$rclone}{$verbosity}{$dryrun} --progress copy {$sourcePath} {$remotePath}";
 
         $this->log(
             'notice',

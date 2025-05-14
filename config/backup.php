@@ -46,6 +46,26 @@ return [
      * other directories will be handled by logrotate
 	 */
 	'keeponly_days' => env('BACKUP_KEEPONLY_DAYS', 7),
+    /**
+     * rclone configuration
+     */
+    'rclone' => [
+
+        /**
+         * Path to rclone binary for transferring files
+         */
+        'binary' => env('BACKUP_RCLONE_PATH', '/usr/bin/rclone'),
+
+        /**
+         * rclone remote for cloud storage ("remote:path_prefix")
+         */
+        'cloud_remote' => env('BACKUP_CLOUD_REMOTE'),
+
+        /**
+         * rclone remote for sync storage ("remote:path_prefix")
+         */
+        'sync_remote' => env('BACKUP_SYNC_REMOTE'),
+    ],
 
     /**
      * rclone remote for cloud storage ("remote:path_prefix")

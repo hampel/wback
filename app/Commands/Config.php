@@ -52,6 +52,7 @@ class Config extends Command
             'MySQL Hex Blob' => config('backup.mysql.hexblob') ? 'true' : 'false',
             'GZip Path' => config('backup.gzip_path'),
             'Zip Path' => config('backup.zip_path'),
+            'rclone Binary' => config('backup.rclone.binary'),
             'Keep Only Days' => config('backup.keep_only_days'),
             'rClone Remote' => config('backup.rclone_remote'),
             'Schedule Start' => config('backup.schedule_start'),
