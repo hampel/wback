@@ -52,7 +52,7 @@ class Clean extends BaseCommand
         $path = $this->getDestinationPath($site, $name, $type, false);
 
         $this->log(
-            'notice',
+            'info',
             "Cleaning up old backups from [{$path}]",
             "Cleaning up old backups",
             compact('path')
@@ -74,7 +74,7 @@ class Clean extends BaseCommand
         if ($this->option('dry-run'))
         {
             $this->log(
-                'notice',
+                'debug',
                 "[Dry run] Deleting [{$path}]",
                 "[Dry run] Deleting file",
                 compact('path')
@@ -83,7 +83,7 @@ class Clean extends BaseCommand
         else
         {
             $this->log(
-                'notice',
+                'debug',
                 "Deleting old backup file [{$path}]",
                 "Deleting old backup file",
                 compact('path')

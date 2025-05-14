@@ -67,7 +67,7 @@ class Sync extends BaseCommand
 
         if (!File::isDirectory($syncPath))
         {
-            $this->log('notice', "Sync path [{$syncPath}] does not exist for {$name}");
+            $this->log('warning', "Sync path [{$syncPath}] does not exist for {$name}");
             return;
         }
 
@@ -78,7 +78,7 @@ class Sync extends BaseCommand
         $cmd = "{$rclone}{$verbosity}{$dryrun} --progress sync {$syncPath} {$remotePath}";
 
         $this->log(
-            'notice',
+            'info',
             "Syncing files from [{$syncPath}] to [{$remotePath}]",
             "Syncing files to cloud storage",
             ['source' => $syncPath, 'remote' => $remotePath]

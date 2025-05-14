@@ -64,7 +64,7 @@ class Files extends BaseCommand
         $cmd = "{$zip} -9{$verbosity} --recurse-paths --symlinks {$outputPath} .{$exclude}";
 
         $this->log(
-            'notice',
+            'info',
             "Backing up files from [{$source}] to [{$destination}]",
             "Backing up files",
             compact('source', 'destination', 'cmd')

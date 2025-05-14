@@ -188,7 +188,7 @@ abstract class BaseCommand extends Command
 
     	$prefix = $this->option('dry-run') ? "[Dry run] " : "";
 
-		$this->log('info', "{$prefix}Executing command [{$command}]", "{$prefix}Executing command", compact('command'));
+		$this->log('debug', "{$prefix}Executing command [{$command}]", "{$prefix}Executing command", compact('command'));
 
 		if ($this->option('dry-run') && !$override)
 		{

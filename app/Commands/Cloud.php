@@ -46,7 +46,7 @@ class Cloud extends BaseCommand
 
         if (!Storage::disk('backup')->exists($path))
         {
-            $this->log('notice', "Backup path [{$path}] does not exist for {$name}");
+            $this->log('warning', "Backup path [{$path}] does not exist for {$name}");
             return;
         }
 
@@ -58,7 +58,7 @@ class Cloud extends BaseCommand
         $cmd = "{$rclone}{$verbosity}{$dryrun} --progress copy {$sourcePath} {$remotePath}";
 
         $this->log(
-            'notice',
+            'info',
             "Sending backup files from [{$sourcePath}] to [{$remotePath}]",
             "Sending backup files to cloud storage",
             ['source' => $sourcePath, 'remote' => $remotePath]

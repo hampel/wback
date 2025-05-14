@@ -62,7 +62,7 @@ class Database extends BaseCommand
         $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
 
         $this->log(
-            'notice',
+            'info',
             "Backing up database [{$database}] to [{$destination}]",
             "Backing up database",
             compact('database', 'destination', 'cmd')
