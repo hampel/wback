@@ -55,7 +55,7 @@ class Config extends Command
             'rclone Binary' => config('backup.rclone.binary'),
             'rclone Cloud Remote' => config('backup.rclone.cloud_remote'),
             'rclone Sync Remote' => config('backup.rclone.sync_remote'),
-            'Keep Only Days' => config('backup.keep_only_days'),
+            'Keep Only Days' => config('backup.keeponly_days'),
             'Schedule Start' => config('backup.schedule_start'),
         ]);
 
