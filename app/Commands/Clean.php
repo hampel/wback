@@ -28,16 +28,10 @@ class Clean extends BaseCommand
 
     protected function handleSite(array $site, string $name) : void
     {
-        if (!empty($site['files']))
-        {
-            $this->clean($site, $name, 'files');
-        }
-        else
-        {
-            $this->log('notice', "No files path specified for {$name}");
-        }
+        $this->clean($site, $name, 'files');
 
-        if (!empty($site['database']))
+        $database = $site['database'] ?? $name;
+        if (!empty($database))
         {
             $this->clean($site, $name, 'database');
         }
