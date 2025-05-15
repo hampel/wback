@@ -58,7 +58,7 @@ abstract class BaseCommand extends Command
                     return Command::FAILURE;
                 }
 
-                $this->handleSite($config, $site);
+                $this->processSite($config, $site);
 
                 return Command::SUCCESS;
             }
@@ -67,7 +67,7 @@ abstract class BaseCommand extends Command
                 foreach ($sites as $name => $config) {
                     $this->section($name);
 
-                    $this->handleSite($config, $name);
+                    $this->processSite($config, $name);
                 }
 
                 return Command::SUCCESS;
@@ -94,6 +94,15 @@ abstract class BaseCommand extends Command
         return Command::FAILURE;
     }
 
+    protected function processSite(array $site, string $name) : void
+    {
+        if (empty($site['domain'])) {
+            throw new \RuntimeException("No domain specified for {$name}");
+        }
+
+        $this->handleSite($site, $name);
+    }
+
     /**
      * @param array $site
      * @param string $name
@@ -112,10 +121,6 @@ abstract class BaseCommand extends Command
      */
     protected function getDestinationPath(array $site, string $name, string $type, bool $createPaths = true) : string
     {
-        if (empty($site['domain'])) {
-            throw new \RuntimeException("No domain specified for {$name}");
-        }
-
         $domain = $site['domain'];
 
         if ($createPaths)
