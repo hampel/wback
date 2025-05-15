@@ -35,10 +35,6 @@ class Files extends BaseCommand
         }
         else
         {
-            if (empty($site['domain'])) {
-                throw new \RuntimeException("No domain specified for {$name}");
-            }
-
             $source = Storage::disk('files')->path($site['domain']);
         }
 
