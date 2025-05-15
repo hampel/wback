@@ -65,7 +65,7 @@ class Database extends BaseCommand
             'info',
             "Backing up database [{$database}] to [{$destination}]",
             "Backing up database",
-            compact('database', 'destination', 'cmd')
+            compact('database', 'destination')
         );
 
         $this->executeCommand($cmd);

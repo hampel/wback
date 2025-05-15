@@ -63,7 +63,7 @@ class Files extends BaseCommand
             'info',
             "Backing up files from [{$source}] to [{$destination}]",
             "Backing up files",
-            compact('source', 'destination', 'cmd')
+            compact('source', 'destination')
         );
 
         $this->executeCommand($cmd, $source);
