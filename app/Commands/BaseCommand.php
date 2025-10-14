@@ -89,7 +89,7 @@ abstract class BaseCommand extends Command
 
         $this->section("Configured sites:");
 
-        $this->call('sites');
+        $this->call('app:sites');
 
         return Command::FAILURE;
     }
