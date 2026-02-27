@@ -29,6 +29,8 @@ class Files extends BaseCommand
 
     protected function handleSite(array $site, string $name) : void
     {
+        // TODO: option to not back up any files for a site
+
         if (!empty($site['files']))
         {
             $source = $site['files'];
