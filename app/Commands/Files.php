@@ -26,26 +26,21 @@ class Files extends BaseCommand
      */
     protected $description = 'Backup files';
 
-
     protected function handleSite(array $site, string $name) : void
     {
-        // TODO: option to not back up any files for a site
-
-        if (!empty($site['files']))
+        $files = $site['files'] ?? Storage::disk('files')->path($site['domain']);
+        if (empty($files))
         {
-            $source = $site['files'];
-        }
-        else
-        {
-            $source = Storage::disk('files')->path($site['domain']);
+            $this->log('notice', "No files source specified for {$name}");
+            return;
         }
 
-        if (!File::isDirectory($source))
+        if (!File::isDirectory($files))
         {
-            throw new \RuntimeException("Source path [{$source}] not found for {$name}");
+            throw new \RuntimeException("Source path [{$files}] not found for {$name}");
         }
 
-        $this->backupFiles($site, $name, $source);
+        $this->backupFiles($site, $name, $files);
     }
 
     protected function backupFiles(array $site, string $name, string $source) : void
