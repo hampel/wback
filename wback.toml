@@ -1,0 +1,16 @@
+# Sites
+#
+# Format:
+#
+# [shortname]
+# domain = 'example.com'
+# database = 'example' # optional - leave blank to use the shortname as the domain. Use '' to not back up database
+# charset = 'utf8mb4' # optional - leave blank to use the default for mysqldump
+# files = '/srv/www/example.com' # optional - leave blank to use the domain and default files root. Use '' to not back up files
+# exclude = [
+#	'data/tmp/*'
+# ]
+# sync = [
+#	'data/documents'
+# ]
+# --------------------------------------------------------------------------------------------------------
