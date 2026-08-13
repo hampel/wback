@@ -2,6 +2,7 @@
 
 namespace App\Commands;
 
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -66,11 +67,26 @@ class Sync extends BaseCommand
             return;
         }
 
+        // sync makes the remote match the source, so an empty source empties the remote
+        // copy - and an empty source is what an unmounted filesystem looks like
+        if (File::isEmptyDirectory($syncPath) && !config('backup.rclone.sync_allow_empty'))
+        {
+            throw new \RuntimeException(
+                "Sync path [{$syncPath}] is empty for {$name} - refusing to empty the remote copy."
+                . " Set BACKUP_SYNC_ALLOW_EMPTY=true if the source really is empty"
+            );
+        }
+
         $rclone = config('backup.rclone.binary');
         $remotePath = rtrim(config('backup.rclone.sync_remote'), '/') . "/{$site['domain']}/sync/{$path}";
         $verbosity = $this->getVerbosity();
         $dryrun = $this->option('dry-run') ? ' --dry-run' : '';
-        $cmd = "{$rclone}{$verbosity}{$dryrun} --progress sync "
+
+        // operator supplied, so inserted as written
+        $options = config('backup.rclone.sync_options');
+        $options = empty($options) ? '' : " {$options}";
+
+        $cmd = "{$rclone}{$verbosity}{$dryrun}{$options} --progress sync{$this->archiveOption($site, $path)} "
             . escapeshellarg($syncPath) . ' ' . escapeshellarg($remotePath);
 
         $this->log(
@@ -82,6 +98,34 @@ class Sync extends BaseCommand
 
         // over-ride the dry-run option because we have a --dry-run option for rclone
         $this->executeCommand($cmd, null, true);
+    }
+
+    /**
+     * Where sync should put the files it would otherwise destroy
+     *
+     * With this set, a sync that goes wrong - a source that lost its files, a path that
+     * moved - costs storage rather than data, because everything sync replaces or
+     * deletes is moved into a dated directory on the remote instead.
+     *
+     * @param array $site site config from toml
+     * @param string $path sync path relative to the site file source
+     * @return string --backup-dir option, or empty to let sync delete outright
+     */
+    protected function archiveOption(array $site, string $path) : string
+    {
+        $archive = config('backup.rclone.sync_backup_dir');
+
+        if (empty($archive))
+        {
+            return '';
+        }
+
+        $date = Carbon::today(new \DateTimeZone(config('app.timezone')))->format('Ymd');
+
+        $archivePath = rtrim(config('backup.rclone.sync_remote'), '/')
+            . "/{$site['domain']}/{$archive}/{$date}/{$path}";
+
+        return ' --backup-dir ' . escapeshellarg($archivePath);
     }
 
     /**

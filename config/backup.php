@@ -82,6 +82,25 @@ return [
          * rclone remote for sync storage ("remote:path_prefix")
          */
         'sync_remote' => env('BACKUP_SYNC_REMOTE'),
+
+        /**
+         * additional options for the sync command, inserted as written
+         */
+        'sync_options' => env('BACKUP_SYNC_OPTIONS', ''),
+
+        /**
+         * whether to sync a source directory that has become empty
+         *
+         * sync makes the remote match the source, so an empty source empties the remote
+         * copy - which is what an unmounted filesystem or a mistyped path looks like
+         */
+        'sync_allow_empty' => env('BACKUP_SYNC_ALLOW_EMPTY', false),
+
+        /**
+         * directory on the sync remote to move replaced and deleted files into, dated,
+         * instead of destroying them ("" to let sync delete them outright)
+         */
+        'sync_backup_dir' => env('BACKUP_SYNC_BACKUP_DIR', ''),
     ],
 
     /**

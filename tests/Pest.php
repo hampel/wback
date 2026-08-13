@@ -30,6 +30,9 @@ uses(Tests\TestCase::class)
             'backup.rclone.binary' => '/usr/bin/rclone',
             'backup.rclone.cloud_remote' => 'cloud:backups',
             'backup.rclone.sync_remote' => 'sync:live',
+            'backup.rclone.sync_options' => '',
+            'backup.rclone.sync_allow_empty' => false,
+            'backup.rclone.sync_backup_dir' => '',
             'backup.keeponly_days' => 7,
             'backup.schedule_start' => 3,
         ]);

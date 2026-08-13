@@ -135,6 +135,9 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `BACKUP_RCLONE_PATH` | `/usr/bin/rclone` | |
 | `BACKUP_CLOUD_REMOTE` | — | `remote:prefix` for `cloud`; required by that command |
 | `BACKUP_SYNC_REMOTE` | — | `remote:prefix` for `sync`; required by that command |
+| `BACKUP_SYNC_ALLOW_EMPTY` | `false` | allow a sync from a source that has gone empty |
+| `BACKUP_SYNC_BACKUP_DIR` | — | keep replaced files under this directory instead of deleting |
+| `BACKUP_SYNC_OPTIONS` | — | extra rclone options for `sync`, inserted as written |
 | `SCHEDULE_START` | `3` | hour the nightly run begins |
 | `LARAVEL_STORAGE_PATH` | working directory | storage path, PHAR only |
 | `LOG_CHANNEL` | `stack` | `single`, `daily`, `slack`, `syslog`, `stack`, … |
@@ -280,6 +283,28 @@ rclone --progress sync <source>/<path> <BACKUP_SYNC_REMOTE>/<domain>/sync/<path>
 
 This one *is* a mirror — files deleted locally are deleted on the remote. It is
 meant for large directories worth keeping current but not worth zipping nightly.
+
+Which makes it the one command that can destroy a backup rather than fail to
+make one, so it has two guards:
+
+**An empty source is refused.** A source directory that exists but holds nothing
+is what an unmounted filesystem and a mistyped path both look like, and syncing
+it would faithfully empty the remote copy to match. The site fails with a message
+saying so, and the remote is left alone. Set `BACKUP_SYNC_ALLOW_EMPTY=true` for
+the case where the directory really is meant to be empty.
+
+**`BACKUP_SYNC_BACKUP_DIR` keeps what sync would destroy.** Set it to a directory
+name and everything sync replaces or deletes is moved to
+`<remote>/<domain>/<name>/<date>/<path>` instead, making a sync that went wrong
+cost storage rather than data. It expires nothing, so pair it with a lifecycle
+rule on the bucket.
+
+A note on `--max-delete`, the obvious third option: it is a damage limiter, not a
+guard. rclone deletes up to the threshold and *then* errors, so both a genuine
+fault and a false positive — a directory rename counts every file in it as a
+deletion — leave the remote half mirrored. It is available through
+`BACKUP_SYNC_OPTIONS` if you want it, but the two guards above are what wback
+leans on.
 
 ### `clean` — expire local backups
 

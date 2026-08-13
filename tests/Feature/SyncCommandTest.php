@@ -84,6 +84,94 @@ it('quotes sync paths containing spaces', function () {
         "/usr/bin/rclone --progress sync '{$source}' 'sync:live/example.com/sync/data/My Documents'");
 });
 
+it('refuses to sync a source that has become empty', function () {
+    // an empty source is what an unmounted filesystem looks like, and sync would
+    // faithfully empty the remote copy to match it
+    useSource('example.com');
+    Storage::disk('files')->makeDirectory('example.com/data/documents');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        sync = ['data/documents']
+        TOML);
+
+    $this->artisan('sync', ['site' => 'example'])
+        ->expectsOutputToContain('refusing to empty the remote copy')
+        ->assertFailed();
+
+    Process::assertNothingRan();
+});
+
+it('syncs an empty source when that is allowed', function () {
+    config()->set('backup.rclone.sync_allow_empty', true);
+
+    useSource('example.com');
+    Storage::disk('files')->makeDirectory('example.com/data/documents');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        sync = ['data/documents']
+        TOML);
+
+    $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains($process->command, 'sync'));
+});
+
+it('moves replaced files into a dated archive when one is configured', function () {
+    config()->set('backup.rclone.sync_backup_dir', 'replaced');
+
+    useSource('example.com', ['data/documents/report.pdf']);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        sync = ['data/documents']
+        TOML);
+
+    $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains(
+        $process->command,
+        "sync --backup-dir 'sync:live/example.com/replaced/20260813/data/documents' "
+    ));
+});
+
+it('lets sync delete outright when no archive is configured', function () {
+    useSource('example.com', ['data/documents/report.pdf']);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        sync = ['data/documents']
+        TOML);
+
+    $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => ! str_contains($process->command, '--backup-dir'));
+});
+
+it('appends the configured sync options', function () {
+    config()->set('backup.rclone.sync_options', '--max-delete 1000 --stats 60s');
+
+    useSource('example.com', ['data/documents/report.pdf']);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        sync = ['data/documents']
+        TOML);
+
+    $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains(
+        $process->command,
+        '/usr/bin/rclone --max-delete 1000 --stats 60s --progress sync'
+    ));
+});
+
 it('skips sites with no sync configuration', function () {
     useSites(<<<'TOML'
         [example]
