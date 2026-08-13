@@ -109,6 +109,27 @@ it('passes every exclude pattern in a single option', function () {
     ));
 });
 
+it('removes the partial archive when zip fails', function () {
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/files/example.20260813.zip', 'partial archive');
+
+        return Process::result(errorOutput: 'zip I/O error: No space left on device', exitCode: 14);
+    });
+
+    useSource('example.com');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('files', ['site' => 'example'])
+        ->expectsOutputToContain('Removing incomplete backup file')
+        ->assertFailed();
+
+    expect(Storage::disk('backup')->exists('example.com/files/example.20260813.zip'))->toBeFalse();
+});
+
 it('creates the destination directories', function () {
     useSource('example.com');
 

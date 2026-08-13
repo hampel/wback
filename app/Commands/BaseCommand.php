@@ -239,6 +239,52 @@ abstract class BaseCommand extends Command
     }
 
     /**
+     * Run the command that produces a backup file, and clean up after it if it fails
+     *
+     * A command that dies partway leaves a partial file behind - the shell creates the
+     * destination as soon as it opens the redirect - and a partial file sitting in the
+     * backup directory looks exactly like a backup, right up until it is needed. The
+     * destination is unique to this run, so removing it cannot discard anything else.
+     *
+     * @param string $outputPath backup file the command writes
+     * @param string $command command to execute
+     * @param string|null $workingPath directory to run the command from
+     * @return void
+     */
+    protected function produceBackup(string $outputPath, string $command, string $workingPath = null) : void
+    {
+        try
+        {
+            $this->executeCommand($command, $workingPath);
+        }
+        catch (\Throwable $e)
+        {
+            $this->removeIncomplete($outputPath);
+
+            throw $e;
+        }
+
+        $this->chmod($outputPath);
+    }
+
+    protected function removeIncomplete(string $path) : void
+    {
+        if (!File::exists($path))
+        {
+            return;
+        }
+
+        $this->log(
+            'warning',
+            "Removing incomplete backup file [{$path}]",
+            "Removing incomplete backup file",
+            compact('path')
+        );
+
+        File::delete($path);
+    }
+
+    /**
      * Wrap a command containing a pipe so that a failure anywhere in the pipeline is
      * reported - a plain shell returns the exit status of the last command only, which
      * hides a failed mysqldump behind a gzip that compressed the partial output quite

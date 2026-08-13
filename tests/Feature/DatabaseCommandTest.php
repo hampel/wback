@@ -255,6 +255,44 @@ it('increments the filename when a backup already exists for today', function ()
     Process::assertRan(fn ($process) => str_ends_with(shellCommand($process->command), "example.20260813-2.sql.gz'"));
 });
 
+it('removes the partial dump when mysqldump fails', function () {
+    // the shell creates the destination as soon as it opens the redirect, so a failed
+    // dump leaves a valid gzip file holding part of a database behind
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', 'partial dump');
+
+        return Process::result(errorOutput: 'mysqldump: Got error: 1049', exitCode: 1);
+    });
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])
+        ->expectsOutputToContain('Removing incomplete backup file')
+        ->assertFailed();
+
+    expect(Storage::disk('backup')->exists('example.com/database/example.20260813.sql.gz'))->toBeFalse();
+});
+
+it('keeps the dump when it succeeds', function () {
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', 'a whole dump');
+
+        return Process::result();
+    });
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    expect(Storage::disk('backup')->exists('example.com/database/example.20260813.sql.gz'))->toBeTrue();
+});
+
 it('creates the destination directories', function () {
     useSites(<<<'TOML'
         [example]

@@ -80,8 +80,7 @@ class Database extends BaseCommand
             compact('database', 'destination')
         );
 
-        $this->executeCommand($this->pipeline($cmd));
-        $this->chmod($outputPath);
+        $this->produceBackup($outputPath, $this->pipeline($cmd));
     }
 
     /**

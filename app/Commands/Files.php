@@ -63,8 +63,7 @@ class Files extends BaseCommand
             compact('source', 'destination')
         );
 
-        $this->executeCommand($cmd, $source);
-        $this->chmod($outputPath);
+        $this->produceBackup($outputPath, $cmd, $source);
     }
 
     protected function generateExcludes(array $excludes) : string
