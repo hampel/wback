@@ -36,7 +36,33 @@ php wback app:build wback                # compile a PHAR into builds/ (box.json
 without executing it. Passing neither a site nor `--all` prints usage plus the
 site list and exits FAILURE.
 
-Only the Laravel Zero scaffold tests exist; the backup commands are untested.
+## Testing
+
+Feature tests drive the commands through `$this->artisan()` with `Process::fake()`
+and faked `files`/`backup` disks, and assert on the **command string** each
+command assembles — that string is the product, so that is what is tested.
+
+`tests/Pest.php` pins every binary path, remote and retention setting in a
+`beforeEach`, so assertions don't depend on the developer's `.env`, and freezes
+the clock (destination filenames are datestamped in the app timezone). Its
+helpers: `useSites($toml)` writes an inventory and points config at it,
+`useSource($domain, $files)` creates a source tree on the files disk, and
+`backupPath($path)` gives the absolute destination path.
+
+Faked disks are real directories under `storage_path()` — the commands build
+shell commands out of `Storage::disk(…)->path()`, and `File::isDirectory()` needs
+a real stat, so there is no in-memory option. `CreatesApplication` therefore
+points the test application's storage path at a per-process directory in the
+system temp dir that is removed on exit, keeping the project's `storage/` clean.
+
+Two gotchas when adding tests:
+
+- `expectsOutputToContain()` is greedy — a short substring expectation will
+  swallow a later line that also contains it, and the more specific expectation
+  then fails. Keep expectations non-overlapping, or use exact `expectsOutput()`.
+- The schedule is built while the application boots, so `config()->set()` on
+  `backup.schedule_start` has no effect; set `SCHEDULE_START` in the environment
+  and call `$this->refreshApplication()` (see `tests/Feature/ScheduleTest.php`).
 
 ## Architecture
 
