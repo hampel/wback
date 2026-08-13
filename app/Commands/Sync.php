@@ -15,7 +15,6 @@ class Sync extends BaseCommand
      */
     protected $signature = 'sync
                                 {site?}
-                                {--f|force : Force run, regardless of last run time}
                                 {--a|all : Process all sites}
                                 {--d|dry-run : Simulate the cloud sync with no actual changes}
                            ';

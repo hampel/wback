@@ -133,4 +133,3 @@ is a short name, and the defaulting rules matter:
 - The code uses Allman braces and its own spacing, which is **not** Laravel/PSR-12.
   Pint is installed but there is no `pint.json`, so running it would reformat the
   entire codebase — don't run it across existing files.
-- `--force` is declared on `cloud` and `sync` but never read; it is a stub.

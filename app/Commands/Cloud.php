@@ -14,7 +14,6 @@ class Cloud extends BaseCommand
      */
     protected $signature = 'cloud
                                 {site?}
-                                {--f|force : Force run, regardless of last run time}
                                 {--a|all : Process all sites}
                                 {--d|dry-run : Simulate the cloud copy with no actual changes}
                            ';
