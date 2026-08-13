@@ -18,7 +18,7 @@ it('dumps the database through gzip into the backup disk', function () {
     $destination = backupPath('example.com/database/example.20260813.sql.gz');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/mysqldump --opt --default-character-set=utf8mb4 --hex-blob example | /bin/gzip -c -f > {$destination}");
+        "/usr/bin/mysqldump --opt --default-character-set='utf8mb4' --hex-blob 'example' | /bin/gzip -c -f > '{$destination}'");
 });
 
 it('defaults the database name to the site short name', function () {
@@ -29,7 +29,7 @@ it('defaults the database name to the site short name', function () {
 
     $this->artisan('database', ['site' => 'zabbix'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, '--hex-blob zabbix |'));
+    Process::assertRan(fn ($process) => str_contains($process->command, "--hex-blob 'zabbix' |"));
 });
 
 it('uses an explicit database name over the site short name', function () {
@@ -41,7 +41,7 @@ it('uses an explicit database name over the site short name', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, '--hex-blob example_prod |'));
+    Process::assertRan(fn ($process) => str_contains($process->command, "--hex-blob 'example_prod' |"));
 });
 
 it('skips sites that have the database explicitly disabled', function () {
@@ -67,7 +67,7 @@ it('uses the per site charset over the default', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, '--default-character-set=latin1'));
+    Process::assertRan(fn ($process) => str_contains($process->command, "--default-character-set='latin1'"));
 });
 
 it('omits the charset when it is configured empty', function () {
@@ -105,7 +105,19 @@ it('passes a remote hostname to mysqldump', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, ' -hdb.internal '));
+    Process::assertRan(fn ($process) => str_contains($process->command, "-h'db.internal' "));
+});
+
+it('quotes the database name, leaving shell metacharacters inert', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        database = 'example; rm -rf /srv'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains($process->command, "'example; rm -rf /srv'"));
 });
 
 it('increments the filename when a backup already exists for today', function () {
@@ -118,7 +130,7 @@ it('increments the filename when a backup already exists for today', function ()
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_ends_with($process->command, 'example.20260813-2.sql.gz'));
+    Process::assertRan(fn ($process) => str_ends_with($process->command, "example.20260813-2.sql.gz'"));
 });
 
 it('creates the destination directories', function () {

@@ -54,7 +54,7 @@ class Files extends BaseCommand
         $outputPath = Storage::disk('backup')->path($destination);
         $exclude = $this->generateExcludes($site['exclude'] ?? []);
 
-        $cmd = "{$zip} -9{$verbosity} --recurse-paths --symlinks {$outputPath} .{$exclude}";
+        $cmd = "{$zip} -9{$verbosity} --recurse-paths --symlinks " . escapeshellarg($outputPath) . " .{$exclude}";
 
         $this->log(
             'info',
@@ -69,8 +69,9 @@ class Files extends BaseCommand
 
     protected function generateExcludes(array $excludes) : string
     {
+        // quoting keeps the shell away from the wildcards, leaving zip to match them
         $ex = collect($excludes)->transform(function ($value, $key) {
-            return preg_replace('/[\*]/', '\*', $value);
+            return escapeshellarg($value);
         })->implode(' ');
 
         return empty($ex) ? '' : " --exclude {$ex}";

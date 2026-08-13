@@ -39,10 +39,12 @@ setting; where that is the case it is noted.
   convention need an explicit `files` path.
 - `domain` names the destination directory, so two sites sharing a domain share
   a directory. The short name distinguishes the files inside it.
-- Site short names and domains are used to build filenames, and both they and
-  every configured path are interpolated into a shell command **unescaped**.
-  Keep spaces and shell metacharacters out of them — the only characters escaped
-  for you are the wildcards in `exclude` patterns.
+- Values taken from the inventory — database names, paths, exclude patterns,
+  remotes — are quoted before they reach the shell, so spaces and punctuation in
+  them are safe. The configured binary paths are the exception: they are
+  inserted as written, which is what lets `BACKUP_GZIP_PATH` be something like
+  `nice -n 19 /usr/bin/pigz`, and equally means they must not be built out of
+  anything but your own configuration.
 - Everything is local: files are read from a local path and backups are written
   to a local path. Only the database may be remote.
 

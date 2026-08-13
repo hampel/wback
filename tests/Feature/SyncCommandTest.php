@@ -21,7 +21,7 @@ it('syncs a configured path to the sync remote', function () {
     $source = Storage::disk('files')->path('example.com/data/documents');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/rclone --progress sync {$source} sync:live/example.com/sync/data/documents");
+        "/usr/bin/rclone --progress sync '{$source}' 'sync:live/example.com/sync/data/documents'");
 });
 
 it('syncs every configured path', function () {
@@ -49,7 +49,7 @@ it('accepts a single sync path given as a string', function () {
 
     $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_ends_with($process->command, ' sync:live/example.com/sync/data/documents'));
+    Process::assertRan(fn ($process) => str_ends_with($process->command, " 'sync:live/example.com/sync/data/documents'"));
 });
 
 it('resolves sync paths against an explicit files path', function () {
@@ -64,7 +64,24 @@ it('resolves sync paths against an explicit files path', function () {
 
     $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "sync {$source}/data/documents "));
+    Process::assertRan(fn ($process) => str_contains($process->command, "sync '{$source}/data/documents' "));
+});
+
+it('quotes sync paths containing spaces', function () {
+    useSource('example.com', ['data/My Documents/report.pdf']);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        sync = ['data/My Documents']
+        TOML);
+
+    $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
+
+    $source = Storage::disk('files')->path('example.com/data/My Documents');
+
+    Process::assertRan(fn ($process) => $process->command ===
+        "/usr/bin/rclone --progress sync '{$source}' 'sync:live/example.com/sync/data/My Documents'");
 });
 
 it('skips sites with no sync configuration', function () {

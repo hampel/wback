@@ -27,18 +27,22 @@ it('returns nothing when there is nothing to exclude', function () {
 });
 
 it('escapes wildcards so the shell leaves them for zip', function () {
-    expect(excludeOption(['data/tmp/*']))->toBe(' --exclude data/tmp/\*');
+    expect(excludeOption(['data/tmp/*']))->toBe(" --exclude 'data/tmp/*'");
 });
 
 it('escapes every wildcard in a pattern', function () {
-    expect(excludeOption(['data/*/cache/*']))->toBe(' --exclude data/\*/cache/\*');
+    expect(excludeOption(['data/*/cache/*']))->toBe(" --exclude 'data/*/cache/*'");
 });
 
 it('passes multiple patterns to a single option', function () {
     expect(excludeOption(['data/tmp/*', 'internal_data/cache/*']))
-        ->toBe(' --exclude data/tmp/\* internal_data/cache/\*');
+        ->toBe(" --exclude 'data/tmp/*' 'internal_data/cache/*'");
+});
+
+it('keeps a pattern with spaces as a single argument', function () {
+    expect(excludeOption(['data/My Documents/*']))->toBe(" --exclude 'data/My Documents/*'");
 });
 
 it('leaves patterns without wildcards alone', function () {
-    expect(excludeOption(['data/tmp']))->toBe(' --exclude data/tmp');
+    expect(excludeOption(['data/tmp']))->toBe(" --exclude 'data/tmp'");
 });

@@ -20,7 +20,7 @@ it('copies the whole backup tree for the site to the cloud remote', function () 
     $source = backupPath('example.com');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/rclone --progress copy {$source} cloud:backups/example.com");
+        "/usr/bin/rclone --progress copy '{$source}' 'cloud:backups/example.com'");
 });
 
 it('trims a trailing slash from the configured remote', function () {
@@ -35,7 +35,7 @@ it('trims a trailing slash from the configured remote', function () {
 
     $this->artisan('cloud', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_ends_with($process->command, ' cloud:backups/example.com'));
+    Process::assertRan(fn ($process) => str_ends_with($process->command, " 'cloud:backups/example.com'"));
 });
 
 it('fails when no cloud remote is configured', function () {

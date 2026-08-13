@@ -89,6 +89,11 @@ Backups land at `<backup>/<domain>/{files,database}/<shortname>.<Ymd><suffix>`,
 with `-2`, `-3` … appended by `getDestinationFile()` when a file for today
 already exists. Directories are created on demand; output files are chmod 0660.
 
+**Command strings go through a shell**, so anything interpolated into one from
+the inventory or from a derived path must be wrapped in `escapeshellarg()` — the
+configured binary paths are the deliberate exception, left raw so they can carry
+options.
+
 **`executeCommand()` is the single choke point** for running external binaries.
 It logs the command at debug level and short-circuits under `--dry-run` — except
 when `$override = true`, which `Cloud` and `Sync` use because they instead

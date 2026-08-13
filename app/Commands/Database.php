@@ -53,13 +53,15 @@ class Database extends BaseCommand
         $mysqldump = config('backup.mysql.dump_binary');
         $verbosity = $this->output->isVerbose() ? ' --verbose' : '';
         $charset = $site['charset'] ?? config('backup.mysql.default_charset');
-        $charset = empty($charset) ? '' : " --default-character-set={$charset}";
+        $charset = empty($charset) ? '' : " --default-character-set=" . escapeshellarg($charset);
         $hexblob = config('backup.mysql.hexblob') ? ' --hex-blob' : '';
-        $hostname = isset($site['hostname']) ? " -h{$site['hostname']}" : '';
+        $hostname = isset($site['hostname']) ? " -h" . escapeshellarg($site['hostname']) : '';
         $gzip = config('backup.gzip_binary');
         $outputPath = Storage::disk('backup')->path($destination);
 
-        $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$hostname} {$database} | {$gzip} -c -f > {$outputPath}";
+        $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$hostname} "
+            . escapeshellarg($database)
+            . " | {$gzip} -c -f > " . escapeshellarg($outputPath);
 
         $this->log(
             'info',

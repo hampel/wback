@@ -20,7 +20,7 @@ it('zips the source directory into the backup disk', function () {
     $destination = backupPath('example.com/files/example.20260813.zip');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/zip -9 --recurse-paths --symlinks {$destination} ."
+        "/usr/bin/zip -9 --recurse-paths --symlinks '{$destination}' ."
         && $process->path === $source);
 });
 
@@ -89,7 +89,7 @@ it('escapes wildcards in exclude patterns', function () {
 
     $this->artisan('files', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_ends_with($process->command, ' --exclude data/tmp/\*'));
+    Process::assertRan(fn ($process) => str_ends_with($process->command, " --exclude 'data/tmp/*'"));
 });
 
 it('passes every exclude pattern in a single option', function () {
@@ -105,7 +105,7 @@ it('passes every exclude pattern in a single option', function () {
 
     Process::assertRan(fn ($process) => str_ends_with(
         $process->command,
-        ' --exclude data/tmp/\* internal_data/cache/\*'
+        " --exclude 'data/tmp/*' 'internal_data/cache/*'"
     ));
 });
 

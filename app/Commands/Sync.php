@@ -70,7 +70,8 @@ class Sync extends BaseCommand
         $remotePath = rtrim(config('backup.rclone.sync_remote'), '/') . "/{$site['domain']}/sync/{$path}";
         $verbosity = $this->getVerbosity();
         $dryrun = $this->option('dry-run') ? ' --dry-run' : '';
-        $cmd = "{$rclone}{$verbosity}{$dryrun} --progress sync {$syncPath} {$remotePath}";
+        $cmd = "{$rclone}{$verbosity}{$dryrun} --progress sync "
+            . escapeshellarg($syncPath) . ' ' . escapeshellarg($remotePath);
 
         $this->log(
             'info',
