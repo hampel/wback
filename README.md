@@ -104,7 +104,7 @@ sha256sum -c SHA256SUMS
 Which release you want depends on the PHP on the server: **7.1.0 and later need
 PHP 8.3**, and **7.0.0 runs on PHP 8.2**.
 
-Then give it a `.env` — beside the binary, at `/etc/wback/.env`, or wherever
+Then give it a `.env` — beside the binary, or at `/etc/wback/.env`, or wherever
 `WBACK_ENV` points. See [Configuration](#configuration), and note that the
 storage path follows the working directory rather than the binary.
 `wback app:validate` will tell you whether the server can do what the
@@ -479,7 +479,7 @@ One entry, and `cron` runs every backup in turn:
 
 ```cron
 # /etc/cron.d/wback  (no dot in the filename, or run-parts ignores it)
-0 3 * * * backup cd /srv/backup && /usr/local/bin/wback cron --quiet
+0 3 * * * backup_user cd /srv/backup && /usr/local/bin/wback cron --quiet
 ```
 
 The `cd` matters: it fixes the storage path, and so where the backups land.
@@ -522,44 +522,18 @@ command finds the lock held, reports it, and waits for tomorrow.
 
 ### Not Laravel Zero's scheduler
 
-wback does not use it, and the `schedule:*` commands are removed from the
-application so they cannot be run by mistake. It is broken here twice over:
-
-- A due event resolves `Illuminate\Log\Context\Repository`, which uses a trait
-  from `illuminate/queue` — a package console applications do not install. The
-  command dies with `Trait "Illuminate\Queue\SerializesModels" not found`.
-- In a compiled binary, the working directory handed to Symfony Process is a
-  `phar://` path, which Process rejects, and `ARTISAN_BINARY` is a relative
-  string that does not match the built executable's name.
-
-What makes it dangerous rather than merely broken is the reporting:
-`ScheduleRunCommand` catches the failure and returns `$event->exitCode == 0`,
-where `exitCode` is still `null` — and `null == 0` is true. It prints DONE for
-every task and exits 0 having run nothing at all. For a backup tool that is the
-worst available outcome: everything reports success and there are no backups.
-
-(Aliasing a command is separately unwise. `setAliases()` registers the command
-once per alias, so a scheduled backup would run twice.)
+wback does not use it because of bugs in the scheduling code in Laravel Zero.
 
 ### One run at a time
 
 Every backup command takes a single exclusive lock for as long as it runs, so
 the stages can never overlap: a `files` backup that runs past its hour holds
 `cloud` off rather than having it upload an archive that is still being written.
-A command that finds the lock held reports what holds it and exits non-zero:
-
-```
-Another backup is still running [pid 1116187, files, started 2026-08-13 15:25:11] - skipping this run
-```
-
-That is deliberately an error rather than a quiet skip — a stage that keeps
-colliding with the one before it is worth hearing about. Dry runs ignore the lock
-entirely, since they change nothing.
 
 The lock file lives at the root of the backup destination, the one directory this
 tool can always write to, and is called `.wback.lock`. It sits outside every
 site's directory, so `cloud` never uploads it and `clean` never expires it. Point
-`BACKUP_LOCK_FILE` at an absolute path — `/run/lock/wback.lock`, say — to put it
+`BACKUP_LOCK_FILE` at an absolute path — for example: `/run/lock/wback.lock`, to put it
 elsewhere; do that if your backup destination is a network filesystem, where file
 locking is best avoided.
 
@@ -569,9 +543,8 @@ Everything reported on the console is also logged through Monolog, with
 structured context. Console verbosity and log level are independent: a `--quiet`
 scheduled run still logs at full detail.
 
-**Out of the box nothing is written.** The default channel is `stack`, and an
-unset `LOG_STACK` makes that stack the `null` channel, which discards
-everything. Set `LOG_CHANNEL=single` or `daily` for a file, or keep the stack and
+**Out of the box nothing is written.** Set `LOG_CHANNEL=single` or `daily` for a file, 
+or keep the default `stack` option and 
 set `LOG_STACK=single,slack` to write a file and raise critical failures in
 Slack. `php wback app:validate` writes one message at every level so you can
 confirm where they land.
