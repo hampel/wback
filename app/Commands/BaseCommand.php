@@ -255,9 +255,11 @@ abstract class BaseCommand extends Command
 
     protected function getScheduleTime() : string
     {
-        $scheduleStart = config('backup.schedule_start');
+        $scheduleStart = (int) config('backup.schedule_start');
         $offset = $this->scheduleOffset();
-        return sprintf("%d:00", $scheduleStart + $offset);
+
+        // wrap around midnight - an hour past 23 is not a valid cron expression
+        return sprintf("%d:00", ($scheduleStart + $offset) % 24);
     }
 
 	protected function human_filesize($bytes, $dec = 2)

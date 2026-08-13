@@ -40,6 +40,27 @@ it('moves the whole run when the start time changes', function () {
     ]);
 })->after(fn () => putenv('SCHEDULE_START'));
 
+it('wraps around midnight rather than scheduling an impossible hour', function () {
+    putenv('SCHEDULE_START=22');
+    $this->refreshApplication();
+
+    expect(scheduledCommands()->all())->toEqual([
+        'database' => '0 22 * * *',
+        'files' => '0 23 * * *',
+        'cloud' => '0 0 * * *',
+        'sync' => '0 1 * * *',
+        'clean' => '0 2 * * *',
+    ]);
+})->after(fn () => putenv('SCHEDULE_START'));
+
+it('produces a schedule cron can actually run', function () {
+    putenv('SCHEDULE_START=22');
+    $this->refreshApplication();
+
+    collect(app(Schedule::class)->events())
+        ->each(fn ($event) => expect(fn () => new Cron\CronExpression($event->getExpression()))->not->toThrow(Exception::class));
+})->after(fn () => putenv('SCHEDULE_START'));
+
 it('runs every scheduled command quietly against all sites', function () {
     collect(app(Schedule::class)->events())
         ->each(fn ($event) => expect($event->command)->toContain('--quiet --all'));
