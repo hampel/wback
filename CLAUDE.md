@@ -111,6 +111,14 @@ rather than `$this->info()` / `Log::info()` for anything worth recording.
 `Test.php` carries its own copy of this method — a deliberate duplicate, since
 it does not extend `BaseCommand`.
 
+**Laravel Zero's scheduler is not used to run anything** — cron drives the
+commands directly (see the README). `schedule:run` fatals on any due command
+because `Illuminate\Console\Scheduling\Event` resolves `Log\Context\Repository`,
+which needs a trait from the uninstalled `illuminate/queue`. The `schedule()`
+methods stay because `schedule:list` still works and documents the intended
+times. Never add `setAliases()` to a scheduled command: it registers one event
+per alias.
+
 **Scheduling** is spread by offset, not hardcoded times. Each command returns
 `scheduleOffset()` in hours (database 0, files 1, cloud 2, sync 3, clean 4) and
 `getScheduleTime()` adds it to `backup.schedule_start` (default 03:00). Adding a

@@ -70,11 +70,13 @@ setting; where that is the case it is noted.
 - Backups are never verified or test-restored, and `wback` has no restore
   command. Restoring is `gunzip | mysql` and `unzip`, by hand.
 
-**The schedule is the only coordination.**
+**One run at a time, spaced an hour apart.**
 
-- Each stage is given an hour, and `cloud` copies whatever is in the backup
-  directory when it starts. A `files` run that overruns its hour is uploaded
-  half-written — there is no locking or completion check between stages.
+- Each stage is given an hour, and only one backup command runs at a time. A
+  stage that overruns holds the next one off until the following night rather
+  than running alongside it, so `cloud` cannot upload a half-written archive.
+- That makes the lock a single point of contention by design: a site large
+  enough to take all night stops the stages behind it from running at all.
 - Backup files are created with mode 0660, so access is controlled by the
   backup user's group.
 
@@ -140,6 +142,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `BACKUP_SYNC_BACKUP_DIR` | — | keep replaced files under this directory instead of deleting |
 | `BACKUP_SYNC_OPTIONS` | — | extra rclone options for `sync`, inserted as written |
 | `SCHEDULE_START` | `3` | hour the nightly run begins |
+| `BACKUP_LOCK_FILE` | `<destination>/.wback.lock` | lock keeping two runs off each other |
 | `LARAVEL_STORAGE_PATH` | working directory | storage path, PHAR only |
 | `LOG_CHANNEL` | `stack` | `single`, `daily`, `slack`, `syslog`, `stack`, … |
 | `LOG_STACK` | `null` | channels in the stack, comma separated |
@@ -365,19 +368,54 @@ order they depend on each other: `database`, `files`, `cloud`, `sync`, `clean`.
 With the default start of 3, the nightly run is 03:00 to 07:00. The hours wrap
 around midnight, so a late start time is fine.
 
-Each scheduled command runs with `--quiet --all`, so only errors are printed and
-cron mails you nothing on a clean night.
-
-Driving it needs one cron entry, per Laravel's scheduler:
+Run each with `--quiet --all`, so only errors are printed and cron mails you
+nothing on a clean night:
 
 ```cron
 # /etc/cron.d/wback  (no dot in the filename, or run-parts ignores it)
-* * * * * backup cd /srv/backup && /usr/local/bin/wback schedule:run
+0 3 * * * backup cd /srv/backup && /usr/local/bin/wback database --quiet --all
+0 4 * * * backup cd /srv/backup && /usr/local/bin/wback files --quiet --all
+0 5 * * * backup cd /srv/backup && /usr/local/bin/wback cloud --quiet --all
+0 6 * * * backup cd /srv/backup && /usr/local/bin/wback sync --quiet --all
+0 7 * * * backup cd /srv/backup && /usr/local/bin/wback clean --quiet --all
 ```
 
 The `cd` matters: it fixes the storage path, and so where the backups land.
 
-Use `php wback schedule:list` to see the resolved times.
+**Drive cron at the commands, not at `schedule:run`.** Laravel Zero's scheduler
+is not usable here: running a due command dies with `Trait
+"Illuminate\Queue\SerializesModels" not found`, because the scheduler resolves
+`Illuminate\Log\Context\Repository` and that trait lives in `illuminate/queue`,
+which a console application does not install. Nothing announces this — with
+nothing due, `schedule:run` prints "No scheduled commands are ready to run" and
+exits 0 — so the failure looks like backups quietly not happening. (Aliasing a
+command is separately unwise: `setAliases()` registers the command once per
+alias, so a scheduled backup runs twice.)
+
+`php wback schedule:list` does work, and prints the times the offsets resolve to
+for your `SCHEDULE_START` — which is where the hours above come from.
+
+### One run at a time
+
+Every backup command takes a single exclusive lock for as long as it runs, so
+the stages can never overlap: a `files` backup that runs past its hour holds
+`cloud` off rather than having it upload an archive that is still being written.
+A command that finds the lock held reports what holds it and exits non-zero:
+
+```
+Another backup is still running [pid 1116187, files, started 2026-08-13 15:25:11] - skipping this run
+```
+
+That is deliberately an error rather than a quiet skip — a stage that keeps
+colliding with the one before it is worth hearing about. Dry runs ignore the lock
+entirely, since they change nothing.
+
+The lock file lives at the root of the backup destination, the one directory this
+tool can always write to, and is called `.wback.lock`. It sits outside every
+site's directory, so `cloud` never uploads it and `clean` never expires it. Point
+`BACKUP_LOCK_FILE` at an absolute path — `/run/lock/wback.lock`, say — to put it
+elsewhere; do that if your backup destination is a network filesystem, where file
+locking is best avoided.
 
 ## Logging
 

@@ -45,6 +45,16 @@ return [
     ],
 
     /**
+     * Lock file keeping two backup runs off each other
+     *
+     * One lock covers every backup command, so a stage that overruns holds the next one
+     * off rather than running over the top of it. Defaults to the root of the backup
+     * destination, which is somewhere this tool can always write - set an absolute path
+     * to put it somewhere else, /run/lock/wback.lock say.
+     */
+    'lock_file' => env('BACKUP_LOCK_FILE', ''),
+
+    /**
      * Shell used to run commands containing a pipe
      *
      * A plain shell reports the exit status of the last command in a pipeline, which

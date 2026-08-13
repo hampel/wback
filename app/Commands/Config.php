@@ -64,6 +64,7 @@ class Config extends Command
             'Keep Only Days' => config('backup.keeponly_days'),
             'Keep Least Days' => config('backup.keepleast_days'),
             'Schedule Start' => config('backup.schedule_start'),
+            'Lock File' => config('backup.lock_file') ?: 'backup destination',
         ]);
 
         static::addToSection('Filesystems', fn () => [

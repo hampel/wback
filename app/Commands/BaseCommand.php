@@ -15,18 +15,47 @@ use Yosymfony\Toml\Toml;
 abstract class BaseCommand extends Command
 {
     /**
+     * Handle on the lock file held for the duration of the run
+     *
+     * @var resource|null
+     */
+    protected $lock = null;
+
+    /**
      * Execute the console command.
      *
      * @return mixed
      */
     public function handle()
     {
- 	    $site = $this->argument('site');
-
 		if ($this->option('dry-run'))
 		{
 			$this->comment("Dry run only - no action will be taken");
 		}
+
+        if (!$this->acquireLock())
+        {
+            return Command::FAILURE;
+        }
+
+        try
+        {
+            return $this->process();
+        }
+        finally
+        {
+            $this->releaseLock();
+        }
+    }
+
+    /**
+     * Work through the sites this command was asked to process
+     *
+     * @return int exit code
+     */
+    protected function process()
+    {
+ 	    $site = $this->argument('site');
 
         try
         {
@@ -96,6 +125,84 @@ abstract class BaseCommand extends Command
         $this->call('app:sites');
 
         return Command::FAILURE;
+    }
+
+    /**
+     * Take the lock that keeps two backup runs off each other
+     *
+     * The commands are driven one after another from cron, an hour apart, and that
+     * spacing is the only thing sequencing them - a files backup that overruns its hour
+     * would otherwise have the cloud copy uploading an archive still being written. One
+     * lock covers every backup command, so a stage that is still going holds the next
+     * one off until the following night rather than running over the top of it.
+     *
+     * @return bool false if another run holds the lock
+     */
+    protected function acquireLock() : bool
+    {
+        // a dry run changes nothing, so there is nothing to hold anyone off
+        if ($this->option('dry-run'))
+        {
+            return true;
+        }
+
+        $path = $this->getLockPath();
+
+        File::ensureDirectoryExists(dirname($path));
+
+        $lock = fopen($path, 'c');
+
+        if ($lock === false)
+        {
+            $this->log('error', "Could not open lock file [{$path}]", "Could not open lock file", compact('path'));
+            return false;
+        }
+
+        if (!flock($lock, LOCK_EX | LOCK_NB))
+        {
+            $holder = trim((string) file_get_contents($path));
+
+            $this->log(
+                'error',
+                "Another backup is still running [{$holder}] - skipping this run",
+                "Another backup is still running - skipping this run",
+                ['holder' => $holder, 'lock' => $path]
+            );
+
+            fclose($lock);
+            return false;
+        }
+
+        // leave enough behind to say what is holding it, for whoever gets skipped
+        ftruncate($lock, 0);
+        fwrite($lock, sprintf(
+            "pid %d, %s, started %s",
+            getmypid(),
+            $this->getName(),
+            Carbon::now(new \DateTimeZone(config('app.timezone')))->toDateTimeString()
+        ));
+        fflush($lock);
+
+        $this->lock = $lock;
+
+        return true;
+    }
+
+    protected function releaseLock() : void
+    {
+        if (is_resource($this->lock))
+        {
+            fclose($this->lock);
+
+            $this->lock = null;
+        }
+    }
+
+    protected function getLockPath() : string
+    {
+        $path = config('backup.lock_file');
+
+        return empty($path) ? Storage::disk('backup')->path('.wback.lock') : $path;
     }
 
     /**
