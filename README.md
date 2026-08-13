@@ -124,6 +124,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `FILES_ROOT` | `/srv/www` | where site files are looked for |
 | `BACKUP_DEST_PATH` | `<storage>/backup` | where backups are written |
 | `BACKUP_KEEPONLY_DAYS` | `7` | how long `clean` keeps local backups |
+| `BACKUP_KEEPLEAST_DAYS` | `3` | days of backups `clean` keeps whatever their age |
 | `BACKUP_MYSQLDUMP_PATH` | `/usr/bin/mysqldump` | |
 | `BACKUP_DEFAULT_CHARSET` | `utf8mb4` | dump charset; blank omits the option |
 | `BACKUP_MYSQLDUMP_HEXBLOB` | `true` | dump blobs as hex, for portable restores |
@@ -311,6 +312,19 @@ leans on.
 Deletes anything older than `BACKUP_KEEPONLY_DAYS` from each site's `files` and
 `database` directories. Only those two directories are touched, and only
 locally.
+
+Underneath that sits a floor: the most recent `BACKUP_KEEPLEAST_DAYS` days of
+backups are kept whatever their age. Age on its own eventually leaves nothing —
+a fault that stops backups for longer than the retention period expires the last
+good ones along with the rest, and you find out when you need them. The floor
+only ever *prevents* a deletion, so it can never remove something age would have
+kept.
+
+It counts days rather than files, so several snapshots taken in one afternoon are
+one day of cover rather than several — worth knowing if you take extra snapshots
+while working on a site. It applies per site and per backup type, so a site whose
+files keep backing up while its database quietly fails still holds on to the last
+database dumps that worked. Set it to 0 to expire strictly by age.
 
 ### Dry runs
 

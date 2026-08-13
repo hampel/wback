@@ -4,6 +4,7 @@ namespace App\Commands;
 
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class Clean extends BaseCommand
@@ -54,13 +55,57 @@ class Clean extends BaseCommand
 
         $cutoff = Carbon::now()->subDays(config('backup.keeponly_days', 7))->timestamp;
 
-        collect(Storage::disk('backup')->allFiles($path))
-            ->reject(function ($path) use ($cutoff) {
-                return Storage::disk('backup')->lastModified($path) > $cutoff;
+        $modified = collect(Storage::disk('backup')->allFiles($path))
+            ->mapWithKeys(function ($path) {
+                return [$path => Storage::disk('backup')->lastModified($path)];
+            });
+
+        $keep = $this->protectedDates($modified);
+
+        $modified
+            ->reject(function ($timestamp) use ($cutoff) {
+                return $timestamp > $cutoff;
             })
-            ->each(function ($path) {
+            ->reject(function ($timestamp) use ($keep) {
+                return $keep->contains($this->backupDate($timestamp));
+            })
+            ->each(function ($timestamp, $path) {
                 $this->deleteFile($path);
             });
+    }
+
+    /**
+     * The days whose backups are kept whatever their age
+     *
+     * Age on its own eventually leaves nothing at all: a run of failures lasting longer
+     * than the retention period expires the last good backups along with the rest. The
+     * most recent days are held back from that, counted in days rather than files so
+     * that several snapshots taken in one afternoon are one day of cover, not several.
+     *
+     * @param Collection $modified backup file path => modification timestamp
+     * @return Collection dates in Y-m-d form, newest first
+     */
+    protected function protectedDates(Collection $modified) : Collection
+    {
+        $keep = (int) config('backup.keepleast_days');
+
+        if ($keep < 1)
+        {
+            return collect();
+        }
+
+        return $modified->map(function ($timestamp) {
+                return $this->backupDate($timestamp);
+            })
+            ->unique()
+            ->sortDesc()
+            ->take($keep)
+            ->values();
+    }
+
+    protected function backupDate(int $timestamp) : string
+    {
+        return Carbon::createFromTimestamp($timestamp, config('app.timezone'))->toDateString();
     }
 
     protected function deleteFile(string $path) : void

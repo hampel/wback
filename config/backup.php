@@ -112,6 +112,17 @@ return [
     'keeponly_days' => env('BACKUP_KEEPONLY_DAYS', 7),
 
     /**
+     * Days of backups kept whatever their age
+     *
+     * A floor under the retention period above, so that a run of failures lasting longer
+     * than it does not expire the last backups that worked. Counted in days rather than
+     * files, so several snapshots taken in one day are one day of cover.
+     *
+     * Set to 0 to expire strictly by age.
+     */
+    'keepleast_days' => env('BACKUP_KEEPLEAST_DAYS', 3),
+
+    /**
      * Schedule start time - scheduled commands will run based on offset specified for each command starting at this time in local timezone
      */
     'schedule_start' => env('SCHEDULE_START', 3),

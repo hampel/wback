@@ -34,6 +34,7 @@ uses(Tests\TestCase::class)
             'backup.rclone.sync_allow_empty' => false,
             'backup.rclone.sync_backup_dir' => '',
             'backup.keeponly_days' => 7,
+            'backup.keepleast_days' => 3,
             'backup.schedule_start' => 3,
         ]);
 

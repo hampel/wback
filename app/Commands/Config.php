@@ -62,6 +62,7 @@ class Config extends Command
             'rclone Sync Allow Empty' => config('backup.rclone.sync_allow_empty') ? 'true' : 'false',
             'rclone Sync Backup Dir' => config('backup.rclone.sync_backup_dir'),
             'Keep Only Days' => config('backup.keeponly_days'),
+            'Keep Least Days' => config('backup.keepleast_days'),
             'Schedule Start' => config('backup.schedule_start'),
         ]);
 
