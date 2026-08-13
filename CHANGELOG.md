@@ -6,7 +6,7 @@ only.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [7.2.0] - 2026-08-14
 
 ### Added
 
@@ -34,6 +34,14 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 - `LARAVEL_STORAGE_PATH` now works when set in the environment file. It was read
   before the file was loaded, so it only ever worked as a real environment
   variable.
+
+### Documentation
+
+- `mariadb-dump` works as the dump binary; MariaDB 11 renamed its clients and
+  keeps `mysqldump` as a symlink.
+- Corrected what the working directory decides: the storage path is only ever a
+  default for the sites file, the backup destination and the log, so setting
+  those absolutely makes the working directory irrelevant.
 
 ### Upgrading
 
