@@ -73,6 +73,41 @@ it('carries on after a stage fails, and fails the run', function () {
     expect(collect(ranCommands())->contains(fn ($command) => str_contains($command, 'zip')))->toBeTrue();
 });
 
+it('skips the stages it is told to', function () {
+    // a server still being built has no remotes yet, and every site would otherwise
+    // fail the cloud stage for want of one
+    $this->artisan('cron', ['--no-cloud' => true, '--no-sync' => true])
+        ->expectsOutputToContain('Skipping [cloud]')
+        ->expectsOutputToContain('Skipping [sync]')
+        ->assertSuccessful();
+
+    $ran = ranCommands();
+
+    expect($ran)->toHaveCount(2)
+        ->and($ran[0])->toContain('mysqldump')
+        ->and($ran[1])->toContain('zip');
+});
+
+it('still fails a stage that is meant to run but cannot', function () {
+    config()->set('backup.rclone.cloud_remote', null);
+
+    $this->artisan('cron', ['--no-sync' => true])
+        ->expectsOutputToContain('rclone remote cloud destination not specified in config')
+        ->assertFailed();
+});
+
+it('can be told to skip everything', function () {
+    $this->artisan('cron', [
+        '--no-database' => true,
+        '--no-files' => true,
+        '--no-cloud' => true,
+        '--no-sync' => true,
+        '--no-clean' => true,
+    ])->assertSuccessful();
+
+    expect(ranCommands())->toBeEmpty();
+});
+
 it('passes a dry run down to every stage', function () {
     $this->artisan('cron', ['--dry-run' => true])
         ->expectsOutputToContain('Dry run only - no action will be taken')

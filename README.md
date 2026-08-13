@@ -488,6 +488,20 @@ The stages run in the order they depend on each other — `database`, `files`,
 finished. A stage that fails does not stop the ones after it, and the command
 exits non-zero if any of them failed.
 
+Each stage can be turned off: `--no-database`, `--no-files`, `--no-cloud`,
+`--no-sync`, `--no-clean`. That is how to back up locally on a machine whose
+cloud credentials are not wired up yet, or on one that is never going to have
+any:
+
+```bash
+wback cron --quiet --no-cloud --no-sync
+```
+
+A stage that *is* meant to run and cannot still fails the run — a missing
+`BACKUP_CLOUD_REMOTE` is an error, not a hint to skip the upload, because a
+deployment that lost its configuration looks exactly like one that never had any
+and only you know which it is. Skipped stages say so in the log.
+
 You can still drive the commands individually if you want them spread across the
 night, but then the spacing is a guess about how long each takes, and two of them
 running at once is prevented by the lock rather than by the timing:

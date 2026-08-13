@@ -17,6 +17,11 @@ class Cron extends Command
      */
     protected $signature = 'cron
                                 {--d|dry-run : Do everything except the actual backup}
+                                {--no-database : Skip the database backups}
+                                {--no-files : Skip the file backups}
+                                {--no-cloud : Skip copying backups to cloud storage}
+                                {--no-sync : Skip syncing live directories to cloud storage}
+                                {--no-clean : Skip expiring old backups}
                            ';
 
     /**
@@ -88,6 +93,20 @@ class Cron extends Command
 
         foreach ($this->stages as $stage)
         {
+            // a stage nobody has configured yet - cloud storage on a server still being
+            // built, say - would otherwise fail every site for want of a remote
+            if ($this->option("no-{$stage}"))
+            {
+                $this->log(
+                    'notice',
+                    "Skipping [{$stage}]",
+                    "Skipping backup stage",
+                    ['stage' => $stage]
+                );
+
+                continue;
+            }
+
             $this->section($stage);
 
             // a stage that fails does not stop the ones after it: a database that will

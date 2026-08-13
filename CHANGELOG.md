@@ -10,6 +10,10 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `cron` can skip individual stages: `--no-database`, `--no-files`, `--no-cloud`,
+  `--no-sync`, `--no-clean`. For backing up locally on a machine whose cloud
+  credentials are not configured yet, or never will be. A stage that is meant to
+  run and cannot still fails the run.
 - The environment file can live somewhere other than beside the binary: at
   `/etc/wback/.env`, or wherever `WBACK_ENV` points. A binary on the path can now
   take its configuration from `/etc/wback` and be run from anywhere.
