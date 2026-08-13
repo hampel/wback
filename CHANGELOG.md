@@ -6,6 +6,15 @@ only.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Upgraded to Laravel Zero 13 (Laravel components 13.x), which raises the minimum
+  PHP version to **8.3**. Nothing in the application changed: the suite passes
+  untouched, and a compiled binary still reads `APP_TIMEZONE` from the `.env`
+  beside it.
+
 ## [7.0.0] - 2026-08-13
 
 A release about trusting the backups: several ways they could fail quietly are
