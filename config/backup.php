@@ -17,7 +17,7 @@ return [
      *
      * AppServiceProvider applies it over app.timezone as the application boots.
      */
-    'timezone' => env('APP_TIMEZONE', 'Australia/Sydney'),
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
 	/**
 	 * MySQL dump configuration

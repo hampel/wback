@@ -58,7 +58,7 @@ return [
      * file in as literals, so an env() call here would be frozen at build time. Change
      * the timezone with APP_TIMEZONE, or the default in config/backup.php.
      */
-    'timezone' => 'Australia/Sydney',
+    'timezone' => 'UTC',
 
     /*
     |--------------------------------------------------------------------------

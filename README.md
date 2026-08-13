@@ -174,7 +174,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | variable | default | purpose |
 |---|---|---|
 | `SITES_TOML_PATH` | `<storage>/wback.toml` | the site inventory |
-| `APP_TIMEZONE` | `Australia/Sydney` | timezone for datestamps and reporting |
+| `APP_TIMEZONE` | `UTC` | timezone for datestamps and reporting |
 | `FILES_ROOT` | `/srv/www` | where site files are looked for |
 | `BACKUP_DEST_PATH` | `<storage>/backup` | where backups are written |
 | `BACKUP_KEEPONLY_DAYS` | `7` | how long `clean` keeps local backups |
@@ -462,7 +462,8 @@ It exits non-zero if anything failed, so it works as a post-deploy check.
 Files are named for the site's short name and the date. A second run on the same
 day does not overwrite the first — it appends a counter, `example.20260813-2.zip`.
 
-Datestamps use `APP_TIMEZONE`, which defaults to `Australia/Sydney`.
+Datestamps use `APP_TIMEZONE`, which defaults to `UTC`. Set it to the timezone
+the backup window is expressed in, or dates will move when your clocks do.
 
 That setting lives in `config/backup.php`, not `config/app.php`, and the reason is
 worth knowing if you ever add another one: `app:build` **evaluates

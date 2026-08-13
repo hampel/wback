@@ -19,7 +19,7 @@ uses(Tests\TestCase::class)
     ->beforeEach(function () {
         config()->set([
             'logging.default' => 'null',
-            'backup.timezone' => 'Australia/Sydney',
+            'backup.timezone' => 'UTC',
             'backup.mysql.dump_binary' => '/usr/bin/mysqldump',
             'backup.mysql.default_charset' => 'utf8mb4',
             'backup.mysql.hexblob' => true,

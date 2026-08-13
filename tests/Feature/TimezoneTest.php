@@ -23,8 +23,8 @@ it('applies the configured timezone to the application', function () {
 it('falls back to the configured default', function () {
     $this->refreshApplication();
 
-    expect(config('app.timezone'))->toBe('Australia/Sydney')
-        ->and(date_default_timezone_get())->toBe('Australia/Sydney');
+    expect(config('app.timezone'))->toBe('UTC')
+        ->and(date_default_timezone_get())->toBe('UTC');
 });
 
 it('datestamps backup filenames in that timezone', function () {

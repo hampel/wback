@@ -20,6 +20,13 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   take its configuration from `/etc/wback` and be run from anywhere.
 - `app:config` reports which environment file was read.
 
+### Changed
+
+- **The default timezone is now `UTC`**, where it was `Australia/Sydney` — a
+  default inherited from the machine this was written on rather than one that
+  suits anybody else. Set `APP_TIMEZONE` to keep the old behaviour; see
+  _Upgrading_.
+
 ### Fixed
 
 - `app:validate` reports the error from a failed command rather than a warning
@@ -27,6 +34,15 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 - `LARAVEL_STORAGE_PATH` now works when set in the environment file. It was read
   before the file was loaded, so it only ever worked as a real environment
   variable.
+
+### Upgrading
+
+- **Set `APP_TIMEZONE` before upgrading if you were relying on the old default.**
+  Datestamps in backup filenames follow this setting, so a site backing up at
+  3am in Sydney will start naming its files with the previous day's date under
+  UTC. Existing backups are not touched, and `clean` expires by modification
+  time rather than by the name, so nothing is lost either way — but the names
+  will step back a day at the changeover.
 
 ## [7.1.0] - 2026-08-13
 
