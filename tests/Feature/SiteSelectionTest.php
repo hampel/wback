@@ -65,7 +65,7 @@ it('fails when a site has no domain', function () {
         ->assertFailed();
 });
 
-it('abandons the remaining sites when one of them fails', function () {
+it('keeps going after a broken site, and still fails the run', function () {
     useSites(<<<'TOML'
         [broken]
         database = 'broken'
@@ -78,7 +78,27 @@ it('abandons the remaining sites when one of them fails', function () {
         ->expectsOutputToContain('No domain specified for broken')
         ->assertFailed();
 
-    Process::assertNothingRan();
+    Process::assertRan(fn ($process) => str_contains($process->command, '--hex-blob healthy |'));
+});
+
+it('keeps going after a backup command fails, and still fails the run', function () {
+    // a closure handler replaces the catch-all fake, which would otherwise
+    // match first and hand back a successful result
+    Process::fake(fn ($process) => str_contains($process->command, '--hex-blob broken')
+        ? Process::result(errorOutput: 'mysqldump: unknown database', exitCode: 1)
+        : Process::result());
+
+    useSites(<<<'TOML'
+        [broken]
+        domain = 'broken.example.com'
+
+        [healthy]
+        domain = 'healthy.example.com'
+        TOML);
+
+    $this->artisan('database', ['--all' => true])->assertFailed();
+
+    Process::assertRan(fn ($process) => str_contains($process->command, '--hex-blob healthy |'));
 });
 
 it('fails when the sites file does not exist', function () {

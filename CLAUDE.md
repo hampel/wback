@@ -72,7 +72,10 @@ either one site or all of them, require a `domain` key, and call the subclass's
 `handleSite(array $site, string $name)`. `Database`, `Files`, `Cloud`, `Sync`
 and `Clean` implement only `handleSite()` and `scheduleOffset()`. Throwing
 `\RuntimeException` from `handleSite()` is the idiomatic way to fail a site —
-`handle()` catches it, logs it, and returns FAILURE.
+`runSite()` catches it per site, logs it, and carries on to the next one, so a
+`--all` run still exits FAILURE but backs up everything it can. A failed
+external command arrives the same way, since Illuminate's
+`ProcessFailedException` extends `RuntimeException`.
 
 `Sites`, `Config` and `Test` extend Laravel Zero's `Command` directly and are
 namespaced `app:` to keep the backup verbs at the top level.

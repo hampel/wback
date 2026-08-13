@@ -45,38 +45,33 @@ abstract class BaseCommand extends Command
             return Command::FAILURE;
         }
 
-        try {
-            if (!empty($site)) {
-                $config = $sites[$site] ?? null;
-                if (empty($config)) {
-                    $this->log(
-                        'error',
-                        "Could not find definition for site: {$site}",
-                        "Could not find definition for site",
-                        ['site' => $site]
-                    );
-                    return Command::FAILURE;
-                }
-
-                $this->processSite($config, $site);
-
-                return Command::SUCCESS;
+        if (!empty($site)) {
+            $config = $sites[$site] ?? null;
+            if (empty($config)) {
+                $this->log(
+                    'error',
+                    "Could not find definition for site: {$site}",
+                    "Could not find definition for site",
+                    ['site' => $site]
+                );
+                return Command::FAILURE;
             }
 
-            if ($this->option('all')) {
-                foreach ($sites as $name => $config) {
-                    $this->section($name);
-
-                    $this->processSite($config, $name);
-                }
-
-                return Command::SUCCESS;
-            }
+            return $this->runSite($config, $site) ? Command::SUCCESS : Command::FAILURE;
         }
-        catch (\RuntimeException $e)
-        {
-            $this->log('error', $e->getMessage());
-            return Command::FAILURE;
+
+        if ($this->option('all')) {
+            $failed = false;
+
+            foreach ($sites as $name => $config) {
+                $this->section($name);
+
+                if (!$this->runSite($config, $name)) {
+                    $failed = true;
+                }
+            }
+
+            return $failed ? Command::FAILURE : Command::SUCCESS;
         }
 
         // nothing to do - show usage information and return failure
@@ -92,6 +87,29 @@ abstract class BaseCommand extends Command
         $this->call('app:sites');
 
         return Command::FAILURE;
+    }
+
+    /**
+     * Process a single site, reporting rather than propagating a failure so that
+     * one broken site does not stop the rest of the sites being backed up
+     *
+     * @param array $site site config from toml
+     * @param string $name site short name
+     * @return bool false if the site failed
+     */
+    protected function runSite(array $site, string $name) : bool
+    {
+        try
+        {
+            $this->processSite($site, $name);
+        }
+        catch (\RuntimeException $e)
+        {
+            $this->log('error', $e->getMessage());
+            return false;
+        }
+
+        return true;
     }
 
     protected function processSite(array $site, string $name) : void
