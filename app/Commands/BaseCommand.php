@@ -189,7 +189,8 @@ abstract class BaseCommand extends Command
      */
     protected function getDestinationFile(array $site, string $name, string $type, string $suffix) : string
     {
-        $basePath = $this->getDestinationPath($site, $name, $type);
+        // a dry run reports where the backup would go without building the tree to put it in
+        $basePath = $this->getDestinationPath($site, $name, $type, !$this->option('dry-run'));
 
     	$filenameBase = "{$name}." . Carbon::today(new \DateTimeZone(config('app.timezone')))->format("Ymd");
 
@@ -264,6 +265,11 @@ abstract class BaseCommand extends Command
             throw $e;
         }
 
+        if ($this->option('dry-run'))
+        {
+            return;
+        }
+
         $this->chmod($outputPath);
     }
 
@@ -309,7 +315,7 @@ abstract class BaseCommand extends Command
     {
     	if (!File::exists($path))
 	    {
-	    	$this->log('warning', "Path does not exist when changing permissions [{$path}]", "Path does exist when changing permissions", compact('path'));
+	    	$this->log('warning', "Path does not exist when changing permissions [{$path}]", "Path does not exist when changing permissions", compact('path'));
 	    	return;
 	    }
 

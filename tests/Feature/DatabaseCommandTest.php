@@ -312,7 +312,19 @@ it('runs nothing on a dry run', function () {
 
     $this->artisan('database', ['site' => 'example', '--dry-run' => true])
         ->expectsOutputToContain('Dry run only - no action will be taken')
+        ->doesntExpectOutputToContain('Path does not exist when changing permissions')
         ->assertSuccessful();
 
     Process::assertNothingRan();
+});
+
+it('creates nothing on a dry run', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example', '--dry-run' => true])->assertSuccessful();
+
+    expect(Storage::disk('backup')->exists('example.com'))->toBeFalse();
 });
