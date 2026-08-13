@@ -2,7 +2,7 @@
 
 Website backup for a server hosting many sites. Each site is an entry in a TOML
 inventory; `wback` dumps its database, archives its files, ships the results to
-cloud storage and expires the old ones.
+cloud storage and expires the old backup files.
 
 It is a thin, well-behaved wrapper: every backup is performed by `mysqldump`,
 `gzip`, `zip` or `rclone`, and every command can be run against a single site or
@@ -26,11 +26,10 @@ setting; where that is the case it is noted.
 - `mysqldump` is passed no username or password, so the user running `wback`
   needs credentials of its own — socket authentication, or a `~/.my.cnf`. The
   same applies under cron, where the user is often not the one you tested as.
-- A remote database is reached with `-h` only. There is no port setting, so it
-  must be listening on the default port.
+- A remote database is reached over TCP with `hostname` and, if it is not on the
+  default port, `port`. There is no socket path setting.
 - `rclone` reads its own configuration, and `wback` passes no `--config`, so the
   remotes must be configured for the user running the backup.
-- MySQL or MariaDB only, one database per site, dumped by `mysqldump`.
 - Dumps come from an InnoDB snapshot by default, so anything important held in
   MyISAM or MEMORY tables needs `single_transaction = false` for that site — see
   [Large databases](#large-databases).
@@ -219,6 +218,7 @@ domain = 'shop.example.com'
 database = 'shop_prod'
 charset = 'latin1'
 hostname = 'db.internal'
+port = 3307
 files = '/srv/apps/shop/public'
 exclude = [
     'data/tmp/*',
@@ -238,7 +238,8 @@ files = ''
 | `domain` | *required* | names the backup directory for the site |
 | `database` | the short name | set to `''` to skip the database entirely |
 | `charset` | `BACKUP_DEFAULT_CHARSET` | passed as `--default-character-set` |
-| `hostname` | local socket | database host; passed as `-h`, so a remote server must be on the default port |
+| `hostname` | local socket | database host, passed as `-h` |
+| `port` | mysqldump's default | database port, passed as `-P`; only meaningful with `hostname` |
 | `verify` | `BACKUP_MYSQLDUMP_VERIFY` | read the dump back and check it is complete |
 | `single_transaction` | `BACKUP_MYSQLDUMP_SINGLE_TRANSACTION` | snapshot rather than lock; see below |
 | `options` | `BACKUP_MYSQLDUMP_OPTIONS` | extra mysqldump options, replacing the global ones |

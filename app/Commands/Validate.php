@@ -268,11 +268,12 @@ class Validate extends Command
 
         $mysqldump = config('backup.mysql.dump_binary');
         $hostname = isset($site['hostname']) ? " -h" . escapeshellarg($site['hostname']) : '';
+        $port = isset($site['port']) ? " -P" . escapeshellarg((string) $site['port']) : '';
 
         $options = $site['options'] ?? config('backup.mysql.options');
         $options = empty($options) ? '' : " {$options}";
 
-        $cmd = "{$mysqldump} --no-data --skip-lock-tables{$hostname}{$options} "
+        $cmd = "{$mysqldump} --no-data --skip-lock-tables{$hostname}{$port}{$options} "
             . escapeshellarg($database) . " > /dev/null";
 
         $result = Process::timeout(60)->run($cmd);
@@ -375,17 +376,29 @@ class Validate extends Command
         $this->line(sprintf('  %s %-24s %s', $marker, $label, $detail));
     }
 
+    /**
+     * The line worth reporting from a command that failed
+     *
+     * Tools warn before they fail - mysqldump leads with a note about ssl verification
+     * before telling you the connection was refused - so the first line of the output is
+     * often not the reason for the failure.
+     *
+     * @param string $output output of a failed command
+     * @return string the first line that is not a warning, if there is one
+     */
     protected function firstLine(string $output) : string
     {
-        foreach (explode("\n", $output) as $line)
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $output)), fn ($line) => $line !== ''));
+
+        foreach ($lines as $line)
         {
-            if (trim($line) !== '')
+            if (!preg_match('/^warning\b/i', $line))
             {
-                return trim($line);
+                return $line;
             }
         }
 
-        return '(no output)';
+        return $lines[0] ?? '(no output)';
     }
 
     /**

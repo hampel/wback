@@ -48,6 +48,32 @@ it('checks the database without moving any data', function () {
         && str_contains($process->command, "'example'"));
 });
 
+it('reports the error rather than a warning that came before it', function () {
+    // mysqldump leads with a note about ssl verification before saying it could not
+    // connect at all, and the second line is the one worth printing
+    Process::fake(fn ($process) => str_contains($process->command, '--no-data')
+        ? Process::result(errorOutput: "WARNING: option --ssl-verify-server-cert is disabled\n"
+            . "mysqldump: Got error: 1698: \"Access denied for user\" when trying to connect", exitCode: 2)
+        : Process::result());
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('Access denied for user')
+        ->assertFailed();
+});
+
+it('checks a remote database on the port the site sets', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        hostname = 'db.internal'
+        port = 3307
+        TOML);
+
+    $this->artisan('app:validate')->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains($process->command, "--no-data --skip-lock-tables -h'db.internal' -P'3307'"));
+});
+
 it('reports a missing sites file', function () {
     config()->set('backup.sites_path', '/does/not/exist/wback.toml');
 

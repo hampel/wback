@@ -10,6 +10,7 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A `port` key for sites whose database is not on the default port.
 - `cron` can skip individual stages: `--no-database`, `--no-files`, `--no-cloud`,
   `--no-sync`, `--no-clean`. For backing up locally on a machine whose cloud
   credentials are not configured yet, or never will be. A stage that is meant to
@@ -21,6 +22,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `app:validate` reports the error from a failed command rather than a warning
+  printed ahead of it, which was hiding the reason for the failure.
 - `LARAVEL_STORAGE_PATH` now works when set in the environment file. It was read
   before the file was loaded, so it only ever worked as a real environment
   variable.

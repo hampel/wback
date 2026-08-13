@@ -109,6 +109,31 @@ it('passes a remote hostname to mysqldump', function () {
     Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), "-h'db.internal' "));
 });
 
+it('passes a port to mysqldump', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        hostname = 'db.internal'
+        port = 3307
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), "-h'db.internal' -P'3307'"));
+});
+
+it('leaves the port out when the site does not set one', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        hostname = 'db.internal'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => ! str_contains(shellCommand($process->command), ' -P'));
+});
+
 it('dumps from a snapshot rather than locking the tables', function () {
     useSites(<<<'TOML'
         [example]

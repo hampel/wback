@@ -6,7 +6,8 @@
 # domain = 'example.com'
 # database = 'example' # optional - leave blank to use the shortname as the database name. Use '' to not back up database
 # charset = 'utf8mb4' # optional - leave blank to use the default for mysqldump
-# hostname = 'db.internal' # optional - leave blank for a database on this machine. There is no port setting, so a remote server must be on the default port
+# hostname = 'db.internal' # optional - leave blank for a database on this machine
+# port = 3307 # optional - leave blank for the default port. Only meaningful alongside hostname, since a local connection goes over a socket
 # single_transaction = false # optional - overrides BACKUP_MYSQLDUMP_SINGLE_TRANSACTION. Turn off for a database with MyISAM tables holding data worth keeping
 # options = '--no-tablespaces' # optional - replaces BACKUP_MYSQLDUMP_OPTIONS for this site. Inserted into the command as written
 # verify = false # optional - overrides BACKUP_MYSQLDUMP_VERIFY. Turn off for a database dumped with --skip-comments or --compact

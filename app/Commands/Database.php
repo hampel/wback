@@ -61,6 +61,7 @@ class Database extends BaseCommand
         $snapshot = $snapshot ? ' --single-transaction' : '';
 
         $hostname = isset($site['hostname']) ? " -h" . escapeshellarg($site['hostname']) : '';
+        $port = isset($site['port']) ? " -P" . escapeshellarg((string) $site['port']) : '';
 
         // operator supplied, so inserted as written - see the note in .env.example
         $options = $site['options'] ?? config('backup.mysql.options');
@@ -69,7 +70,7 @@ class Database extends BaseCommand
         $gzip = config('backup.gzip_binary');
         $outputPath = Storage::disk('backup')->path($destination);
 
-        $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$snapshot}{$hostname}{$options} "
+        $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$snapshot}{$hostname}{$port}{$options} "
             . escapeshellarg($database)
             . " | {$gzip} -c -f > " . escapeshellarg($outputPath);
 
