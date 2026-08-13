@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`wback` is a website backup CLI built on Laravel Zero 12 (PHP 8.2+). It reads a
+`wback` is a website backup CLI built on Laravel Zero 13 (PHP 8.3+). It reads a
 TOML inventory of sites and, for each one, shells out to `mysqldump`, `zip` and
 `rclone` to produce and ship backups. It contains no backup logic of its own —
 every command builds a shell command string and runs it.

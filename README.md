@@ -10,7 +10,7 @@ all of them, for real or as a dry run.
 
 ## Requirements
 
-- PHP 8.2 or later, with the CLI SAPI
+- PHP 8.3 or later, with the CLI SAPI
 - `mysqldump` and `gzip` for database backups
 - `zip` for file backups
 - [rclone](https://rclone.org/) for cloud storage, with a configured remote
