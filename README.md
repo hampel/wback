@@ -82,18 +82,49 @@ setting; where that is the case it is noted.
 
 ## Installation
 
+### From a release
+
+Each release publishes a single-file executable on the
+[releases page](https://github.com/hampel/wback/releases). It carries everything
+but PHP itself, so a server needs nothing else installed — no composer, no
+vendor directory:
+
+```bash
+curl -L -o wback https://github.com/hampel/wback/releases/download/7.1.0/wback-7.1.0
+chmod +x wback
+sudo mv wback /usr/local/bin/wback
+```
+
+Each release also has a `SHA256SUMS` file, so the download can be checked before
+you trust it with your backups:
+
+```bash
+sha256sum -c SHA256SUMS
+```
+
+Which release you want depends on the PHP on the server: **7.1.0 and later need
+PHP 8.3**, and **7.0.0 runs on PHP 8.2**.
+
+Then put a `.env` beside the binary — see [Configuration](#configuration), and
+note that `.env` is read from the binary's directory while the storage path
+follows the working directory. `wback app:validate` will tell you whether the
+server can do what the configuration says.
+
+### From source
+
 ```bash
 composer install
 ```
 
-Run it from the source tree with `php wback <command>`, or build a single-file
-executable:
+Run it from the source tree with `php wback <command>`, or build the same
+single-file executable yourself:
 
 ```bash
 php wback app:build wback
 ```
 
-The result is `builds/wback`, which is the artefact to deploy to a server.
+The result is `builds/wback`. Building needs `phar.readonly=Off` in the CLI
+php.ini, or `php -d phar.readonly=0 wback app:build wback`.
 
 ## Configuration
 
