@@ -45,6 +45,29 @@ abstract class BaseCommand extends Command
             return Command::FAILURE;
         }
 
+        if ($this->option('all')) {
+            if (!empty($site)) {
+                $this->log(
+                    'notice',
+                    "Processing all sites - ignoring site argument [{$site}]",
+                    "Processing all sites - ignoring site argument",
+                    ['site' => $site]
+                );
+            }
+
+            $failed = false;
+
+            foreach ($sites as $name => $config) {
+                $this->section($name);
+
+                if (!$this->runSite($config, $name)) {
+                    $failed = true;
+                }
+            }
+
+            return $failed ? Command::FAILURE : Command::SUCCESS;
+        }
+
         if (!empty($site)) {
             $config = $sites[$site] ?? null;
             if (empty($config)) {
@@ -58,20 +81,6 @@ abstract class BaseCommand extends Command
             }
 
             return $this->runSite($config, $site) ? Command::SUCCESS : Command::FAILURE;
-        }
-
-        if ($this->option('all')) {
-            $failed = false;
-
-            foreach ($sites as $name => $config) {
-                $this->section($name);
-
-                if (!$this->runSite($config, $name)) {
-                    $failed = true;
-                }
-            }
-
-            return $failed ? Command::FAILURE : Command::SUCCESS;
         }
 
         // nothing to do - show usage information and return failure

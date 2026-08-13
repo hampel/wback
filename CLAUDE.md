@@ -32,7 +32,8 @@ vendor/bin/pest --filter='inspires'          # single test
 php wback app:build wback                # compile a PHAR into builds/ (box.json)
 ```
 
-`-a|--all` iterates every site; `-d|--dry-run` logs the command it would run
+`-a|--all` iterates every site and takes precedence over a site named on the
+command line; `-d|--dry-run` logs the command it would run
 without executing it. Passing neither a site nor `--all` prints usage plus the
 site list and exits FAILURE.
 

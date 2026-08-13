@@ -54,6 +54,22 @@ it('processes every configured site with --all', function () {
     Process::assertRanTimes(fn ($process) => str_contains($process->command, 'mysqldump'), 2);
 });
 
+it('lets --all override a site given as well', function () {
+    useSites(<<<'TOML'
+        [first]
+        domain = 'first.example.com'
+
+        [second]
+        domain = 'second.example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'first', '--all' => true])
+        ->expectsOutputToContain('ignoring site argument [first]')
+        ->assertSuccessful();
+
+    Process::assertRanTimes(fn ($process) => str_contains($process->command, 'mysqldump'), 2);
+});
+
 it('fails when a site has no domain', function () {
     useSites(<<<'TOML'
         [example]
