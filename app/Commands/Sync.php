@@ -86,7 +86,9 @@ class Sync extends BaseCommand
         $options = config('backup.rclone.sync_options');
         $options = empty($options) ? '' : " {$options}";
 
-        $cmd = "{$rclone}{$verbosity}{$dryrun}{$options} --progress sync{$this->archiveOption($site, $path)} "
+        $archive = $this->archiveOption($site, $path);
+
+        $cmd = "{$rclone}{$verbosity}{$dryrun}{$options} --progress sync{$archive} "
             . escapeshellarg($syncPath) . ' ' . escapeshellarg($remotePath);
 
         $this->log(
