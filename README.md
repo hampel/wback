@@ -138,7 +138,7 @@ common thing to get wrong when deploying:
 | | source checkout | built binary |
 |---|---|---|
 | `.env` | the project root | beside the binary, `WBACK_ENV`, or `/etc/wback/.env` |
-| storage path (default sites file, backup destination and log) | `./storage` | the **current working directory**, or `LARAVEL_STORAGE_PATH` |
+| storage path — only ever the *default* for the sites file, backup destination and log | `./storage` | the **current working directory**, or `LARAVEL_STORAGE_PATH` |
 
 Because the storage path follows the working directory, set `SITES_TOML_PATH`,
 `BACKUP_DEST_PATH` and `LOG_STORAGE_PATH` to absolute paths on a server rather
@@ -482,8 +482,14 @@ One entry, and `cron` runs every backup in turn:
 0 3 * * * backup_user cd /srv/backup && /usr/local/bin/wback cron --quiet
 ```
 
-The `cd` matters: it fixes the storage path, and so where the backups land.
 `--quiet` prints errors only, so cron mails you nothing on a clean night.
+
+The `cd` fixes the working directory, which is what the storage path follows in a
+built binary — and the storage path is only ever a *default*: for the sites file,
+the backup destination and the log. Set `SITES_TOML_PATH`, `BACKUP_DEST_PATH` and
+`LOG_STORAGE_PATH` to absolute paths and the working directory stops mattering
+entirely; leave any of them unset, or set to a relative path, and cron's working
+directory decides where that one lands. The `cd` is cheap insurance either way.
 
 The stages run in the order they depend on each other — `database`, `files`,
 `cloud`, `sync`, `clean` — each starting when the one before it has actually
