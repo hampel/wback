@@ -213,11 +213,6 @@ abstract class BaseCommand extends Command
 
     protected function executeCommand(string $command, string $path = null, bool $override = false) : bool
     {
-        if (empty($path))
-        {
-            $path = storage_path();
-        }
-
     	$prefix = $this->option('dry-run') ? "[Dry run] " : "";
 
 		$this->log('debug', "{$prefix}Executing command [{$command}]", "{$prefix}Executing command", compact('command'));
@@ -227,11 +222,41 @@ abstract class BaseCommand extends Command
 			return true;
 		}
 
-        $result = Process::forever()->path($path)->run($command, function (string $type, string $output) {
+        // only the file backup cares where it runs from - everything else works with
+        // absolute paths, and would rather inherit a working directory that exists
+        $process = Process::forever();
+
+        if (!empty($path))
+        {
+            $process = $process->path($path);
+        }
+
+        $result = $process->run($command, function (string $type, string $output) {
             $this->getOutput()->write($output, false);
         })->throw();
 
         return $result->successful();
+    }
+
+    /**
+     * Wrap a command containing a pipe so that a failure anywhere in the pipeline is
+     * reported - a plain shell returns the exit status of the last command only, which
+     * hides a failed mysqldump behind a gzip that compressed the partial output quite
+     * happily and exited 0
+     *
+     * @param string $command command to run as a pipeline
+     * @return string command to execute
+     */
+    protected function pipeline(string $command) : string
+    {
+        $shell = config('backup.shell');
+
+        if (empty($shell))
+        {
+            return $command;
+        }
+
+        return "{$shell} -o pipefail -c " . escapeshellarg($command);
     }
 
     protected function chmod($path, $mode = 0660)

@@ -94,13 +94,13 @@ it('keeps going after a broken site, and still fails the run', function () {
         ->expectsOutputToContain('No domain specified for broken')
         ->assertFailed();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "--hex-blob 'healthy' |"));
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), "--hex-blob --single-transaction 'healthy' |"));
 });
 
 it('keeps going after a backup command fails, and still fails the run', function () {
     // a closure handler replaces the catch-all fake, which would otherwise
     // match first and hand back a successful result
-    Process::fake(fn ($process) => str_contains($process->command, "--hex-blob 'broken'")
+    Process::fake(fn ($process) => str_contains(shellCommand($process->command), "--hex-blob --single-transaction 'broken'")
         ? Process::result(errorOutput: 'mysqldump: unknown database', exitCode: 1)
         : Process::result());
 
@@ -114,7 +114,7 @@ it('keeps going after a backup command fails, and still fails the run', function
 
     $this->artisan('database', ['--all' => true])->assertFailed();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "--hex-blob 'healthy' |"));
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), "--hex-blob --single-transaction 'healthy' |"));
 });
 
 it('fails when the sites file does not exist', function () {

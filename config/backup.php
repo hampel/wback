@@ -27,7 +27,31 @@ return [
          * use --hex-blob option to store blobs as hex to avoid cross-platform export/import issues
          */
         'hexblob' => env('BACKUP_MYSQLDUMP_HEXBLOB', true),
+
+        /**
+         * use --single-transaction to dump from a consistent snapshot instead of locking
+         * every table in the database for the duration of the dump
+         *
+         * only transactional tables (InnoDB) are covered by the snapshot
+         * override for a specific database in the source configuration toml file
+         */
+        'single_transaction' => env('BACKUP_MYSQLDUMP_SINGLE_TRANSACTION', true),
+
+        /**
+         * additional options appended to every mysqldump command, inserted as written
+         * override for a specific database in the source configuration toml file
+         */
+        'options' => env('BACKUP_MYSQLDUMP_OPTIONS', ''),
     ],
+
+    /**
+     * Shell used to run commands containing a pipe
+     *
+     * A plain shell reports the exit status of the last command in a pipeline, which
+     * would hide a failed mysqldump behind a successful gzip. Needs a shell supporting
+     * "set -o pipefail" - leave empty to run pipelines under the system default shell
+     */
+    'shell' => env('BACKUP_SHELL', '/bin/bash'),
 
     /**
      * Path to gzip binary for compressing database dumps

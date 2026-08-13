@@ -31,6 +31,9 @@ setting; where that is the case it is noted.
 - `rclone` reads its own configuration, and `wback` passes no `--config`, so the
   remotes must be configured for the user running the backup.
 - MySQL or MariaDB only, one database per site, dumped by `mysqldump`.
+- Dumps come from an InnoDB snapshot by default, so anything important held in
+  MyISAM or MEMORY tables needs `single_transaction = false` for that site — see
+  [Large databases](#large-databases).
 
 **Names and layout follow a convention.**
 
@@ -124,7 +127,10 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `BACKUP_MYSQLDUMP_PATH` | `/usr/bin/mysqldump` | |
 | `BACKUP_DEFAULT_CHARSET` | `utf8mb4` | dump charset; blank omits the option |
 | `BACKUP_MYSQLDUMP_HEXBLOB` | `true` | dump blobs as hex, for portable restores |
-| `BACKUP_GZIP_PATH` | `/bin/gzip` | |
+| `BACKUP_MYSQLDUMP_SINGLE_TRANSACTION` | `true` | snapshot instead of locking every table |
+| `BACKUP_MYSQLDUMP_OPTIONS` | — | extra mysqldump options, inserted as written |
+| `BACKUP_SHELL` | `/bin/bash` | shell for the dump pipeline; needs `pipefail` |
+| `BACKUP_GZIP_PATH` | `/bin/gzip` | see [Large databases](#large-databases) |
 | `BACKUP_ZIP_PATH` | `/usr/bin/zip` | |
 | `BACKUP_RCLONE_PATH` | `/usr/bin/rclone` | |
 | `BACKUP_CLOUD_REMOTE` | — | `remote:prefix` for `cloud`; required by that command |
@@ -172,6 +178,8 @@ files = ''
 | `database` | the short name | set to `''` to skip the database entirely |
 | `charset` | `BACKUP_DEFAULT_CHARSET` | passed as `--default-character-set` |
 | `hostname` | local socket | database host; passed as `-h`, so a remote server must be on the default port |
+| `single_transaction` | `BACKUP_MYSQLDUMP_SINGLE_TRANSACTION` | snapshot rather than lock; see below |
+| `options` | `BACKUP_MYSQLDUMP_OPTIONS` | extra mysqldump options, replacing the global ones |
 | `files` | `<FILES_ROOT>/<domain>` | set to `''` to skip files entirely |
 | `exclude` | none | patterns passed to `zip --exclude`; wildcards are escaped for you |
 | `sync` | none | paths, relative to the file source, mirrored live by `sync` |
@@ -199,7 +207,47 @@ sites, and exits non-zero.
 ### `database` — dump databases
 
 ```
-mysqldump --opt --default-character-set=<charset> --hex-blob <database> | gzip -c -f > <destination>
+bash -o pipefail -c 'mysqldump --opt --default-character-set=<charset> --hex-blob \
+    --single-transaction <database> | gzip -c -f > <destination>'
+```
+
+The `pipefail` wrapper is not decoration. A shell reports the exit status of the
+*last* command in a pipeline, so without it a mysqldump that dies partway — wrong
+credentials, a dropped connection, a full disk — is masked by the gzip that
+compresses the partial output and exits 0. The result is a valid gzip file
+containing half a database, recorded as a successful backup. Set `BACKUP_SHELL`
+empty to go back to a plain shell, knowing that is the trade.
+
+#### Large databases
+
+Two settings matter once a database is big enough that the dump takes minutes.
+
+**`--single-transaction`** (on by default) is the difference between a backup
+your users notice and one they don't. Without it, `--opt` implies
+`--lock-tables`, which read-locks *every table in the database* for the whole
+dump — on a 280-table forum that is 281 tables locked at once, for as long as the
+dump and the compression take. With it, the dump comes from a consistent InnoDB
+snapshot and writes carry on unaffected.
+
+The catch is that only transactional tables are in that snapshot. MyISAM and
+MEMORY tables are dumped as they are read, so they can be inconsistent with the
+rest. Whether that matters depends on what they hold — a rebuildable search index
+or a session table, no; anything else, set `single_transaction = false` for that
+site or convert the tables to InnoDB. To find them:
+
+```sql
+SELECT table_name, engine FROM information_schema.tables
+ WHERE table_schema = 'yourdb' AND engine <> 'InnoDB';
+```
+
+**Compression is usually the bottleneck**, not MySQL. On a 2GB dump, the dump
+alone took 32s, and piping it into `gzip` at its default level took 88s — nearly
+three times as long, and with `--lock-tables` every one of those extra seconds is
+lock held. `BACKUP_GZIP_PATH` is inserted as written, so:
+
+```dotenv
+BACKUP_GZIP_PATH=/usr/bin/pigz        # same ratio, spread across every core
+BACKUP_GZIP_PATH="/bin/gzip -1"       # ~2x faster, ~20% more storage
 ```
 
 ### `files` — archive site files

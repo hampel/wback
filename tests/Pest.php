@@ -22,6 +22,9 @@ uses(Tests\TestCase::class)
             'backup.mysql.dump_binary' => '/usr/bin/mysqldump',
             'backup.mysql.default_charset' => 'utf8mb4',
             'backup.mysql.hexblob' => true,
+            'backup.mysql.single_transaction' => true,
+            'backup.mysql.options' => '',
+            'backup.shell' => '/bin/bash',
             'backup.gzip_binary' => '/bin/gzip',
             'backup.zip_binary' => '/usr/bin/zip',
             'backup.rclone.binary' => '/usr/bin/rclone',
@@ -80,4 +83,21 @@ function useSource(string $domain, array $files = ['index.php']): string
 function backupPath(string $path): string
 {
     return Storage::disk('backup')->path($path);
+}
+
+/**
+ * The command inside the pipefail wrapper.
+ *
+ * Pipelines are handed to a shell as a single quoted argument, so assertions read
+ * against the command the operator would recognise rather than the quoting of it.
+ */
+function shellCommand(string $command): string
+{
+    $prefix = config('backup.shell') . ' -o pipefail -c ';
+
+    if (! str_starts_with($command, $prefix)) {
+        return $command;
+    }
+
+    return str_replace("'\\''", "'", substr($command, strlen($prefix) + 1, -1));
 }

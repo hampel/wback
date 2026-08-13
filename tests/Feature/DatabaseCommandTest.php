@@ -17,8 +17,9 @@ it('dumps the database through gzip into the backup disk', function () {
 
     $destination = backupPath('example.com/database/example.20260813.sql.gz');
 
-    Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/mysqldump --opt --default-character-set='utf8mb4' --hex-blob 'example' | /bin/gzip -c -f > '{$destination}'");
+    Process::assertRan(fn ($process) => shellCommand($process->command) ===
+        "/usr/bin/mysqldump --opt --default-character-set='utf8mb4' --hex-blob --single-transaction 'example'"
+        . " | /bin/gzip -c -f > '{$destination}'");
 });
 
 it('defaults the database name to the site short name', function () {
@@ -29,7 +30,7 @@ it('defaults the database name to the site short name', function () {
 
     $this->artisan('database', ['site' => 'zabbix'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "--hex-blob 'zabbix' |"));
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), " 'zabbix' |"));
 });
 
 it('uses an explicit database name over the site short name', function () {
@@ -41,7 +42,7 @@ it('uses an explicit database name over the site short name', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "--hex-blob 'example_prod' |"));
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), " 'example_prod' |"));
 });
 
 it('skips sites that have the database explicitly disabled', function () {
@@ -67,7 +68,7 @@ it('uses the per site charset over the default', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "--default-character-set='latin1'"));
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), "--default-character-set='latin1'"));
 });
 
 it('omits the charset when it is configured empty', function () {
@@ -80,7 +81,7 @@ it('omits the charset when it is configured empty', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => ! str_contains($process->command, '--default-character-set'));
+    Process::assertRan(fn ($process) => ! str_contains(shellCommand($process->command), '--default-character-set'));
 });
 
 it('omits the hex blob option when it is disabled', function () {
@@ -93,7 +94,7 @@ it('omits the hex blob option when it is disabled', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => ! str_contains($process->command, '--hex-blob'));
+    Process::assertRan(fn ($process) => ! str_contains(shellCommand($process->command), '--hex-blob'));
 });
 
 it('passes a remote hostname to mysqldump', function () {
@@ -105,7 +106,128 @@ it('passes a remote hostname to mysqldump', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "-h'db.internal' "));
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), "-h'db.internal' "));
+});
+
+it('dumps from a snapshot rather than locking the tables', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), ' --single-transaction'));
+});
+
+it('locks tables when snapshots are turned off', function () {
+    config()->set('backup.mysql.single_transaction', false);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => ! str_contains(shellCommand($process->command), '--single-transaction'));
+});
+
+it('lets a site opt out of the snapshot', function () {
+    useSites(<<<'TOML'
+        [legacy]
+        domain = 'legacy.example.com'
+        single_transaction = false
+        TOML);
+
+    $this->artisan('database', ['site' => 'legacy'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => ! str_contains(shellCommand($process->command), '--single-transaction'));
+});
+
+it('lets a site opt in when snapshots are off by default', function () {
+    config()->set('backup.mysql.single_transaction', false);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        single_transaction = true
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), ' --single-transaction'));
+});
+
+it('appends the configured extra options', function () {
+    config()->set('backup.mysql.options', '--no-tablespaces --set-gtid-purged=OFF');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains(
+        shellCommand($process->command),
+        "--no-tablespaces --set-gtid-purged=OFF 'example' |"
+    ));
+});
+
+it('lets a site replace the extra options', function () {
+    config()->set('backup.mysql.options', '--no-tablespaces');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        options = '--column-statistics=0'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(function ($process) {
+        $command = shellCommand($process->command);
+
+        return str_contains($command, '--column-statistics=0') && ! str_contains($command, '--no-tablespaces');
+    });
+});
+
+it('runs the dump through a shell that reports pipeline failures', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_starts_with($process->command, "/bin/bash -o pipefail -c '"));
+});
+
+it('runs the dump from wherever it was invoked', function () {
+    // the dump works entirely in absolute paths, and forcing a working directory
+    // fails outright when that directory does not exist
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => $process->path === null);
+});
+
+it('runs the dump unwrapped when no shell is configured', function () {
+    config()->set('backup.shell', '');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_starts_with($process->command, '/usr/bin/mysqldump '));
 });
 
 it('quotes the database name, leaving shell metacharacters inert', function () {
@@ -117,7 +239,7 @@ it('quotes the database name, leaving shell metacharacters inert', function () {
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, "'example; rm -rf /srv'"));
+    Process::assertRan(fn ($process) => str_contains(shellCommand($process->command), "'example; rm -rf /srv'"));
 });
 
 it('increments the filename when a backup already exists for today', function () {
@@ -130,7 +252,7 @@ it('increments the filename when a backup already exists for today', function ()
 
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_ends_with($process->command, "example.20260813-2.sql.gz'"));
+    Process::assertRan(fn ($process) => str_ends_with(shellCommand($process->command), "example.20260813-2.sql.gz'"));
 });
 
 it('creates the destination directories', function () {

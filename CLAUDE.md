@@ -91,8 +91,13 @@ already exists. Directories are created on demand; output files are chmod 0660.
 
 **Command strings go through a shell**, so anything interpolated into one from
 the inventory or from a derived path must be wrapped in `escapeshellarg()` — the
-configured binary paths are the deliberate exception, left raw so they can carry
-options.
+configured binary paths and `BACKUP_MYSQLDUMP_OPTIONS` are the deliberate
+exceptions, left raw so they can carry options.
+
+**Any command containing a pipe must go through `pipeline()`**, which wraps it in
+`bash -o pipefail` so a failure on the left of the pipe isn't masked by success on
+the right. Tests assert against `shellCommand($process->command)`, a `tests/Pest.php`
+helper that unwraps it.
 
 **`executeCommand()` is the single choke point** for running external binaries.
 It logs the command at debug level and short-circuits under `--dry-run` — except

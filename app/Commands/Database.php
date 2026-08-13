@@ -55,11 +55,21 @@ class Database extends BaseCommand
         $charset = $site['charset'] ?? config('backup.mysql.default_charset');
         $charset = empty($charset) ? '' : " --default-character-set=" . escapeshellarg($charset);
         $hexblob = config('backup.mysql.hexblob') ? ' --hex-blob' : '';
+
+        // dump from a snapshot rather than locking every table for the duration
+        $snapshot = $site['single_transaction'] ?? config('backup.mysql.single_transaction');
+        $snapshot = $snapshot ? ' --single-transaction' : '';
+
         $hostname = isset($site['hostname']) ? " -h" . escapeshellarg($site['hostname']) : '';
+
+        // operator supplied, so inserted as written - see the note in .env.example
+        $options = $site['options'] ?? config('backup.mysql.options');
+        $options = empty($options) ? '' : " {$options}";
+
         $gzip = config('backup.gzip_binary');
         $outputPath = Storage::disk('backup')->path($destination);
 
-        $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$hostname} "
+        $cmd = "{$mysqldump} --opt{$verbosity}{$charset}{$hexblob}{$snapshot}{$hostname}{$options} "
             . escapeshellarg($database)
             . " | {$gzip} -c -f > " . escapeshellarg($outputPath);
 
@@ -70,7 +80,7 @@ class Database extends BaseCommand
             compact('database', 'destination')
         );
 
-        $this->executeCommand($cmd);
+        $this->executeCommand($this->pipeline($cmd));
         $this->chmod($outputPath);
     }
 
