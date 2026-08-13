@@ -130,6 +130,25 @@ it('removes the partial archive when zip fails', function () {
     expect(Storage::disk('backup')->exists('example.com/files/example.20260813.zip'))->toBeFalse();
 });
 
+it('reports how big the archive turned out', function () {
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/files/example.20260813.zip', str_repeat('x', 1536));
+
+        return Process::result();
+    });
+
+    useSource('example.com');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('files', ['site' => 'example'])
+        ->expectsOutputToContain('Backed up example.20260813.zip - 1.50 kB')
+        ->assertSuccessful();
+});
+
 it('creates the destination directories', function () {
     useSource('example.com');
 

@@ -295,6 +295,36 @@ abstract class BaseCommand extends Command
         }
 
         $this->chmod($outputPath);
+        $this->reportSize($outputPath);
+    }
+
+    /**
+     * Report how big the backup turned out
+     *
+     * Worth having in the log for its own sake, and worth watching: a backup that
+     * suddenly comes out a fraction of its usual size is the cheapest sign available
+     * that something has gone wrong with it.
+     *
+     * @param string $path backup file that was written
+     * @return void
+     */
+    protected function reportSize(string $path) : void
+    {
+        if (!File::exists($path))
+        {
+            // the chmod before this will have said so already
+            return;
+        }
+
+        $file = basename($path);
+        $bytes = File::size($path);
+
+        $this->log(
+            'notice',
+            "Backed up {$file} - " . $this->human_filesize($bytes),
+            "Backup written",
+            ['file' => $file, 'bytes' => $bytes]
+        );
     }
 
     protected function removeIncomplete(string $path) : void
@@ -375,13 +405,6 @@ abstract class BaseCommand extends Command
     //        return sprintf("%d:00", ($scheduleStart + $offset) % 24);
     //    }
 
-	protected function human_filesize($bytes, $dec = 2)
-	{
-	    $size   = array('B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-	    $factor = floor((strlen($bytes) - 1) / 3);
-
-	    return sprintf("%.{$dec}f", $bytes / pow(1024, $factor)) . " " . @$size[$factor];
-	}
 
 }
 
