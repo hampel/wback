@@ -15,6 +15,60 @@ all of them, for real or as a dry run.
 - `zip` for file backups
 - [rclone](https://rclone.org/) for cloud storage, with a configured remote
 
+## Assumptions
+
+`wback` is deliberately thin, which means it inherits a set of assumptions about
+the machine it runs on. Most of them can be worked around with an explicit
+setting; where that is the case it is noted.
+
+**The tools are already configured.**
+
+- `mysqldump` is passed no username or password, so the user running `wback`
+  needs credentials of its own — socket authentication, or a `~/.my.cnf`. The
+  same applies under cron, where the user is often not the one you tested as.
+- A remote database is reached with `-h` only. There is no port setting, so it
+  must be listening on the default port.
+- `rclone` reads its own configuration, and `wback` passes no `--config`, so the
+  remotes must be configured for the user running the backup.
+- MySQL or MariaDB only, one database per site, dumped by `mysqldump`.
+
+**Names and layout follow a convention.**
+
+- A site's files live at `<FILES_ROOT>/<domain>` — named for the domain,
+  `/srv/www/example.com` rather than `/srv/www/example`. Sites that break the
+  convention need an explicit `files` path.
+- `domain` names the destination directory, so two sites sharing a domain share
+  a directory. The short name distinguishes the files inside it.
+- Site short names and domains are used to build filenames, and both they and
+  every configured path are interpolated into a shell command **unescaped**.
+  Keep spaces and shell metacharacters out of them — the only characters escaped
+  for you are the wildcards in `exclude` patterns.
+- Everything is local: files are read from a local path and backups are written
+  to a local path. Only the database may be remote.
+
+**The backups are full, daily and unverified.**
+
+- Every run archives everything. There are no incremental or differential
+  backups, so local disk needs roughly `BACKUP_KEEPONLY_DAYS` times the full size
+  of every site.
+- Filenames are datestamped to the day and retention is counted in whole days,
+  so the intended cadence is daily. More frequent runs work — they just get a
+  counter suffix, and expire together.
+- `clean` goes by file modification time, and only inside each site's `files` and
+  `database` directories. Anything else under the backup root is kept forever.
+- Nothing is encrypted: the dump and the archive land on the remote as written.
+  Use an rclone crypt remote if that matters.
+- Backups are never verified or test-restored, and `wback` has no restore
+  command. Restoring is `gunzip | mysql` and `unzip`, by hand.
+
+**The schedule is the only coordination.**
+
+- Each stage is given an hour, and `cloud` copies whatever is in the backup
+  directory when it starts. A `files` run that overruns its hour is uploaded
+  half-written — there is no locking or completion check between stages.
+- Backup files are created with mode 0660, so access is controlled by the
+  backup user's group.
+
 ## Installation
 
 ```bash
@@ -77,10 +131,6 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `LOG_LEVEL` | `debug` | |
 | `LOG_SLACK_WEBHOOK_URL` | — | |
 | `LOG_SLACK_LEVEL` | `critical` | |
-
-`wback` passes no credentials to `mysqldump`, so the invoking user needs its own
-working MySQL client configuration — socket authentication, or a `~/.my.cnf`
-holding the username and password.
 
 ### Sites
 
