@@ -18,7 +18,7 @@ framework, not this app.
 php wback                       # default: summary list of all commands
 php wback app:config            # resolved config (paths, binaries, remotes, disks, logging)
 php wback app:sites [site]      # dump the parsed TOML inventory
-php wback app:test              # write one log line at every level, then show logging config
+php wback app:validate          # run the binaries, connect to the databases, list the remotes
 
 php wback cron [-d]                  # every backup in turn, what cron calls
 
@@ -80,8 +80,11 @@ and `Clean` implement only `handleSite()`. Throwing
 external command arrives the same way, since Illuminate's
 `ProcessFailedException` extends `RuntimeException`.
 
-`Sites`, `Config` and `Test` extend Laravel Zero's `Command` directly and are
-namespaced `app:` to keep the backup verbs at the top level.
+`Sites`, `Config` and `Validate` extend Laravel Zero's `Command` directly and are
+namespaced `app:` to keep the backup verbs at the top level. `Validate` exercises
+the real thing — it runs each binary, dumps each schema to /dev/null, lists each
+remote and takes the lock — so it is the command to extend when a new dependency
+on the environment appears.
 
 **Two storage disks** (`config/filesystems.php`):
 - `files` — source root, `FILES_ROOT`, default `/srv/www`

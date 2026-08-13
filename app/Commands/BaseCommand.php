@@ -2,6 +2,7 @@
 
 use App\Support\LocksBackups;
 use App\Support\LogsToConsole;
+use App\Support\SiteInventory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -9,7 +10,6 @@ use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 use Symfony\Component\Console\Helper\DescriptorHelper;
 use Yosymfony\Toml\Exception\ParseException;
-use Yosymfony\Toml\Toml;
 
 abstract class BaseCommand extends Command
 {
@@ -51,10 +51,11 @@ abstract class BaseCommand extends Command
     {
  	    $site = $this->argument('site');
 
+        $inventory = app(SiteInventory::class);
+
         try
         {
-            $sitesPath = config('backup.sites_path');
-            $sites = File::exists($sitesPath) ? Toml::parseFile($sitesPath) : null;
+            $sites = $inventory->all();
         }
         catch (ParseException $e)
         {
@@ -64,7 +65,7 @@ abstract class BaseCommand extends Command
 
         if (empty($sites))
         {
-            $this->error("No sites found at: {$sitesPath}");
+            $this->error("No sites found at: " . $inventory->path());
             return Command::FAILURE;
         }
 

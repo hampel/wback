@@ -2,11 +2,10 @@
 
 namespace App\Commands;
 
-use Illuminate\Support\Facades\File;
+use App\Support\SiteInventory;
 use Illuminate\Support\Facades\Log;
 use LaravelZero\Framework\Commands\Command;
 use Yosymfony\Toml\Exception\ParseException;
-use Yosymfony\Toml\Toml;
 
 class Sites extends Command
 {
@@ -31,10 +30,11 @@ class Sites extends Command
     {
         $site = $this->argument('site');
 
+        $inventory = app(SiteInventory::class);
+
         try
         {
-            $sitesPath = config('backup.sites_path');
-            $sites = File::exists($sitesPath) ? Toml::parseFile($sitesPath) : null;
+            $sites = $inventory->all();
         }
         catch (ParseException $e)
         {
@@ -58,7 +58,7 @@ class Sites extends Command
         {
             if (empty($sites))
             {
-                $this->error("No sites found at: " . config("backup.sites_path"));
+                $this->error("No sites found at: " . $inventory->path());
                 return Command::FAILURE;
             }
             foreach ($sites as $name => $site)

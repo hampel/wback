@@ -344,7 +344,26 @@ transfers it would make.
 |---|---|
 | `app:config` | every resolved path, binary, remote and log setting |
 | `app:sites [site]` | the site inventory, as parsed |
-| `app:test` | writes a message at each log level, to prove out logging |
+| `app:validate` | runs the binaries, connects to the databases, lists the remotes |
+
+`app:validate` is the one to run after provisioning a server, and the first one
+to run when backups have gone quiet. It exercises the real thing rather than
+describing it:
+
+- every configured binary is **run**, which also proves a setting carrying
+  options of its own still resolves to something executable
+- every database is **dumped** — schema only, to `/dev/null` — through the same
+  binary, credentials and user the backup will use
+- every remote is **listed**, distinguishing a remote it cannot reach at all
+  (an error) from a path that does not exist yet (a warning, normal before the
+  first transfer)
+- the sites file parses, every site has a domain, and each file source and sync
+  path is there
+- the backup destination exists, is writable and has room, and the lock can be
+  taken and released
+- a message is written at every log level, so you can confirm where they land
+
+It exits non-zero if anything failed, so it works as a post-deploy check.
 
 ## Where backups end up
 
@@ -456,8 +475,8 @@ scheduled run still logs at full detail.
 unset `LOG_STACK` makes that stack the `null` channel, which discards
 everything. Set `LOG_CHANNEL=single` or `daily` for a file, or keep the stack and
 set `LOG_STACK=single,slack` to write a file and raise critical failures in
-Slack. `php wback app:test` writes one message at every level so you can confirm
-where they land.
+Slack. `php wback app:validate` writes one message at every level so you can
+confirm where they land.
 
 Log files are not rotated by `clean`; use logrotate.
 
