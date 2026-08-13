@@ -55,7 +55,11 @@ setting; where that is the case it is noted.
   so the intended cadence is daily. More frequent runs work — they just get a
   counter suffix, and expire together.
 - `clean` goes by file modification time, and only inside each site's `files` and
-  `database` directories. Anything else under the backup root is kept forever.
+  `database` directories. Whatever else lives under a site's backup root is left
+  alone, and stays the responsibility of whatever put it there: logs archived
+  into it by logrotate, for instance, are expired by logrotate's own retention,
+  not by `clean`. `cloud` is the opposite — it copies the site's backup root
+  wholesale, so anything dropped there does get shipped to the remote.
 - Nothing is encrypted: the dump and the archive land on the remote as written.
   Use an rclone crypt remote if that matters.
 - Backups are never verified or test-restored, and `wback` has no restore
