@@ -171,7 +171,7 @@ files = ''
 | `domain` | *required* | names the backup directory for the site |
 | `database` | the short name | set to `''` to skip the database entirely |
 | `charset` | `BACKUP_DEFAULT_CHARSET` | passed as `--default-character-set` |
-| `hostname` | local socket | database host, for a remote server |
+| `hostname` | local socket | database host; passed as `-h`, so a remote server must be on the default port |
 | `files` | `<FILES_ROOT>/<domain>` | set to `''` to skip files entirely |
 | `exclude` | none | patterns passed to `zip --exclude`; wildcards are escaped for you |
 | `sync` | none | paths, relative to the file source, mirrored live by `sync` |
