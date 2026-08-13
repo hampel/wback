@@ -2,13 +2,13 @@
 
 namespace App\Commands;
 
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Support\Facades\Log;
+use App\Support\LogsToConsole;
 use LaravelZero\Framework\Commands\Command;
-use Symfony\Component\Console\Output\OutputInterface;
 
 class Test extends Command
 {
+    use LogsToConsole;
+
     /**
      * The name and signature of the console command.
      *
@@ -47,43 +47,4 @@ class Test extends Command
         return Command::SUCCESS;
     }
 
-    protected function log($level, $message, $logMessage = null, $context = [])
-    {
-        $verbosityMap = [
-            'debug' => OutputInterface::VERBOSITY_DEBUG,
-            'info' => OutputInterface::VERBOSITY_VERBOSE,
-            'notice' => OutputInterface::VERBOSITY_NORMAL,
-            'warning' => OutputInterface::VERBOSITY_NORMAL,
-            'error' => OutputInterface::VERBOSITY_QUIET,
-            'critical' => OutputInterface::VERBOSITY_QUIET,
-            'alert' => OutputInterface::VERBOSITY_QUIET,
-            'emergency' => OutputInterface::VERBOSITY_QUIET,
-        ];
-
-        $styleMap = [
-            'debug' => null,
-            'info' => 'info',
-            'notice' => 'comment',
-            'warning' => 'comment',
-            'error' => 'error',
-            'critical' => 'error',
-            'alert' => 'error',
-            'emergency' => 'error',
-        ];
-
-        $logMessage = $logMessage ?? $message;
-        $verbosity = $verbosityMap[$level] ?? 'warning';
-        $style = $styleMap[$level] ?? null;
-
-        Log::log($level, $logMessage, $context);
-        $this->line($message, $style, $verbosity);
-    }
-
-    /**
-     * Define the command's schedule.
-     */
-    public function schedule(Schedule $schedule): void
-    {
-         //
-    }
 }

@@ -70,13 +70,12 @@ setting; where that is the case it is noted.
 - Backups are never verified or test-restored, and `wback` has no restore
   command. Restoring is `gunzip | mysql` and `unzip`, by hand.
 
-**One run at a time, spaced an hour apart.**
+**One run at a time.**
 
-- Each stage is given an hour, and only one backup command runs at a time. A
-  stage that overruns holds the next one off until the following night rather
-  than running alongside it, so `cloud` cannot upload a half-written archive.
+- The stages run one after another, and only one backup runs at a time, so
+  `cloud` cannot upload an archive that `files` is still writing.
 - That makes the lock a single point of contention by design: a site large
-  enough to take all night stops the stages behind it from running at all.
+  enough to take all night stops tonight's run from starting at all.
 - Backup files are created with mode 0660, so access is controlled by the
   backup user's group.
 
@@ -141,7 +140,6 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `BACKUP_SYNC_ALLOW_EMPTY` | `false` | allow a sync from a source that has gone empty |
 | `BACKUP_SYNC_BACKUP_DIR` | — | keep replaced files under this directory instead of deleting |
 | `BACKUP_SYNC_OPTIONS` | — | extra rclone options for `sync`, inserted as written |
-| `SCHEDULE_START` | `3` | hour the nightly run begins |
 | `BACKUP_LOCK_FILE` | `<destination>/.wback.lock` | lock keeping two runs off each other |
 | `LARAVEL_STORAGE_PATH` | working directory | storage path, PHAR only |
 | `LOG_CHANNEL` | `stack` | `single`, `daily`, `slack`, `syslog`, `stack`, … |
@@ -203,7 +201,10 @@ list it at all.
 
 ## Commands
 
-Every backup command takes an optional site name, and the same three options:
+`cron` runs the lot, in order, and is what a cron entry should call — see
+[Running it from cron](#running-it-from-cron). The rest are the individual
+stages, and every one of them takes an optional site name and the same three
+options:
 
 | option | effect |
 |---|---|
@@ -358,21 +359,31 @@ transfers it would make.
 Files are named for the site's short name and the date. A second run on the same
 day does not overwrite the first — it appends a counter, `example.20260813-2.zip`.
 
-Datestamps and schedule times use the application timezone, which is fixed at
-`Australia/Sydney` in `config/app.php`.
+Datestamps use the application timezone, which is fixed at `Australia/Sydney` in
+`config/app.php`.
 
-## Scheduling
+## Running it from cron
 
-The commands are scheduled an hour apart, starting at `SCHEDULE_START`, in the
-order they depend on each other: `database`, `files`, `cloud`, `sync`, `clean`.
-With the default start of 3, the nightly run is 03:00 to 07:00. The hours wrap
-around midnight, so a late start time is fine.
-
-Run each with `--quiet --all`, so only errors are printed and cron mails you
-nothing on a clean night:
+One entry, and `cron` runs every backup in turn:
 
 ```cron
 # /etc/cron.d/wback  (no dot in the filename, or run-parts ignores it)
+0 3 * * * backup cd /srv/backup && /usr/local/bin/wback cron --quiet
+```
+
+The `cd` matters: it fixes the storage path, and so where the backups land.
+`--quiet` prints errors only, so cron mails you nothing on a clean night.
+
+The stages run in the order they depend on each other — `database`, `files`,
+`cloud`, `sync`, `clean` — each starting when the one before it has actually
+finished. A stage that fails does not stop the ones after it, and the command
+exits non-zero if any of them failed.
+
+You can still drive the commands individually if you want them spread across the
+night, but then the spacing is a guess about how long each takes, and two of them
+running at once is prevented by the lock rather than by the timing:
+
+```cron
 0 3 * * * backup cd /srv/backup && /usr/local/bin/wback database --quiet --all
 0 4 * * * backup cd /srv/backup && /usr/local/bin/wback files --quiet --all
 0 5 * * * backup cd /srv/backup && /usr/local/bin/wback cloud --quiet --all
@@ -380,20 +391,30 @@ nothing on a clean night:
 0 7 * * * backup cd /srv/backup && /usr/local/bin/wback clean --quiet --all
 ```
 
-The `cd` matters: it fixes the storage path, and so where the backups land.
+Leave enough room between them for the slowest site, and remember that a stage
+which overruns into the next one's hour does not run alongside it — the later
+command finds the lock held, reports it, and waits for tomorrow.
 
-**Drive cron at the commands, not at `schedule:run`.** Laravel Zero's scheduler
-is not usable here: running a due command dies with `Trait
-"Illuminate\Queue\SerializesModels" not found`, because the scheduler resolves
-`Illuminate\Log\Context\Repository` and that trait lives in `illuminate/queue`,
-which a console application does not install. Nothing announces this — with
-nothing due, `schedule:run` prints "No scheduled commands are ready to run" and
-exits 0 — so the failure looks like backups quietly not happening. (Aliasing a
-command is separately unwise: `setAliases()` registers the command once per
-alias, so a scheduled backup runs twice.)
+### Not Laravel Zero's scheduler
 
-`php wback schedule:list` does work, and prints the times the offsets resolve to
-for your `SCHEDULE_START` — which is where the hours above come from.
+wback does not use it, and the `schedule:*` commands are removed from the
+application so they cannot be run by mistake. It is broken here twice over:
+
+- A due event resolves `Illuminate\Log\Context\Repository`, which uses a trait
+  from `illuminate/queue` — a package console applications do not install. The
+  command dies with `Trait "Illuminate\Queue\SerializesModels" not found`.
+- In a compiled binary, the working directory handed to Symfony Process is a
+  `phar://` path, which Process rejects, and `ARTISAN_BINARY` is a relative
+  string that does not match the built executable's name.
+
+What makes it dangerous rather than merely broken is the reporting:
+`ScheduleRunCommand` catches the failure and returns `$event->exitCode == 0`,
+where `exitCode` is still `null` — and `null == 0` is true. It prints DONE for
+every task and exits 0 having run nothing at all. For a backup tool that is the
+worst available outcome: everything reports success and there are no backups.
+
+(Aliasing a command is separately unwise. `setAliases()` registers the command
+once per alias, so a scheduled backup would run twice.)
 
 ### One run at a time
 

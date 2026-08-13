@@ -20,6 +20,8 @@ php wback app:config            # resolved config (paths, binaries, remotes, dis
 php wback app:sites [site]      # dump the parsed TOML inventory
 php wback app:test              # write one log line at every level, then show logging config
 
+php wback cron [-d]                  # every backup in turn, what cron calls
+
 php wback database <site> [-a] [-d]   # mysqldump | gzip -> backup disk
 php wback files    <site> [-a] [-d]   # zip -> backup disk
 php wback cloud    <site> [-a] [-d]   # rclone copy the whole backup tree to cloud_remote
@@ -27,8 +29,8 @@ php wback sync     <site> [-a] [-d]   # rclone sync configured live dirs to sync
 php wback clean    <site> [-a] [-d]   # delete backups older than keeponly_days
 
 vendor/bin/pest                          # all tests
-vendor/bin/pest tests/Unit/ExampleTest.php   # single file
-vendor/bin/pest --filter='inspires'          # single test
+vendor/bin/pest tests/Feature/CronCommandTest.php   # single file
+vendor/bin/pest --filter='dry run'                  # single test
 php wback app:build wback                # compile a PHAR into builds/ (box.json)
 ```
 
@@ -61,9 +63,9 @@ Two gotchas when adding tests:
 - `expectsOutputToContain()` is greedy — a short substring expectation will
   swallow a later line that also contains it, and the more specific expectation
   then fails. Keep expectations non-overlapping, or use exact `expectsOutput()`.
-- The schedule is built while the application boots, so `config()->set()` on
-  `backup.schedule_start` has no effect; set `SCHEDULE_START` in the environment
-  and call `$this->refreshApplication()` (see `tests/Feature/ScheduleTest.php`).
+- `Process::recorded()` is not public in this version of Illuminate, so a test
+  that cares about the order commands ran in has to record them from a closure
+  fake — see `recordCommands()` in `tests/Feature/CronCommandTest.php`.
 
 ## Architecture
 
@@ -71,7 +73,7 @@ Two gotchas when adding tests:
 whole per-site loop: parse the TOML at `config('backup.sites_path')`, resolve
 either one site or all of them, require a `domain` key, and call the subclass's
 `handleSite(array $site, string $name)`. `Database`, `Files`, `Cloud`, `Sync`
-and `Clean` implement only `handleSite()` and `scheduleOffset()`. Throwing
+and `Clean` implement only `handleSite()`. Throwing
 `\RuntimeException` from `handleSite()` is the idiomatic way to fail a site —
 `runSite()` catches it per site, logs it, and carries on to the next one, so a
 `--all` run still exits FAILURE but backs up everything it can. A failed
@@ -107,22 +109,23 @@ translate `--dry-run` into rclone's own `--dry-run` flag.
 **`log($level, $message, $logMessage = null, $context = [])`** dual-writes: to
 the Monolog channel (structured, with `$context`) and to the console (styled,
 gated by a level→verbosity map, so debug lines only appear under `-vvv`). Use it
-rather than `$this->info()` / `Log::info()` for anything worth recording.
-`Test.php` carries its own copy of this method — a deliberate duplicate, since
-it does not extend `BaseCommand`.
+rather than `$this->info()` / `Log::info()` for anything worth recording. It
+lives in the `LogsToConsole` trait, used by everything that reports.
 
-**Laravel Zero's scheduler is not used to run anything** — cron drives the
-commands directly (see the README). `schedule:run` fatals on any due command
-because `Illuminate\Console\Scheduling\Event` resolves `Log\Context\Repository`,
-which needs a trait from the uninstalled `illuminate/queue`. The `schedule()`
-methods stay because `schedule:list` still works and documents the intended
-times. Never add `setAliases()` to a scheduled command: it registers one event
-per alias.
+**Laravel Zero's scheduler is not used, and its commands are removed** in
+`config/commands.php` so they cannot be run by mistake — a due event fatals on a
+trait from the uninstalled `illuminate/queue`, a compiled binary hands Process a
+`phar://` working directory it rejects, and `ScheduleRunCommand` reports success
+either way (`null == 0`). The `schedule()` methods are commented out in place
+rather than deleted. Ordering lives in `Cron::$stages` instead; a new backup
+command goes in that list.
 
-**Scheduling** is spread by offset, not hardcoded times. Each command returns
-`scheduleOffset()` in hours (database 0, files 1, cloud 2, sync 3, clean 4) and
-`getScheduleTime()` adds it to `backup.schedule_start` (default 03:00). Adding a
-command means picking the next free offset.
+**One lock covers a whole run.** `App\Support\BackupLock` is a container
+singleton wrapping an `flock`, taken by whichever command starts first — `cron`
+for a scheduled run — with the commands it calls seeing `isHeld()` and leaving it
+alone. That indirection is necessary: `flock` conflicts with itself when one
+process opens the file twice. `LocksBackups` and `LogsToConsole` in `app/Support`
+are the traits shared between `BaseCommand` and `Cron`.
 
 **PHAR-aware storage path**: `bootstrap/app.php` sets the storage path to
 `getcwd()` when running inside a Phar, so a compiled `wback` resolves `.env`,

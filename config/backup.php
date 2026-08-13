@@ -132,8 +132,4 @@ return [
      */
     'keepleast_days' => env('BACKUP_KEEPLEAST_DAYS', 3),
 
-    /**
-     * Schedule start time - scheduled commands will run based on offset specified for each command starting at this time in local timezone
-     */
-    'schedule_start' => env('SCHEDULE_START', 3),
 ];

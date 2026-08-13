@@ -2,8 +2,6 @@
 
 namespace App\Commands;
 
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
 use LaravelZero\Framework\Commands\Command;
 
@@ -63,7 +61,6 @@ class Config extends Command
             'rclone Sync Backup Dir' => config('backup.rclone.sync_backup_dir'),
             'Keep Only Days' => config('backup.keeponly_days'),
             'Keep Least Days' => config('backup.keepleast_days'),
-            'Schedule Start' => config('backup.schedule_start'),
             'Lock File' => config('backup.lock_file') ?: 'backup destination',
         ]);
 
@@ -182,13 +179,5 @@ class Config extends Command
     protected function toSearchKeyword(string $value)
     {
         return (new Stringable($value))->lower()->snake()->value();
-    }
-
-    /**
-     * Define the command's schedule.
-     */
-    public function schedule(Schedule $schedule): void
-    {
-        // $schedule->command(static::class)->everyMinute();
     }
 }

@@ -1,25 +1,19 @@
 <?php namespace App\Commands;
 
+use App\Support\LocksBackups;
+use App\Support\LogsToConsole;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
-use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Helper\DescriptorHelper;
-use Symfony\Component\Console\Output\OutputInterface;
 use Yosymfony\Toml\Exception\ParseException;
 use Yosymfony\Toml\Toml;
 
 abstract class BaseCommand extends Command
 {
-    /**
-     * Handle on the lock file held for the duration of the run
-     *
-     * @var resource|null
-     */
-    protected $lock = null;
+    use LocksBackups, LogsToConsole;
 
     /**
      * Execute the console command.
@@ -125,84 +119,6 @@ abstract class BaseCommand extends Command
         $this->call('app:sites');
 
         return Command::FAILURE;
-    }
-
-    /**
-     * Take the lock that keeps two backup runs off each other
-     *
-     * The commands are driven one after another from cron, an hour apart, and that
-     * spacing is the only thing sequencing them - a files backup that overruns its hour
-     * would otherwise have the cloud copy uploading an archive still being written. One
-     * lock covers every backup command, so a stage that is still going holds the next
-     * one off until the following night rather than running over the top of it.
-     *
-     * @return bool false if another run holds the lock
-     */
-    protected function acquireLock() : bool
-    {
-        // a dry run changes nothing, so there is nothing to hold anyone off
-        if ($this->option('dry-run'))
-        {
-            return true;
-        }
-
-        $path = $this->getLockPath();
-
-        File::ensureDirectoryExists(dirname($path));
-
-        $lock = fopen($path, 'c');
-
-        if ($lock === false)
-        {
-            $this->log('error', "Could not open lock file [{$path}]", "Could not open lock file", compact('path'));
-            return false;
-        }
-
-        if (!flock($lock, LOCK_EX | LOCK_NB))
-        {
-            $holder = trim((string) file_get_contents($path));
-
-            $this->log(
-                'error',
-                "Another backup is still running [{$holder}] - skipping this run",
-                "Another backup is still running - skipping this run",
-                ['holder' => $holder, 'lock' => $path]
-            );
-
-            fclose($lock);
-            return false;
-        }
-
-        // leave enough behind to say what is holding it, for whoever gets skipped
-        ftruncate($lock, 0);
-        fwrite($lock, sprintf(
-            "pid %d, %s, started %s",
-            getmypid(),
-            $this->getName(),
-            Carbon::now(new \DateTimeZone(config('app.timezone')))->toDateTimeString()
-        ));
-        fflush($lock);
-
-        $this->lock = $lock;
-
-        return true;
-    }
-
-    protected function releaseLock() : void
-    {
-        if (is_resource($this->lock))
-        {
-            fclose($this->lock);
-
-            $this->lock = null;
-        }
-    }
-
-    protected function getLockPath() : string
-    {
-        $path = config('backup.lock_file');
-
-        return empty($path) ? Storage::disk('backup')->path('.wback.lock') : $path;
     }
 
     /**
@@ -441,19 +357,22 @@ abstract class BaseCommand extends Command
         };
     }
 
-    /**
-     * @return int offset in hours to execute this command on schedule
-     */
-    abstract protected function scheduleOffset() : int;
-
-    protected function getScheduleTime() : string
-    {
-        $scheduleStart = (int) config('backup.schedule_start');
-        $offset = $this->scheduleOffset();
-
-        // wrap around midnight - an hour past 23 is not a valid cron expression
-        return sprintf("%d:00", ($scheduleStart + $offset) % 24);
-    }
+    // Scheduling is not used - Laravel Zero's scheduler cannot run these commands at
+    // all, and cron drives them directly instead. See the readme.
+    //
+    //    /**
+    //     * @return int offset in hours to execute this command on schedule
+    //     */
+    //    abstract protected function scheduleOffset() : int;
+    //
+    //    protected function getScheduleTime() : string
+    //    {
+    //        $scheduleStart = (int) config('backup.schedule_start');
+    //        $offset = $this->scheduleOffset();
+    //
+    //        // wrap around midnight - an hour past 23 is not a valid cron expression
+    //        return sprintf("%d:00", ($scheduleStart + $offset) % 24);
+    //    }
 
 	protected function human_filesize($bytes, $dec = 2)
 	{
@@ -463,49 +382,5 @@ abstract class BaseCommand extends Command
 	    return sprintf("%.{$dec}f", $bytes / pow(1024, $factor)) . " " . @$size[$factor];
 	}
 
-    protected function log($level, $message, $logMessage = null, $context = [])
-    {
-    	$verbosityMap = [
-    	    'debug' => OutputInterface::VERBOSITY_DEBUG,
-	        'info' => OutputInterface::VERBOSITY_VERBOSE,
-	        'notice' => OutputInterface::VERBOSITY_NORMAL,
-	        'warning' => OutputInterface::VERBOSITY_NORMAL,
-	        'error' => OutputInterface::VERBOSITY_QUIET,
-	        'critical' => OutputInterface::VERBOSITY_QUIET,
-	        'alert' => OutputInterface::VERBOSITY_QUIET,
-	        'emergency' => OutputInterface::VERBOSITY_QUIET,
-	    ];
-
-    	$styleMap = [
-     	    'debug' => null,
-	        'info' => 'info',
-	        'notice' => 'comment',
-	        'warning' => 'comment',
-	        'error' => 'error',
-	        'critical' => 'error',
-	        'alert' => 'error',
-	        'emergency' => 'error',
-	    ];
-
-    	$logMessage = $logMessage ?? $message;
-    	$verbosity = $verbosityMap[$level] ?? 'warning';
-    	$style = $styleMap[$level] ?? null;
-
-		Log::log($level, $logMessage, $context);
-		$this->line($message, $style, $verbosity);
-    }
-
-    protected function section($string, $verbosity = null)
-    {
-        if (! $this->output->getFormatter()->hasStyle('section')) {
-            $style = new OutputFormatterStyle('cyan');
-
-            $this->output->getFormatter()->setStyle('section', $style);
-        }
-
-        $this->output->newLine();
-        $this->line($string, 'section', $verbosity);
-        $this->line(str_repeat('-', strlen($string)), 'section', $verbosity);
-        $this->output->newLine();
-    }
 }
+

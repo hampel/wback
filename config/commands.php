@@ -58,9 +58,6 @@ return [
         NunoMaduro\LaravelConsoleSummary\SummaryCommand::class,
         Symfony\Component\Console\Command\DumpCompletionCommand::class,
         Symfony\Component\Console\Command\HelpCommand::class,
-        Illuminate\Console\Scheduling\ScheduleRunCommand::class,
-        Illuminate\Console\Scheduling\ScheduleListCommand::class,
-        Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
         Illuminate\Foundation\Console\VendorPublishCommand::class,
         LaravelZero\Framework\Commands\StubPublishCommand::class,
     ],
@@ -77,7 +74,17 @@ return [
     */
 
     'remove' => [
-        //
+        /*
+         * Laravel Zero's scheduler cannot run these commands: a due event resolves
+         * Illuminate\Log\Context\Repository, which needs a trait from illuminate/queue
+         * that a console application does not install, and in a compiled binary the
+         * working directory it hands Symfony Process is a phar:// path that Process
+         * rejects. Worse, ScheduleRunCommand swallows the failure and exits 0, so it
+         * reports a successful run having done nothing at all. Use the cron command.
+         */
+        Illuminate\Console\Scheduling\ScheduleRunCommand::class,
+        Illuminate\Console\Scheduling\ScheduleListCommand::class,
+        Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
     ],
 
 ];

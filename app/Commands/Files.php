@@ -2,7 +2,6 @@
 
 namespace App\Commands;
 
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
@@ -76,20 +75,22 @@ class Files extends BaseCommand
         return empty($ex) ? '' : " --exclude {$ex}";
     }
 
-    /**
-     * @return int offset (in hours) to run this command daily based on universal start time
-     */
-    protected function scheduleOffset() : int
-    {
-        return 1;
-    }
-
-    /**
-     * Define the command's schedule.
-     */
-    public function schedule(Schedule $schedule): void
-    {
-        $schedule->command(static::class, ['--quiet', '--all'])->dailyAt($this->getScheduleTime());
-    }
-
+    // Scheduling is not used - Laravel Zero's scheduler cannot run these commands
+    // at all, and cron drives them directly instead. See the readme.
+    //
+    ///**
+    // * @return int offset (in hours) to run this command daily based on universal start time
+    // */
+    //protected function scheduleOffset() : int
+    //{
+    //    return 1;
+    //}
+    //
+    ///**
+    // * Define the command's schedule.
+    // */
+    //public function schedule(Schedule $schedule): void
+    //{
+    //    $schedule->command(static::class, ['--quiet', '--all'])->dailyAt($this->getScheduleTime());
+    //}
 }
