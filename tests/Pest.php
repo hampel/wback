@@ -90,6 +90,17 @@ function backupPath(string $path): string
 }
 
 /**
+ * A gzipped dump, as mysqldump leaves one - ending with the marker it writes when it
+ * finishes, unless asked for one that stopped partway.
+ */
+function dumpArchive(bool $complete = true): string
+{
+    $sql = "-- MySQL dump 10.19\nINSERT INTO thing VALUES (1);\n";
+
+    return gzencode($complete ? $sql . "-- Dump completed on 2026-08-13  3:00:00\n" : $sql);
+}
+
+/**
  * The command inside the pipefail wrapper.
  *
  * Pipelines are handed to a shell as a single quoted argument, so assertions read

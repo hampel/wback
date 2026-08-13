@@ -50,6 +50,7 @@ class Config extends Command
             'MySQL Hex Blob' => config('backup.mysql.hexblob') ? 'true' : 'false',
             'MySQL Single Transaction' => config('backup.mysql.single_transaction') ? 'true' : 'false',
             'MySQL Extra Options' => config('backup.mysql.options'),
+            'MySQL Verify Dumps' => config('backup.mysql.verify') ? 'true' : 'false',
             'Pipeline Shell' => config('backup.shell'),
             'GZip Binary' => config('backup.gzip_binary'),
             'Zip Binary' => config('backup.zip_binary'),

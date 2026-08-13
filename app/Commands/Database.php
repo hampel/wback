@@ -2,6 +2,7 @@
 
 namespace App\Commands;
 
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 class Database extends BaseCommand
@@ -80,6 +81,81 @@ class Database extends BaseCommand
         );
 
         $this->produceBackup($outputPath, $this->pipeline($cmd));
+
+        $this->verifyDump($site, $destination, $outputPath);
+    }
+
+    /**
+     * Read the dump back, and check mysqldump got to the end of it
+     *
+     * Running the pipeline under pipefail catches a dump that reports failure. This
+     * catches the one that does not: a mysqldump stopped partway - killed, timed out,
+     * disconnected - leaves a perfectly valid gzip file holding half a database, and
+     * nothing about the file itself says so. The marker mysqldump writes when it
+     * finishes is the only thing that does.
+     *
+     * @param array $site site config from toml
+     * @param string $destination backup file, relative to the backup disk
+     * @param string $path backup file, absolute
+     * @return void
+     * @throws \RuntimeException if the dump is incomplete
+     */
+    protected function verifyDump(array $site, string $destination, string $path) : void
+    {
+        $verify = $site['verify'] ?? config('backup.mysql.verify');
+
+        if ($this->option('dry-run') || !$verify || !File::exists($path))
+        {
+            return;
+        }
+
+        if (!$this->dumpIsComplete($path))
+        {
+            throw new \RuntimeException(
+                "Dump [{$destination}] is incomplete - mysqldump did not finish writing it."
+                . " The file has been kept so you can look at it"
+            );
+        }
+
+        $this->log(
+            'info',
+            "Verified [{$destination}]",
+            "Verified backup",
+            compact('destination')
+        );
+    }
+
+    /**
+     * @param string $path backup file, absolute
+     * @return bool whether the dump ends the way mysqldump ends one
+     */
+    protected function dumpIsComplete(string $path) : bool
+    {
+        $handle = @gzopen($path, 'rb');
+
+        if ($handle === false)
+        {
+            return false;
+        }
+
+        $tail = '';
+
+        while (!gzeof($handle))
+        {
+            $chunk = @gzread($handle, 65536);
+
+            // corrupt, or truncated partway through the stream
+            if ($chunk === false || $chunk === '')
+            {
+                break;
+            }
+
+            $tail = substr($tail . $chunk, -512);
+        }
+
+        gzclose($handle);
+
+        return str_contains($tail, '-- Dump completed');
     }
 
     // Scheduling is not used - Laravel Zero's scheduler cannot run these commands

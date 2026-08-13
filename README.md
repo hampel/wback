@@ -51,7 +51,7 @@ setting; where that is the case it is noted.
 - Everything is local: files are read from a local path and backups are written
   to a local path. Only the database may be remote.
 
-**The backups are full, daily and unverified.**
+**The backups are full and daily.**
 
 - Every run archives everything. There are no incremental or differential
   backups, so local disk needs roughly `BACKUP_KEEPONLY_DAYS` times the full size
@@ -67,8 +67,9 @@ setting; where that is the case it is noted.
   wholesale, so anything dropped there does get shipped to the remote.
 - Nothing is encrypted: the dump and the archive land on the remote as written.
   Use an rclone crypt remote if that matters.
-- Backups are never verified or test-restored, and `wback` has no restore
-  command. Restoring is `gunzip | mysql` and `unzip`, by hand.
+- Database dumps are checked for completeness, but nothing is test-restored, and
+  file archives are not checked at all. `wback` has no restore command either:
+  restoring is `gunzip | mysql` and `unzip`, by hand.
 
 **One run at a time.**
 
@@ -132,6 +133,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `BACKUP_MYSQLDUMP_HEXBLOB` | `true` | dump blobs as hex, for portable restores |
 | `BACKUP_MYSQLDUMP_SINGLE_TRANSACTION` | `true` | snapshot instead of locking every table |
 | `BACKUP_MYSQLDUMP_OPTIONS` | — | extra mysqldump options, inserted as written |
+| `BACKUP_MYSQLDUMP_VERIFY` | `true` | read each dump back and check it is complete |
 | `BACKUP_SHELL` | `/bin/bash` | shell for the dump pipeline; needs `pipefail` |
 | `BACKUP_GZIP_PATH` | `/bin/gzip` | see [Large databases](#large-databases) |
 | `BACKUP_ZIP_PATH` | `/usr/bin/zip` | |
@@ -184,6 +186,7 @@ files = ''
 | `database` | the short name | set to `''` to skip the database entirely |
 | `charset` | `BACKUP_DEFAULT_CHARSET` | passed as `--default-character-set` |
 | `hostname` | local socket | database host; passed as `-h`, so a remote server must be on the default port |
+| `verify` | `BACKUP_MYSQLDUMP_VERIFY` | read the dump back and check it is complete |
 | `single_transaction` | `BACKUP_MYSQLDUMP_SINGLE_TRANSACTION` | snapshot rather than lock; see below |
 | `options` | `BACKUP_MYSQLDUMP_OPTIONS` | extra mysqldump options, replacing the global ones |
 | `files` | `<FILES_ROOT>/<domain>` | set to `''` to skip files entirely |
@@ -222,6 +225,24 @@ sites, and exits non-zero.
 bash -o pipefail -c 'mysqldump --opt --default-character-set=<charset> --hex-blob \
     --single-transaction <database> | gzip -c -f > <destination>'
 ```
+
+Each dump is then read back and checked for the marker mysqldump writes when it
+finishes. `pipefail` catches a dump that *reports* failure; this catches the one
+that does not. A mysqldump stopped partway leaves a file that is a perfectly
+valid gzip — `gzip -t` passes it — holding a fraction of a database, and nothing
+else about it says so:
+
+```
+Backed up demo.20260813.sql.gz - 108.00 kB
+Dump [demo.example.com/database/demo.20260813.sql.gz] is incomplete - mysqldump
+did not finish writing it. The file has been kept so you can look at it
+```
+
+It costs one decompression pass, about 8% of the time the backup itself takes (6
+seconds against 72 on a 2GB dump), and the file is kept rather than deleted so
+you can see what you got. Turn it off with `BACKUP_MYSQLDUMP_VERIFY=false`, or
+per site with `verify = false` — which you must do for a database dumped with
+`--skip-comments` or `--compact`, since those remove the marker.
 
 The `pipefail` wrapper is not decoration. A shell reports the exit status of the
 *last* command in a pipeline, so without it a mysqldump that dies partway — wrong

@@ -54,6 +54,17 @@ return [
          * override for a specific database in the source configuration toml file
          */
         'options' => env('BACKUP_MYSQLDUMP_OPTIONS', ''),
+
+        /**
+         * read each dump back and check mysqldump finished writing it
+         *
+         * costs a decompression pass - around 8% of the time the backup itself takes -
+         * and needs the comments mysqldump writes by default, so turn it off for a
+         * database dumped with --skip-comments or --compact
+         *
+         * override for a specific database in the source configuration toml file
+         */
+        'verify' => env('BACKUP_MYSQLDUMP_VERIFY', true),
     ],
 
     /**

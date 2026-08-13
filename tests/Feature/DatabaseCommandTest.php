@@ -277,6 +277,8 @@ it('removes the partial dump when mysqldump fails', function () {
 });
 
 it('reports how big the dump turned out', function () {
+    config()->set('backup.mysql.verify', false);   // this one is about the size
+
     Process::fake(function () {
         Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', str_repeat('x', 2048));
 
@@ -306,7 +308,7 @@ it('reports no size for a dry run', function () {
 
 it('keeps the dump when it succeeds', function () {
     Process::fake(function () {
-        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', 'a whole dump');
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', dumpArchive());
 
         return Process::result();
     });
@@ -319,6 +321,76 @@ it('keeps the dump when it succeeds', function () {
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 
     expect(Storage::disk('backup')->exists('example.com/database/example.20260813.sql.gz'))->toBeTrue();
+});
+
+it('fails the site when the dump stopped partway', function () {
+    // a mysqldump killed partway leaves a valid gzip file holding half a database, and
+    // exits 0 if the gzip it was piped into was happy
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', dumpArchive(complete: false));
+
+        return Process::result();
+    });
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])
+        ->expectsOutputToContain('is incomplete - mysqldump did not finish writing it')
+        ->assertFailed();
+
+    // kept, because a dump that fails this check is worth looking at
+    expect(Storage::disk('backup')->exists('example.com/database/example.20260813.sql.gz'))->toBeTrue();
+});
+
+it('passes a dump that ran to the end', function () {
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', dumpArchive());
+
+        return Process::result();
+    });
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+});
+
+it('can have verification turned off', function () {
+    config()->set('backup.mysql.verify', false);
+
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', dumpArchive(complete: false));
+
+        return Process::result();
+    });
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+});
+
+it('can have verification turned off for one site', function () {
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', dumpArchive(complete: false));
+
+        return Process::result();
+    });
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        verify = false
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 });
 
 it('creates the destination directories', function () {
