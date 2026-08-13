@@ -142,6 +142,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `BACKUP_SYNC_REMOTE` | — | `remote:prefix` for `sync`; required by that command |
 | `BACKUP_SYNC_ALLOW_EMPTY` | `false` | allow a sync from a source that has gone empty |
 | `BACKUP_SYNC_BACKUP_DIR` | — | keep replaced files under this directory instead of deleting |
+| `BACKUP_CLOUD_OPTIONS` | — | extra rclone options for `cloud`, inserted as written |
 | `BACKUP_SYNC_OPTIONS` | — | extra rclone options for `sync`, inserted as written |
 | `BACKUP_LOCK_FILE` | `<destination>/.wback.lock` | lock keeping two runs off each other |
 | `LARAVEL_STORAGE_PATH` | working directory | storage path, PHAR only |
@@ -294,18 +295,26 @@ zip -9 --recurse-paths --symlinks <destination> . --exclude <patterns>
 ### `cloud` — copy backups off the machine
 
 ```
-rclone --progress copy <backup>/<domain> <BACKUP_CLOUD_REMOTE>/<domain>
+rclone --stats-one-line --stats 1m copy <backup>/<domain> <BACKUP_CLOUD_REMOTE>/<domain>
 ```
 
 A copy, not a mirror: nothing on the remote is ever deleted, so remote retention
 is the storage provider's job (a bucket lifecycle rule, for instance).
+
+**Reporting depends on where the output is going.** Run from a terminal, both
+rclone commands get `--progress` and draw the usual live display. Anywhere else —
+cron, a log file, a pipe — they get `--stats-one-line --stats 1m` instead,
+because a progress display off a terminal writes the whole thing again every half
+second: 47 lines for a six second transfer, and proportionally more for a real
+one. `BACKUP_CLOUD_OPTIONS` and `BACKUP_SYNC_OPTIONS` are inserted after these,
+so putting `--progress` in one of them forces the display back on.
 
 ### `sync` — mirror live directories
 
 For each `sync` path of the site:
 
 ```
-rclone --progress sync <source>/<path> <BACKUP_SYNC_REMOTE>/<domain>/sync/<path>
+rclone --stats-one-line --stats 1m sync <source>/<path> <BACKUP_SYNC_REMOTE>/<domain>/sync/<path>
 ```
 
 This one *is* a mirror — files deleted locally are deleted on the remote. It is

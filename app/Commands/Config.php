@@ -57,6 +57,7 @@ class Config extends Command
             'rclone Binary' => config('backup.rclone.binary'),
             'rclone Cloud Remote' => config('backup.rclone.cloud_remote'),
             'rclone Sync Remote' => config('backup.rclone.sync_remote'),
+            'rclone Cloud Options' => config('backup.rclone.cloud_options'),
             'rclone Sync Options' => config('backup.rclone.sync_options'),
             'rclone Sync Allow Empty' => config('backup.rclone.sync_allow_empty') ? 'true' : 'false',
             'rclone Sync Backup Dir' => config('backup.rclone.sync_backup_dir'),

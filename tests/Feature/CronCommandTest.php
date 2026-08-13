@@ -48,8 +48,8 @@ it('runs every backup in the order they depend on each other', function () {
     expect($ran)->toHaveCount(4)
         ->and($ran[0])->toContain('mysqldump')
         ->and($ran[1])->toContain('zip')
-        ->and($ran[2])->toContain('rclone --progress copy')
-        ->and($ran[3])->toContain('rclone --progress sync');
+        ->and($ran[2])->toContain('rclone --stats-one-line --stats 1m copy')
+        ->and($ran[3])->toContain('rclone --stats-one-line --stats 1m sync');
 });
 
 it('holds the lock itself, so the stages do not fight over it', function () {

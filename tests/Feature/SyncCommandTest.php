@@ -21,7 +21,7 @@ it('syncs a configured path to the sync remote', function () {
     $source = Storage::disk('files')->path('example.com/data/documents');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/rclone --progress sync '{$source}' 'sync:live/example.com/sync/data/documents'");
+        "/usr/bin/rclone --stats-one-line --stats 1m sync '{$source}' 'sync:live/example.com/sync/data/documents'");
 });
 
 it('syncs every configured path', function () {
@@ -81,7 +81,7 @@ it('quotes sync paths containing spaces', function () {
     $source = Storage::disk('files')->path('example.com/data/My Documents');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/rclone --progress sync '{$source}' 'sync:live/example.com/sync/data/My Documents'");
+        "/usr/bin/rclone --stats-one-line --stats 1m sync '{$source}' 'sync:live/example.com/sync/data/My Documents'");
 });
 
 it('refuses to sync a source that has become empty', function () {
@@ -153,6 +153,22 @@ it('lets sync delete outright when no archive is configured', function () {
     Process::assertRan(fn ($process) => ! str_contains($process->command, '--backup-dir'));
 });
 
+it('reports with periodic summaries rather than a progress display off a terminal', function () {
+    useSource('example.com', ['data/documents/report.pdf']);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        sync = ['data/documents']
+        TOML);
+
+    $this->artisan('sync', ['site' => 'example'])->assertSuccessful();
+
+    // a progress display redraws itself, which fills a log file with the same lines
+    Process::assertRan(fn ($process) => str_contains($process->command, '--stats-one-line --stats 1m')
+        && ! str_contains($process->command, '--progress'));
+});
+
 it('appends the configured sync options', function () {
     config()->set('backup.rclone.sync_options', '--max-delete 1000 --stats 60s');
 
@@ -168,7 +184,7 @@ it('appends the configured sync options', function () {
 
     Process::assertRan(fn ($process) => str_contains(
         $process->command,
-        '/usr/bin/rclone --max-delete 1000 --stats 60s --progress sync'
+        '/usr/bin/rclone --stats-one-line --stats 1m --max-delete 1000 --stats 60s sync'
     ));
 });
 
@@ -230,5 +246,5 @@ it('hands the dry run over to rclone rather than skipping the command', function
 
     $this->artisan('sync', ['site' => 'example', '--dry-run' => true])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, '/usr/bin/rclone --dry-run --progress sync'));
+    Process::assertRan(fn ($process) => str_contains($process->command, '/usr/bin/rclone --dry-run --stats-one-line --stats 1m sync'));
 });

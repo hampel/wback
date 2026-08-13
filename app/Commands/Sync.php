@@ -86,8 +86,9 @@ class Sync extends BaseCommand
         $options = empty($options) ? '' : " {$options}";
 
         $archive = $this->archiveOption($site, $path);
+        $progress = $this->getProgress();
 
-        $cmd = "{$rclone}{$verbosity}{$dryrun}{$options} --progress sync{$archive} "
+        $cmd = "{$rclone}{$verbosity}{$dryrun}{$progress}{$options} sync{$archive} "
             . escapeshellarg($syncPath) . ' ' . escapeshellarg($remotePath);
 
         $this->log(

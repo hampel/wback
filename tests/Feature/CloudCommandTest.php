@@ -20,7 +20,7 @@ it('copies the whole backup tree for the site to the cloud remote', function () 
     $source = backupPath('example.com');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/rclone --progress copy '{$source}' 'cloud:backups/example.com'");
+        "/usr/bin/rclone --stats-one-line --stats 1m copy '{$source}' 'cloud:backups/example.com'");
 });
 
 it('trims a trailing slash from the configured remote', function () {
@@ -36,6 +36,24 @@ it('trims a trailing slash from the configured remote', function () {
     $this->artisan('cloud', ['site' => 'example'])->assertSuccessful();
 
     Process::assertRan(fn ($process) => str_ends_with($process->command, " 'cloud:backups/example.com'"));
+});
+
+it('appends the configured cloud options, which win over the defaults', function () {
+    config()->set('backup.rclone.cloud_options', '--transfers 8 --progress');
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', 'dump');
+
+    $this->artisan('cloud', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains(
+        $process->command,
+        '/usr/bin/rclone --stats-one-line --stats 1m --transfers 8 --progress copy'
+    ));
 });
 
 it('fails when no cloud remote is configured', function () {
@@ -76,5 +94,5 @@ it('hands the dry run over to rclone rather than skipping the command', function
 
     $this->artisan('cloud', ['site' => 'example', '--dry-run' => true])->assertSuccessful();
 
-    Process::assertRan(fn ($process) => str_contains($process->command, '/usr/bin/rclone --dry-run --progress copy'));
+    Process::assertRan(fn ($process) => str_contains($process->command, '/usr/bin/rclone --dry-run --stats-one-line --stats 1m copy'));
 });

@@ -117,6 +117,11 @@ return [
         'sync_remote' => env('BACKUP_SYNC_REMOTE'),
 
         /**
+         * additional options for the cloud command, inserted as written
+         */
+        'cloud_options' => env('BACKUP_CLOUD_OPTIONS', ''),
+
+        /**
          * additional options for the sync command, inserted as written
          */
         'sync_options' => env('BACKUP_SYNC_OPTIONS', ''),

@@ -49,7 +49,13 @@ class Cloud extends BaseCommand
         $remotePath = rtrim(config('backup.rclone.cloud_remote'), '/') . '/' . $path;
         $verbosity = $this->getVerbosity();
         $dryrun = $this->option('dry-run') ? ' --dry-run' : '';
-        $cmd = "{$rclone}{$verbosity}{$dryrun} --progress copy "
+        $progress = $this->getProgress();
+
+        // operator supplied, so inserted as written
+        $options = config('backup.rclone.cloud_options');
+        $options = empty($options) ? '' : " {$options}";
+
+        $cmd = "{$rclone}{$verbosity}{$dryrun}{$progress}{$options} copy "
             . escapeshellarg($sourcePath) . ' ' . escapeshellarg($remotePath);
 
         $this->log(

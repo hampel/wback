@@ -379,6 +379,22 @@ abstract class BaseCommand extends Command
 	    }
     }
 
+    /**
+     * How rclone should report what it is doing
+     *
+     * A progress display redraws itself, which is what you want watching a transfer and
+     * not what you want in a log file or a cron mail - off a terminal it writes the
+     * whole display again every half second, tens of lines for a transfer of any size.
+     * Anything that is not a terminal gets periodic one line summaries instead, which
+     * stay quiet unless the command is run verbosely.
+     *
+     * @return string rclone reporting option
+     */
+    protected function getProgress() : string
+    {
+        return $this->output->isDecorated() ? ' --progress' : ' --stats-one-line --stats 1m';
+    }
+
     protected function getVerbosity() : string
     {
         return match (true) {
