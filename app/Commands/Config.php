@@ -44,6 +44,7 @@ class Config extends Command
         ]);
 
         static::addToSection('Backup', fn () => [
+            'Environment File' => $this->laravel->environmentFilePath(),
             'Sites Path' => config('backup.sites_path'),
             'MySQL Dump Binary' => config('backup.mysql.dump_binary'),
             'MySQL Default Charset' => config('backup.mysql.default_charset'),

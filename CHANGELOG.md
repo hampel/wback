@@ -6,6 +6,21 @@ only.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- The environment file can live somewhere other than beside the binary: at
+  `/etc/wback/.env`, or wherever `WBACK_ENV` points. A binary on the path can now
+  take its configuration from `/etc/wback` and be run from anywhere.
+- `app:config` reports which environment file was read.
+
+### Fixed
+
+- `LARAVEL_STORAGE_PATH` now works when set in the environment file. It was read
+  before the file was loaded, so it only ever worked as a real environment
+  variable.
+
 ## [7.1.0] - 2026-08-13
 
 ### Changed

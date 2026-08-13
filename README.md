@@ -105,10 +105,11 @@ sha256sum -c SHA256SUMS
 Which release you want depends on the PHP on the server: **7.1.0 and later need
 PHP 8.3**, and **7.0.0 runs on PHP 8.2**.
 
-Then put a `.env` beside the binary — see [Configuration](#configuration), and
-note that `.env` is read from the binary's directory while the storage path
-follows the working directory. `wback app:validate` will tell you whether the
-server can do what the configuration says.
+Then give it a `.env` — beside the binary, at `/etc/wback/.env`, or wherever
+`WBACK_ENV` points. See [Configuration](#configuration), and note that the
+storage path follows the working directory rather than the binary.
+`wback app:validate` will tell you whether the server can do what the
+configuration says.
 
 ### From source
 
@@ -135,14 +136,34 @@ Two files: `.env` for the environment, and a TOML file listing the sites.
 This differs between a source checkout and a built binary, and it is the most
 common thing to get wrong when deploying:
 
-| | source checkout | built PHAR |
+| | source checkout | built binary |
 |---|---|---|
-| `.env` | the project root | **the directory containing the binary** |
+| `.env` | the project root | beside the binary, `WBACK_ENV`, or `/etc/wback/.env` |
 | storage path (default sites file, backup destination and log) | `./storage` | the **current working directory**, or `LARAVEL_STORAGE_PATH` |
 
 Because the storage path follows the working directory, set `SITES_TOML_PATH`,
 `BACKUP_DEST_PATH` and `LOG_STORAGE_PATH` to absolute paths on a server rather
 than relying on the defaults.
+
+The environment file is looked for in this order, first one that exists winning:
+
+1. **beside the binary** — `.env` next to the executable
+2. **`WBACK_ENV`**, naming the file itself, wherever it is
+3. the project's own `.env`, running from a source checkout
+4. **`/etc/wback/.env`**
+
+Which means the binary can go somewhere on the path and its configuration can sit
+with the rest of the system's, with nothing to pass at all:
+
+```bash
+sudo install -m 755 wback-7.1.0 /usr/local/bin/wback
+sudo install -d /etc/wback
+sudo install -m 640 .env /etc/wback/.env
+wback app:config          # reports which file it read
+```
+
+Note the first entry: a `.env` beside the binary is loaded last by the framework
+and so overrides the others. Keep one there only if you mean it to win.
 
 `php wback app:config` prints every resolved path, binary and remote — run it
 first when something is not where you expect.
@@ -176,7 +197,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `BACKUP_CLOUD_OPTIONS` | — | extra rclone options for `cloud`, inserted as written |
 | `BACKUP_SYNC_OPTIONS` | — | extra rclone options for `sync`, inserted as written |
 | `BACKUP_LOCK_FILE` | `<destination>/.wback.lock` | lock keeping two runs off each other |
-| `LARAVEL_STORAGE_PATH` | working directory | storage path, PHAR only |
+| `LARAVEL_STORAGE_PATH` | working directory | storage path, built binary only |
 | `LOG_CHANNEL` | `stack` | `single`, `daily`, `slack`, `syslog`, `stack`, … |
 | `LOG_STACK` | `null` | channels in the stack, comma separated |
 | `LOG_STORAGE_PATH` | `<storage>/wback.log` | |
