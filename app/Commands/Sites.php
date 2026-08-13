@@ -75,23 +75,35 @@ class Sites extends Command
     {
         foreach ($site as $key => $data)
         {
-            if (!empty($data))
+            if (is_array($data) && !empty($data))
             {
-                if (is_array($data))
+                $this->line("    <comment>{$key}</comment>:");
+                foreach ($data as $d)
                 {
-                    $this->line("    <comment>{$key}</comment>:");
-                    foreach ($data as $d)
-                    {
-                        $this->line("        {$d}");
-                    }
+                    $this->line("        {$d}");
                 }
-                else
-                {
-                    $this->line("    <comment>{$key}</comment>: {$data}");
-                }
+
+                continue;
             }
+
+            $this->line("    <comment>{$key}</comment>: " . $this->formatValue($data));
         }
 
         $this->line('');
+    }
+
+    /**
+     * A key turned off carries as much meaning as one that is set - database = ''
+     * means this site has no database - so every key in the file is shown, empty or
+     * not. A key that is absent from the file is the one that is not listed, which is
+     * the difference between deliberately disabled and left to the default.
+     */
+    protected function formatValue($data) : string
+    {
+        return match (true) {
+            is_bool($data) => $data ? 'true' : 'false',
+            is_array($data), $data === null, $data === '' => '(none)',
+            default => (string) $data,
+        };
     }
 }

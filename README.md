@@ -189,7 +189,10 @@ the short name is used; set it to `''` and the site has no database. The same
 applies to `files`, for a database-only site such as the Zabbix example above.
 
 `php wback app:sites` prints the inventory as parsed, which is the quickest way
-to check a TOML edit did what you meant.
+to check a TOML edit did what you meant. It lists every key a site sets,
+including the ones set to nothing — `files: (none)` is a site with files
+deliberately turned off, where a site that simply leaves `files` out does not
+list it at all.
 
 ## Commands
 

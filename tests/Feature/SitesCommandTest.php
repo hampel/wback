@@ -46,6 +46,58 @@ it('lists array values one per line', function () {
         ->assertSuccessful();
 });
 
+it('shows a setting that is deliberately turned off', function () {
+    useSites(<<<'TOML'
+        [zabbix]
+        domain = 'zabbix.example.com'
+        files = ''
+        TOML);
+
+    $this->artisan('app:sites', ['site' => 'zabbix'])
+        ->expectsOutputToContain('files: (none)')
+        ->assertSuccessful();
+});
+
+it('does not list a key the site leaves out', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('app:sites', ['site' => 'example'])
+        ->doesntExpectOutputToContain('files')
+        ->assertSuccessful();
+});
+
+it('shows booleans as written rather than as 1 and nothing', function () {
+    useSites(<<<'TOML'
+        [legacy]
+        domain = 'legacy.example.com'
+        single_transaction = false
+
+        [modern]
+        domain = 'modern.example.com'
+        single_transaction = true
+        TOML);
+
+    $this->artisan('app:sites')
+        ->expectsOutputToContain('single_transaction: false')
+        ->expectsOutputToContain('single_transaction: true')
+        ->assertSuccessful();
+});
+
+it('shows an empty list as empty', function () {
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        exclude = []
+        TOML);
+
+    $this->artisan('app:sites', ['site' => 'example'])
+        ->expectsOutputToContain('exclude: (none)')
+        ->assertSuccessful();
+});
+
 it('fails when the requested site is not configured', function () {
     useSites(<<<'TOML'
         [example]
