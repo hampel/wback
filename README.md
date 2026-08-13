@@ -527,6 +527,10 @@ application actually produces.
 [Laravel Zero](https://laravel-zero.com/), a console micro-framework built on
 Laravel's components.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
