@@ -122,6 +122,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | variable | default | purpose |
 |---|---|---|
 | `SITES_TOML_PATH` | `<storage>/wback.toml` | the site inventory |
+| `APP_TIMEZONE` | `Australia/Sydney` | timezone for datestamps and reporting |
 | `FILES_ROOT` | `/srv/www` | where site files are looked for |
 | `BACKUP_DEST_PATH` | `<storage>/backup` | where backups are written |
 | `BACKUP_KEEPONLY_DAYS` | `7` | how long `clean` keeps local backups |
@@ -359,8 +360,15 @@ transfers it would make.
 Files are named for the site's short name and the date. A second run on the same
 day does not overwrite the first — it appends a counter, `example.20260813-2.zip`.
 
-Datestamps use the application timezone, which is fixed at `Australia/Sydney` in
-`config/app.php`.
+Datestamps use `APP_TIMEZONE`, which defaults to `Australia/Sydney`.
+
+That setting lives in `config/backup.php`, not `config/app.php`, and the reason is
+worth knowing if you ever add another one: `app:build` **evaluates
+`config/app.php` on the build machine and compiles the result in as literals**,
+so an `env()` call in that file is resolved at build time and frozen. No `.env`
+beside the built binary can change it — which is why the timezone appeared
+unconfigurable for years. Every other config file is compiled as written, so put
+anything that needs to stay configurable in one of those.
 
 ## Running it from cron
 

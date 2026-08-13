@@ -130,7 +130,12 @@ are the traits shared between `BaseCommand` and `Cron`.
 **PHAR-aware storage path**: `bootstrap/app.php` sets the storage path to
 `getcwd()` when running inside a Phar, so a compiled `wback` resolves `.env`,
 `wback.toml` and the default backup/log paths relative to the working directory.
-The timezone is hardcoded to `Australia/Sydney` in `config/app.php`.
+**Never put an `env()` call in `config/app.php`.** `app:build` evaluates that file
+on the build machine and rewrites it as a literal array before compiling
+(`BuildCommand::prepare()`), so the value is frozen at build time and no `.env`
+beside the binary can change it. That is why the timezone lives in
+`config/backup.php` as `backup.timezone`, applied over `app.timezone` by
+`AppServiceProvider::boot()`. Every other config file is compiled as written.
 
 ## The TOML site inventory
 

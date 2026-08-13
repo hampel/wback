@@ -53,7 +53,12 @@ return [
     |
     */
 
-    'timezone' => 'Australia/Sydney', //env('APP_TIMEZONE', 'UTC'),
+    /*
+     * Set from config/backup.php as the application boots - app:build compiles this
+     * file in as literals, so an env() call here would be frozen at build time. Change
+     * the timezone with APP_TIMEZONE, or the default in config/backup.php.
+     */
+    'timezone' => 'Australia/Sydney',
 
     /*
     |--------------------------------------------------------------------------

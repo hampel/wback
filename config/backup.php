@@ -7,6 +7,18 @@ return [
      */
     'sites_path' => env('SITES_TOML_PATH', storage_path('wback.toml')),
 
+    /**
+     * Timezone for datestamped backup filenames and everything else this app reports
+     *
+     * It lives here rather than in config/app.php because app:build evaluates that file
+     * on the build machine and compiles the result in as literals - an env() call in it
+     * is frozen at build time and no .env beside the binary can change it. This file is
+     * compiled as written, so the setting still works in a built binary.
+     *
+     * AppServiceProvider applies it over app.timezone as the application boots.
+     */
+    'timezone' => env('APP_TIMEZONE', 'Australia/Sydney'),
+
 	/**
 	 * MySQL dump configuration
 	 */

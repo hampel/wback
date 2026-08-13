@@ -12,7 +12,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        /*
+         * app:build evaluates config/app.php on the build machine and compiles the
+         * result in as literals, so an env() call in that file is frozen at build time.
+         * The timezone is configured in config/backup.php instead, which is compiled as
+         * written, and applied here - before any command runs.
+         */
+        $timezone = config('backup.timezone');
+
+        config(['app.timezone' => $timezone]);
+
+        date_default_timezone_set($timezone);
     }
 
     /**
