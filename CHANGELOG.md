@@ -6,6 +6,14 @@ only.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The "Backup written" log entry carries the size twice: `bytes` as before, and
+  `size` rounded and with a unit, so a log can be read without converting the
+  large numbers by hand.
+
 ## [7.2.0] - 2026-08-14
 
 ### Added

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -318,6 +319,30 @@ it('reports how big the dump turned out', function () {
     $this->artisan('database', ['site' => 'example'])
         ->expectsOutputToContain('Backed up example.20260813.sql.gz - 2.00 kB')
         ->assertSuccessful();
+});
+
+it('logs the size both ways, so the log is readable and still comparable', function () {
+    config()->set('backup.mysql.verify', false);
+
+    Log::spy();
+
+    Process::fake(function () {
+        Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', str_repeat('x', 2048));
+
+        return Process::result();
+    });
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('database', ['site' => 'example'])->assertSuccessful();
+
+    Log::shouldHaveReceived('log')
+        ->withArgs(fn ($level, $message, $context = []) => $message === 'Backup written'
+            && $context['bytes'] === 2048
+            && $context['size'] === '2.00 kB');
 });
 
 it('reports no size for a dry run', function () {

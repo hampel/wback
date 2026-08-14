@@ -318,12 +318,15 @@ abstract class BaseCommand extends Command
 
         $file = basename($path);
         $bytes = File::size($path);
+        $size = $this->human_filesize($bytes);
 
+        // the log carries both: bytes to compare one run against the next, and the
+        // rounded size so a person reading the log does not have to count digits
         $this->log(
             'notice',
-            "Backed up {$file} - " . $this->human_filesize($bytes),
+            "Backed up {$file} - {$size}",
             "Backup written",
-            ['file' => $file, 'bytes' => $bytes]
+            ['file' => $file, 'bytes' => $bytes, 'size' => $size]
         );
     }
 
