@@ -395,6 +395,22 @@ deletion — leave the remote half mirrored. It is available through
 `BACKUP_SYNC_OPTIONS` if you want it, but the two guards above are what wback
 leans on.
 
+**Sharing one remote with `cloud` is safe, with one exception.** Pointing
+`BACKUP_CLOUD_REMOTE` and `BACKUP_SYNC_REMOTE` at the same place works: the two
+write to separate branches of it — `<domain>/database/` and `<domain>/files/` for
+`cloud`, `<domain>/sync/<path>` for `sync` — and `cloud` only ever copies, so it
+cannot delete what `sync` put there.
+
+The exception runs the other way. `cloud` copies the *whole* backup root for a
+site, so a directory of your own at `<backup>/<domain>/sync/<path>`, matching a
+path you sync, gets uploaded into the sync destination — where the next `sync`
+deletes it, correctly, as a file the source no longer has. Nothing wback writes
+lands there; it creates only `files/` and `database/`. So the rule is just: don't
+park anything under a `sync/` directory in a site's backup root, the way
+logrotate archives sometimes end up parked alongside the backups. A collision
+with the `BACKUP_SYNC_BACKUP_DIR` branch is harmless by comparison — `sync` only
+adds to that one — but it leaves your files mixed in with the archived ones.
+
 ### `clean` — expire local backups
 
 Deletes anything older than `BACKUP_KEEPONLY_DAYS` from each site's `files` and

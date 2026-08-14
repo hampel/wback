@@ -14,6 +14,12 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   `size` rounded and with a unit, so a log can be read without converting the
   large numbers by hand.
 
+### Documentation
+
+- What happens when `cloud` and `sync` share one rclone remote: the branches they
+  write to, and the single case where a directory of your own in a site's backup
+  root ends up inside the sync destination and is deleted by the next sync.
+
 ## [7.2.0] - 2026-08-14
 
 ### Added
