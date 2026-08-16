@@ -80,6 +80,11 @@ and `Clean` implement only `handleSite()`. Throwing
 external command arrives the same way, since Illuminate's
 `ProcessFailedException` extends `RuntimeException`.
 
+**Do not report paths with `$this->components->twoColumnDetail()`.** Its
+`EnsureRelativePaths` mutator strips `base_path().'/'` out of every value and
+cannot be opted out of, so absolute paths print as convincing relative ones.
+`Config` and `Validate` each render their own lines for this reason.
+
 `Sites`, `Config` and `Validate` extend Laravel Zero's `Command` directly and are
 namespaced `app:` to keep the backup verbs at the top level. `Validate` exercises
 the real thing — it runs each binary, dumps each schema to /dev/null, lists each

@@ -4,7 +4,19 @@ namespace App\Commands;
 
 use Illuminate\Support\Stringable;
 use LaravelZero\Framework\Commands\Command;
+use Symfony\Component\Console\Terminal;
 
+/**
+ * What this installation is actually configured to do
+ *
+ * The lines are rendered here rather than with $this->components->twoColumnDetail(),
+ * whose EnsureRelativePaths mutator strips base_path() out of every value it is given
+ * and cannot be turned off. For an "about" screen that is a tidy touch; for a settings
+ * dump it is the one mutation you cannot afford, because which file is being loaded is
+ * the entire question being asked. It rendered the environment file as `.env` and the
+ * backup destination as `storage/backup` - both plausible enough as relative paths that
+ * nothing looked wrong.
+ */
 class Config extends Command
 {
     /**
@@ -22,92 +34,27 @@ class Config extends Command
     protected $description = 'Show application configuration';
 
     /**
-     * The data to display.
-     *
-     * @var array
-     */
-    protected static $data = [];
-
-    /**
      * Execute the console command.
      */
     public function handle()
     {
-        static::addToSection('Application', fn () => [
-            'Name' => config('app.name'),
-            'Version' => $this->app->version(),
-            'Laravel Version' => $this->app::VERSION,
-            'PHP Version' => phpversion(),
-            'Environment' => $this->laravel->environment(),
-            'Debug Mode' => config('app.debug') ? '<fg=yellow;options=bold>ENABLED</>' : 'OFF',
-            'Timezone' => config('app.timezone'),
-        ]);
+        $sections = $this->option('only') ? $this->sections() : [];
 
-        static::addToSection('Backup', fn () => [
-            'Environment File' => $this->laravel->environmentFilePath(),
-            'Sites Path' => config('backup.sites_path'),
-            'MySQL Dump Binary' => config('backup.mysql.dump_binary'),
-            'MySQL Default Charset' => config('backup.mysql.default_charset'),
-            'MySQL Hex Blob' => config('backup.mysql.hexblob') ? 'true' : 'false',
-            'MySQL Single Transaction' => config('backup.mysql.single_transaction') ? 'true' : 'false',
-            'MySQL Extra Options' => config('backup.mysql.options'),
-            'MySQL Verify Dumps' => config('backup.mysql.verify') ? 'true' : 'false',
-            'Pipeline Shell' => config('backup.shell'),
-            'GZip Binary' => config('backup.gzip_binary'),
-            'Zip Binary' => config('backup.zip_binary'),
-            'rclone Binary' => config('backup.rclone.binary'),
-            'rclone Cloud Remote' => config('backup.rclone.cloud_remote'),
-            'rclone Sync Remote' => config('backup.rclone.sync_remote'),
-            'rclone Cloud Options' => config('backup.rclone.cloud_options'),
-            'rclone Sync Options' => config('backup.rclone.sync_options'),
-            'rclone Sync Allow Empty' => config('backup.rclone.sync_allow_empty') ? 'true' : 'false',
-            'rclone Sync Backup Dir' => config('backup.rclone.sync_backup_dir'),
-            'Keep Only Days' => config('backup.keeponly_days'),
-            'Keep Least Days' => config('backup.keepleast_days'),
-            'Lock File' => config('backup.lock_file') ?: 'backup destination',
-        ]);
+        foreach ($this->settings() as $section => $settings)
+        {
+            if ($sections && !in_array($this->toSearchKeyword($section), $sections))
+            {
+                continue;
+            }
 
-        static::addToSection('Filesystems', fn () => [
-            'Default' => config('filesystems.default'),
-            'Storage Path' => storage_path(),
-            'Files Disk' => config('filesystems.disks.files.root'),
-            'Backup Disk' => config('filesystems.disks.backup.root'),
-        ]);
+            $this->newLine();
+            $this->heading($section);
 
-        static::addToSection('Logging', fn () => [
-            'Default' => config('logging.default'),
-            'Hostname Stamp' => config('logging.hostname') ?: 'none',
-            'Stack Channels' => implode(',', config('logging.channels.stack.channels')),
-            'Single Path' => config('logging.channels.single.path'),
-            'Single Level' => config('logging.channels.single.level'),
-        ]);
-
-        collect(static::$data)
-            ->map(fn ($items) => collect($items)
-                ->map(function ($value) {
-                    if (is_array($value)) {
-                        return [$value];
-                    }
-
-                    if (is_string($value)) {
-                        $value = $this->laravel->make($value);
-                    }
-
-                    return collect($this->laravel->call($value))
-                        ->map(fn ($value, $key) => [$key, $value])
-                        ->values()
-                        ->all();
-                })->flatten(1)
-            )
-            ->sortBy(function ($data, $key) {
-                $index = array_search($key, ['Application', 'Backup', 'Filesystems', 'Logging']);
-
-                return $index === false ? 99 : $index;
-            })
-            ->filter(function ($data, $key) {
-                return $this->option('only') ? in_array($this->toSearchKeyword($key), $this->sections()) : true;
-            })
-            ->pipe(fn ($data) => $this->display($data));
+            foreach ($settings as $label => $value)
+            {
+                $this->detail($label, $value);
+            }
+        }
 
         $this->newLine();
 
@@ -115,58 +62,193 @@ class Config extends Command
     }
 
     /**
-     * Display the application information.
-     *
-     * @param  \Illuminate\Support\Collection  $data
-     * @return void
+     * @return array<string, array<string, string>> settings to report, by section
      */
-    protected function display($data)
+    protected function settings() : array
     {
-        $this->displayDetail($data);
-    }
+        return [
+            'Application' => [
+                'Name' => config('app.name'),
+                'Version' => $this->app->version(),
+                'Laravel Version' => $this->app::VERSION,
+                'PHP Version' => phpversion(),
+                'Environment' => $this->laravel->environment(),
+                'Debug Mode' => config('app.debug') ? '<fg=yellow;options=bold>ENABLED</>' : 'OFF',
+                'Timezone' => config('app.timezone'),
+            ],
 
-    protected function displayDetail($data)
-    {
-        $data->each(function ($data, $section) {
-            $this->newLine();
+            'Backup' => [
+                'Environment File' => $this->path($this->laravel->environmentFilePath()),
+                'Sites Path' => $this->path(config('backup.sites_path')),
+                // binaries are left as written: a bare name is found on the PATH, so it
+                // is not relative to anything the way a path would be
+                'MySQL Dump Binary' => config('backup.mysql.dump_binary'),
+                'MySQL Default Charset' => config('backup.mysql.default_charset'),
+                'MySQL Hex Blob' => config('backup.mysql.hexblob') ? 'true' : 'false',
+                'MySQL Single Transaction' => config('backup.mysql.single_transaction') ? 'true' : 'false',
+                'MySQL Extra Options' => $this->redacted(config('backup.mysql.options')),
+                'MySQL Verify Dumps' => config('backup.mysql.verify') ? 'true' : 'false',
+                'Pipeline Shell' => config('backup.shell'),
+                'GZip Binary' => config('backup.gzip_binary'),
+                'Zip Binary' => config('backup.zip_binary'),
+                'rclone Binary' => config('backup.rclone.binary'),
+                // a remote is "remote:bucket" - complete as written, with nothing for a
+                // working directory to resolve
+                'rclone Cloud Remote' => $this->required(config('backup.rclone.cloud_remote')),
+                'rclone Sync Remote' => $this->required(config('backup.rclone.sync_remote')),
+                'rclone Cloud Options' => $this->redacted(config('backup.rclone.cloud_options')),
+                'rclone Sync Options' => $this->redacted(config('backup.rclone.sync_options')),
+                'rclone Sync Allow Empty' => config('backup.rclone.sync_allow_empty') ? 'true' : 'false',
+                'rclone Sync Backup Dir' => $this->optional(config('backup.rclone.sync_backup_dir')),
+                'Keep Only Days' => config('backup.keeponly_days'),
+                'Keep Least Days' => config('backup.keepleast_days'),
+                // the fallback is a description of where the lock goes, not a path
+                'Lock File' => config('backup.lock_file')
+                    ? $this->path(config('backup.lock_file'))
+                    : 'backup destination',
+            ],
 
-            $this->components->twoColumnDetail('  <fg=green;options=bold>'.$section.'</>');
+            'Filesystems' => [
+                'Default' => config('filesystems.default'),
+                'Storage Path' => $this->path(storage_path()),
+                'Files Disk' => $this->path(config('filesystems.disks.files.root')),
+                'Backup Disk' => $this->path(config('filesystems.disks.backup.root')),
+            ],
 
-            $data->pipe(fn ($data) => $data)->each(function ($detail) {
-                [$label, $value] = $detail;
-
-                $this->components->twoColumnDetail($label, value($value));
-            });
-        });
+            'Logging' => [
+                'Default' => config('logging.default'),
+                'Hostname Stamp' => $this->optional(config('logging.hostname')),
+                'Stack Channels' => implode(',', config('logging.channels.stack.channels')),
+                'Single Path' => $this->path(config('logging.channels.single.path')),
+                'Single Level' => config('logging.channels.single.level'),
+            ],
+        ];
     }
 
     /**
-     * Add additional data to the output of the "about" command.
+     * A path as the reader needs to see it
      *
-     * @param  string  $section
-     * @param  callable|string|array  $data
-     * @param  string|null  $value
+     * A relative path is reported along with what it resolves against, because every
+     * consumer of these resolves against the process working directory - which under
+     * cron is wherever the crontab last changed to. Printing it bare hides the very
+     * thing that makes it ambiguous.
+     *
+     * @param string|null $value configured path
+     * @return string
+     */
+    protected function path(?string $value) : string
+    {
+        if (empty($value))
+        {
+            return '<fg=yellow>not set</>';
+        }
+
+        if (str_starts_with($value, DIRECTORY_SEPARATOR))
+        {
+            return $value;
+        }
+
+        return $value . ' <fg=yellow>(relative to ' . getcwd() . ')</>';
+    }
+
+    /**
+     * @param string|null $value setting that a working installation needs
+     * @return string
+     */
+    protected function required(?string $value) : string
+    {
+        return empty($value) ? '<fg=yellow>not set</>' : $value;
+    }
+
+    /**
+     * @param string|null $value setting that is empty in the ordinary case
+     * @return string
+     */
+    protected function optional(?string $value) : string
+    {
+        return empty($value) ? '<fg=gray>none</>' : $value;
+    }
+
+    /**
+     * Options as written, less anything that looks like a password
+     *
+     * These go straight to the binary, so an installation can put credentials in one -
+     * and this output is what gets pasted into a support ticket. It covers the flag
+     * spellings people actually use rather than every possible one: credentials belong
+     * in a defaults file that the tool reads for itself, which is what the readme
+     * assumes.
+     *
+     * @param string|null $value operator supplied options
+     * @return string
+     */
+    protected function redacted(?string $value) : string
+    {
+        $value = (string) preg_replace(
+            ['/(--[\w-]*(?:pass|secret|token)[\w-]*[= ])\S+/i', '/(^|\s)(-p)\S+/'],
+            ['${1}<fg=yellow>redacted</>', '${1}${2}<fg=yellow>redacted</>'],
+            (string) $value
+        );
+
+        return $this->optional($value);
+    }
+
+    /**
+     * One dotted line, or two when the value will not fit beside its label
+     *
+     * Wrapping rather than truncating: a path is worth less than nothing cut off, since
+     * it still looks like a path and is not one.
+     *
+     * @param string $label setting name
+     * @param string $value setting value, empty for a heading
      * @return void
      */
-    public static function add(string $section, $data, string $value = null)
+    protected function detail(string $label, string $value) : void
     {
-        static::$customDataResolvers[] = fn () => static::addToSection($section, $data, $value);
-    }
+        $width = min((new Terminal)->getWidth(), 150);
 
-    protected static function addToSection(string $section, $data, string $value = null)
-    {
-        if (is_array($data)) {
-            foreach ($data as $key => $value) {
-                self::$data[$section][] = [$key, $value];
+        // two margin columns, a space either side of the leader, and - for a heading,
+        // whose value is empty - no trailing space to strip later
+        $spacing = $value === '' ? 3 : 4;
+        $room = $width - 2 - $spacing - $this->length($label) - $this->length($value);
+
+        if ($room < 2)
+        {
+            $this->line("  {$label}");
+
+            if ($value !== '')
+            {
+                $this->line("    {$value}");
             }
-        } elseif (is_callable($data) || ($value === null && class_exists($data))) {
-            self::$data[$section][] = $data;
-        } else {
-            self::$data[$section][] = [$data, $value];
+
+            return;
         }
+
+        $line = "  {$label} <fg=gray>" . str_repeat('.', $room) . '</>';
+
+        $this->line($value === '' ? $line : "{$line} {$value}");
     }
 
-    protected function sections()
+    /**
+     * @param string $section section name
+     * @return void
+     */
+    protected function heading(string $section) : void
+    {
+        $this->detail("<fg=green;options=bold>{$section}</>", '');
+    }
+
+    /**
+     * @return int the visible width of a string, ignoring the console's own markup
+     */
+    protected function length(string $value) : int
+    {
+        return mb_strlen((string) preg_replace('/<[^>]+>/', '', $value));
+    }
+
+    /**
+     * @return array sections named by --only
+     */
+    protected function sections() : array
     {
         return collect(explode(',', $this->option('only') ?? ''))
             ->filter()

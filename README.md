@@ -445,6 +445,13 @@ transfers it would make.
 | `app:sites [site]` | the site inventory, as parsed |
 | `app:validate` | runs the binaries, connects to the databases, lists the remotes |
 
+`app:config` prints paths exactly as they resolve, and says what a relative one
+resolves against — the question it is usually being asked is *which file is this
+installation actually reading*, and a path that is relative to the working
+directory answers that differently depending on where it was run from. Anything
+in the free-form option settings that looks like a password is redacted, since
+this output is what tends to get pasted into a support ticket.
+
 `app:validate` is the one to run after provisioning a server, and the first one
 to run when backups have gone quiet. It exercises the real thing rather than
 describing it:

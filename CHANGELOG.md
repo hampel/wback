@@ -25,6 +25,21 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   used to be the exception message alone — a failed process says which command it
   was but nothing about whose backup it belonged to.
 
+### Fixed
+
+- `app:config` printed every path with the project directory silently removed —
+  the environment file as `.env`, the backup destination as `storage/backup` —
+  because Laravel's two-column component runs its values through a mutator that
+  strips `base_path()` and cannot be turned off. The rows are rendered directly
+  now, and a value too long for the line wraps rather than being truncated.
+- A relative path in `app:config` is reported along with the working directory it
+  resolves against, and an unset remote as `not set`, rather than either passing
+  for a setting that is in order.
+- Anything resembling a password in `BACKUP_MYSQLDUMP_OPTIONS`,
+  `BACKUP_CLOUD_OPTIONS` or `BACKUP_SYNC_OPTIONS` is redacted from `app:config`,
+  which is the output that gets pasted into support tickets. It covers the usual
+  flag spellings; credentials still belong in a defaults file.
+
 ### Documentation
 
 - What happens when `cloud` and `sync` share one rclone remote: the branches they
