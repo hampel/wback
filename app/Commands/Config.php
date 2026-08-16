@@ -76,6 +76,7 @@ class Config extends Command
 
         static::addToSection('Logging', fn () => [
             'Default' => config('logging.default'),
+            'Hostname Stamp' => config('logging.hostname') ?: 'none',
             'Stack Channels' => implode(',', config('logging.channels.stack.channels')),
             'Single Path' => config('logging.channels.single.path'),
             'Single Level' => config('logging.channels.single.level'),

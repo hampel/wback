@@ -55,7 +55,7 @@ trait LocksBackups
         }
         catch (\RuntimeException $e)
         {
-            $this->log('error', $e->getMessage());
+            $this->log('error', $e->getMessage(), $e->getMessage(), ['lock' => $lock->path()]);
 
             return false;
         }

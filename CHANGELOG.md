@@ -8,11 +8,22 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Every log record is stamped with the machine it came from, so one Slack webhook
+  can serve a whole fleet instead of one per installation to tell the alerts
+  apart. `LOG_HOSTNAME` sets the label and defaults to the system hostname; an
+  empty value turns the stamp off. `LOG_SLACK_USERNAME` defaults to it too.
+- `app:config` and `app:validate` report the hostname label.
+
 ### Changed
 
 - The "Backup written" log entry carries the size twice: `bytes` as before, and
   `size` rounded and with a unit, so a log can be read without converting the
   large numbers by hand.
+- A failed site is logged with the site, domain and stage as context, where it
+  used to be the exception message alone — a failed process says which command it
+  was but nothing about whose backup it belonged to.
 
 ### Documentation
 

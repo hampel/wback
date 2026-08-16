@@ -59,7 +59,7 @@ abstract class BaseCommand extends Command
         }
         catch (ParseException $e)
         {
-            $this->log('error', $e->getMessage());
+            $this->log('error', $e->getMessage(), $e->getMessage(), ['sites' => $inventory->path()]);
             return Command::FAILURE;
         }
 
@@ -138,7 +138,14 @@ abstract class BaseCommand extends Command
         }
         catch (\RuntimeException $e)
         {
-            $this->log('error', $e->getMessage());
+            // a failed process says which command it was but nothing about whose backup
+            // it was, so the site and the stage are what the alert would otherwise lack
+            $this->log('error', $e->getMessage(), $e->getMessage(), [
+                'site' => $name,
+                'domain' => $site['domain'] ?? null,
+                'stage' => $this->getName(),
+            ]);
+
             return false;
         }
 

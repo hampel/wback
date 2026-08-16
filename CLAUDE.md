@@ -113,7 +113,14 @@ translate `--dry-run` into rclone's own `--dry-run` flag.
 the Monolog channel (structured, with `$context`) and to the console (styled,
 gated by a level→verbosity map, so debug lines only appear under `-vvv`). Use it
 rather than `$this->info()` / `Log::info()` for anything worth recording. It
-lives in the `LogsToConsole` trait, used by everything that reports.
+lives in the `LogsToConsole` trait, used by everything that reports. Context is
+worth passing: Slack renders context and extra as fields, which is what tells one
+site's failure from another's.
+
+`app/Logging/StampHostname` is a **tap** that pushes `HostnameProcessor` onto the
+`single`, `daily` and `slack` channels, stamping every record with
+`logging.hostname` so one webhook can serve a fleet. It has to be a tap — the
+`processors` key in a channel's config is only read by the `monolog` driver.
 
 **Laravel Zero's scheduler is not used, and its commands are removed** in
 `config/commands.php` so they cannot be run by mistake — a due event fatals on a

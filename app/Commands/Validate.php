@@ -344,6 +344,14 @@ class Validate extends Command
             $this->checkOk('log path', config("logging.channels.{$channel}.path"));
         }
 
+        // worth reading back on a new installation: it is what tells one machine's
+        // alerts from another's when they all report to the same place
+        $hostname = config('logging.hostname');
+
+        $hostname
+            ? $this->checkOk('log hostname', $hostname)
+            : $this->checkSkip('log hostname', 'records are not stamped with a hostname - set LOG_HOSTNAME');
+
         $this->line('  A message was written at every level - check that your logs received them');
     }
 

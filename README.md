@@ -573,6 +573,43 @@ confirm where they land.
 
 Log files are not rotated by `clean`; use logrotate.
 
+### One Slack webhook for a fleet
+
+Every record is stamped with the machine it came from, so alerts from a dozen
+installations can share one webhook and still say who raised them. `LOG_HOSTNAME`
+sets the label and defaults to the system hostname; leave it empty to turn the
+stamp off.
+
+Slack renders a record's context and extra data as fields, so a failed site
+arrives looking like this:
+
+```
+Backup failed  (attachment text: the command that failed, and its error output)
+
+  Level     ERROR
+  Hostname  web01
+  Site      example
+  Domain    example.com
+  Stage     database
+```
+
+`LOG_SLACK_USERNAME` also defaults to the hostname, and Monolog puts it in the
+footer of the attachment as well as in the posting name — worth knowing because
+an app-based webhook ignores the posting name unless the Slack app holds
+`chat:write.customize`, while the footer is shown either way.
+
+`php wback app:config --only=logging` and `app:validate` both report the label, so
+a new installation can be checked without waiting for something to fail.
+
+What this cannot tell you is that a backup **did not run at all** — a broken
+crontab, a machine that was off, a lock left behind by a killed run. Nothing in
+the log can report a run that never started, so pair the Slack alerts with a
+dead-man's switch if that matters:
+
+```
+0 3 * * * root wback cron --quiet && curl -fsS -m 10 https://hc-ping.com/<uuid>
+```
+
 ## Development
 
 ```bash
