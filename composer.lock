@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9fe7db6926bef700a198896f258a00e1",
+    "content-hash": "8cf84bc2ba3a08b6ed2898cdff0712c5",
     "packages": [
         {
             "name": "brick/math",
@@ -751,6 +751,61 @@
                 }
             ],
             "time": "2026-07-16T22:23:49+00:00"
+        },
+        {
+            "name": "hampel/console-report",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hampel/console-report.git",
+                "reference": "b242a90716dff18e7e8b63fae735ec08187c1d22"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hampel/console-report/zipball/b242a90716dff18e7e8b63fae735ec08187c1d22",
+                "reference": "b242a90716dff18e7e8b63fae735ec08187c1d22",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "illuminate/console": "^12.0|^13.0",
+                "php": ">=8.3"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.30",
+                "phpstan/phpstan": "^2.0",
+                "phpunit/phpunit": "^12.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Hampel\\ConsoleReport\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Simon Hampel",
+                    "email": "simon@hampelgroup.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Console output for CLI tools that report on themselves - settings dumps and validation checks, with paths printed whole",
+            "homepage": "https://github.com/hampel/console-report",
+            "keywords": [
+                "cli",
+                "console",
+                "laravel",
+                "laravel-zero"
+            ],
+            "support": {
+                "issues": "https://github.com/hampel/console-report/issues",
+                "source": "https://github.com/hampel/console-report"
+            },
+            "time": "2026-08-19T07:58:11+00:00"
         },
         {
             "name": "illuminate/bus",

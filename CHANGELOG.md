@@ -24,6 +24,10 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 - A failed site is logged with the site, domain and stage as context, where it
   used to be the exception message alone — a failed process says which command it
   was but nothing about whose backup it belonged to.
+- `app:config` and `app:validate` draw their output with
+  [hampel/console-report](https://github.com/hampel/console-report) rather than
+  with private copies of the same renderers. The output is unchanged, byte for
+  byte, apart from the last two fixes below.
 
 ### Fixed
 
@@ -39,6 +43,10 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   `BACKUP_CLOUD_OPTIONS` or `BACKUP_SYNC_OPTIONS` is redacted from `app:config`,
   which is the output that gets pasted into support tickets. It covers the usual
   flag spellings; credentials still belong in a defaults file.
+- An empty `BACKUP_SHELL` — a legitimate setting, meaning "run pipelines under
+  the system shell" — is reported as `none` by `app:config`. It used to render as
+  a line of dots indistinguishable from a section heading.
+- A check row in `app:validate` with no detail no longer ends in trailing spaces.
 
 ### Documentation
 

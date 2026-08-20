@@ -634,6 +634,9 @@ application actually produces.
 [Laravel Zero](https://laravel-zero.com/), a console micro-framework built on
 Laravel's components.
 
+[hampel/console-report](https://github.com/hampel/console-report) draws the
+output of `app:config` and `app:validate`.
+
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).

@@ -83,7 +83,12 @@ external command arrives the same way, since Illuminate's
 **Do not report paths with `$this->components->twoColumnDetail()`.** Its
 `EnsureRelativePaths` mutator strips `base_path().'/'` out of every value and
 cannot be opted out of, so absolute paths print as convincing relative ones.
-`Config` and `Validate` each render their own lines for this reason.
+`hampel/console-report` exists for this reason and `Config` and `Validate` use
+it: `ReportsSettings` + `FormatsValues` draw the settings dump, `RendersChecks`
+draws the `[ ok ]` / `[warn]` / `[fail]` rows and owns the exit code. Those
+traits are strict about their argument types — an `int` from config has to be
+cast at the call site, which is why `Keep Only Days` carries a `(string)`. What
+to report stays here; only the drawing moved.
 
 `Sites`, `Config` and `Validate` extend Laravel Zero's `Command` directly and are
 namespaced `app:` to keep the backup verbs at the top level. `Validate` exercises

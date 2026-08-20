@@ -5,6 +5,7 @@ namespace App\Commands;
 use App\Support\BackupLock;
 use App\Support\LogsToConsole;
 use App\Support\SiteInventory;
+use Hampel\ConsoleReport\RendersChecks;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +23,7 @@ use Yosymfony\Toml\Exception\ParseException;
 class Validate extends Command
 {
     use LogsToConsole;
+    use RendersChecks;
 
     /**
      * The name and signature of the console command.
@@ -36,16 +38,6 @@ class Validate extends Command
      * @var string
      */
     protected $description = 'Check the binaries, paths, sites and remotes this is configured to use';
-
-    /**
-     * @var bool something is wrong
-     */
-    protected $failed = false;
-
-    /**
-     * @var bool something is worth knowing about
-     */
-    protected $warned = false;
 
     /**
      * Execute the console command.
@@ -69,13 +61,13 @@ class Validate extends Command
 
         $this->newLine();
 
-        if ($this->failed)
+        if ($this->checksFailed())
         {
             $this->error('Validation failed - the backups configured here will not all work');
             return Command::FAILURE;
         }
 
-        if ($this->warned)
+        if ($this->checksWarned())
         {
             $this->comment('Validated, with warnings');
             return Command::SUCCESS;
@@ -353,35 +345,6 @@ class Validate extends Command
             : $this->checkSkip('log hostname', 'records are not stamped with a hostname - set LOG_HOSTNAME');
 
         $this->line('  A message was written at every level - check that your logs received them');
-    }
-
-    protected function checkOk(string $label, string $detail = '') : void
-    {
-        $this->result('<info>[ ok ]</info>', $label, $detail);
-    }
-
-    protected function checkWarn(string $label, string $detail = '') : void
-    {
-        $this->warned = true;
-
-        $this->result('<comment>[warn]</comment>', $label, $detail);
-    }
-
-    protected function checkFail(string $label, string $detail = '') : void
-    {
-        $this->failed = true;
-
-        $this->result('<error>[fail]</error>', $label, $detail);
-    }
-
-    protected function checkSkip(string $label, string $detail = '') : void
-    {
-        $this->result('[    ]', $label, $detail);
-    }
-
-    protected function result(string $marker, string $label, string $detail) : void
-    {
-        $this->line(sprintf('  %s %-24s %s', $marker, $label, $detail));
     }
 
     /**

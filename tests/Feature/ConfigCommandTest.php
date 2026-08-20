@@ -97,3 +97,30 @@ it('leaves the options that are not secrets readable', function () {
         ->expectsOutputToContain('--skip-comments --max-allowed-packet=512M')
         ->assertSuccessful();
 });
+
+it('reports a setting that is a number rather than a string', function () {
+    // the renderer takes strings strictly, so an integer straight out of config is a
+    // fatal error rather than a wrong-looking line
+    config()->set('backup.keeponly_days', 21);
+
+    $this->artisan('app:config', ['--only' => 'backup'])
+        ->expectsOutputToContain('Keep Only Days')
+        ->assertSuccessful();
+});
+
+it('says the pipeline shell is unset rather than drawing it as a heading', function () {
+    // empty is a real setting here - it means "run pipelines under the system shell" -
+    // and a value-less line is how a section heading is drawn. The other optional
+    // settings are filled in so that "none" can only have come from this one
+    config()->set([
+        'backup.shell' => '',
+        'backup.mysql.options' => '--skip-comments',
+        'backup.rclone.cloud_options' => '--transfers=2',
+        'backup.rclone.sync_options' => '--transfers=2',
+        'backup.rclone.sync_backup_dir' => 'archive',
+    ]);
+
+    $this->artisan('app:config', ['--only' => 'backup'])
+        ->expectsOutputToContain('none')
+        ->assertSuccessful();
+});
