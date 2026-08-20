@@ -201,8 +201,12 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `LOG_STACK` | `null` | channels in the stack, comma separated |
 | `LOG_STORAGE_PATH` | `<storage>/wback.log` | |
 | `LOG_LEVEL` | `debug` | |
-| `LOG_SLACK_WEBHOOK_URL` | — | |
+| `LOG_HOSTNAME` | system hostname | what this machine calls itself in logs and alerts |
+| `LOG_SLACK_WEBHOOK_URL` | — | webhook for the log channel — raises failures as they happen |
+| `LOG_SLACK_USERNAME` | `LOG_HOSTNAME` | name log posts are made under |
 | `LOG_SLACK_LEVEL` | `critical` | |
+| `BACKUP_SUMMARY_SLACK_WEBHOOK` | — | webhook for the [run summary](#the-run-summary) — one message a run |
+| `BACKUP_SUMMARY_NOTIFY` | `always` | `always`, or `failure` for the bad nights only |
 
 ### Sites
 
@@ -553,6 +557,10 @@ Leave enough room between them for the slowest site, and remember that a stage
 which overruns into the next one's hour does not run alongside it — the later
 command finds the lock held, reports it, and waits for tomorrow.
 
+Spread out like this there is no run for anything to report on, so the
+[run summary](#the-run-summary) is not sent — the stages have no idea they belong
+to one. That is the strongest argument for the single `cron` entry.
+
 ### Not Laravel Zero's scheduler
 
 wback does not use it because of bugs in the scheduling code in Laravel Zero.
@@ -581,6 +589,12 @@ or keep the default `stack` option and
 set `LOG_STACK=single,slack` to write a file and raise critical failures in
 Slack. `php wback app:validate` writes one message at every level so you can
 confirm where they land.
+
+Reporting has two halves and they answer different questions. The **log** says
+what happened, in order, and raises trouble as it happens. The
+**[run summary](#the-run-summary)** says whether last night's backup worked at
+all — which no log channel can tell you, because nothing in a stream of records
+stands for the run as a whole. Set both; they can share a webhook.
 
 Log files are not rotated by `clean`; use logrotate.
 
@@ -620,7 +634,7 @@ and a run where nothing fails produces nothing at all, which is the same silence
 as a cron entry nobody ever installed.
 
 The run summary is the other half: **one message per `cron` run**, raised by the
-run, saying what the run did.
+run rather than by a record, saying what the run did.
 
 ```
 BACKUP_SUMMARY_SLACK_WEBHOOK=https://hooks.slack.com/services/...
@@ -637,14 +651,14 @@ Backup completed on web01
   Website Backup 7.3.0 on web01
 ```
 
-On a bad night it arrives in red, with the failures named by site and stage so
-they can be acted on without opening the log first:
+On a bad night it arrives in red, and the failures come first — named by site and
+stage, so they can be acted on without opening the log:
 
 ```
 Backup failed on web01
 
   example (database): mysqldump: Got error: 1049 Unknown database 'example'
-  acme (cloud): directory not found
+  acme (files): Source path [/srv/www/acme.test] not found for acme
 
   Sites      11          Backups   22
   Written    3.11 GB     Duration  44m 03s
@@ -652,29 +666,71 @@ Backup failed on web01
   Failures   2
 ```
 
+It is a different kind of message from a log record rather than a duplicate of
+one, so **it can share the webhook the log channel uses**. Keep the log channel as
+the backstop: it catches whatever goes wrong somewhere nobody thought to
+summarise.
+
+#### Reading it
+
+| field | means |
+|---|---|
+| `Sites` | sites that produced at least one backup — not sites configured |
+| `Backups` | backup files written, so a site with files and a database counts twice |
+| `Written` | their total size |
+| `Duration` | how long the run took, `<1s` if it was quicker than that |
+| `Stages` | the stages that ran, in order, including any that failed |
+| `Skipped` | stages left out with `--no-database`, `--no-cloud` and friends |
+| `Failures` | how many sites failed, present only when some did |
+
+`Sites` and `Backups` count what was **produced**, so a stage that failed for
+every site shows the work that survived it rather than the work that was
+attempted. A dry run reports zero of both, because a dry run writes nothing.
+
+Failures are quoted one per line, at most ten, and then
+`... and N more - see the log`. Each is a single line: the reason the command
+failed, not the exception wrapped around it — a failed process reports itself as
+the whole command line and an exit code, with the useful part several lines
+further down under `Error Output`. Leading warnings are skipped too, since
+mysqldump likes to mention SSL before mentioning that the connection was
+refused.
+
+Not every failure belongs to a site. An inventory that will not parse fails a
+stage without failing any one site, and the message says so rather than arriving
+red and empty:
+
+```
+Failed during database, files - see the log
+```
+
+#### When it is sent
+
+**Only `cron` sends one.** The stages have no idea whether they are part of a run,
+so driving `database`, `files` and the rest from separate crontab lines gets you
+no summary — one more reason to prefer the single `cron` entry.
+
 `BACKUP_SUMMARY_NOTIFY=failure` sends only the bad nights. That buys quiet at the
 cost of the thing the summary was for: silence stops meaning anything again,
 because a working backup and an uninstalled one look identical.
 
-It is a different kind of message from a log record rather than a duplicate of
-one, so it can share the webhook the log channel uses. Keep the log channel as
-the backstop — it catches anything that goes wrong somewhere nobody thought to
-summarise.
-
-Three things worth knowing:
+Three cases worth knowing:
 
 - **A run that never started still reports.** If the lock is held by a run that
-  never finished, the summary says `Backup did not run` and names the holder.
-  That is the failure that otherwise leaves nothing behind but one log line.
+  never finished, the summary says `Backup did not run` and names the holder. That
+  is the failure that otherwise leaves nothing behind but one log line. It carries
+  no counts — a row of zeroes would read as a run that started and found nothing.
+- **A dry run posts too, marked `[Dry run]`**, which makes `wback cron -d` the way
+  to check the channel is wired up without touching a backup.
 - **`app:validate` posts a test message** when a webhook is configured, and fails
   validation if Slack refuses it. A mistyped or revoked webhook is otherwise
-  invisible until the night it matters.
-- **A dry run posts too, marked `[Dry run]`**, which makes `wback cron -d` the
-  way to check the channel is wired up. It reports nothing written, because a dry
-  run writes nothing.
+  invisible from this end: the summary simply never arrives, which looks exactly
+  like a backup that never ran.
 
-Sending never fails a backup: if Slack will not take the message the run logs a
-warning and keeps its own exit code.
+Sending cannot fail a backup. It happens after the lock is released, so a Slack
+endpoint that has gone slow cannot hold the next run off, and it gives up after
+fifteen seconds. If Slack will not take the message the run logs a warning and
+keeps its own exit code — whether Slack heard about the backups does not change
+whether they worked.
 
 ### A backup that never started
 
