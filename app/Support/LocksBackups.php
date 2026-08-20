@@ -20,6 +20,14 @@ trait LocksBackups
     protected $holdsLock = false;
 
     /**
+     * Why the lock could not be taken, for a caller that has to report on a run that
+     * never happened rather than just exit
+     *
+     * @var string|null
+     */
+    protected $lockFailure = null;
+
+    /**
      * @return bool false if another backup run holds the lock
      */
     protected function acquireLock() : bool
@@ -43,6 +51,8 @@ trait LocksBackups
             {
                 $holder = $lock->holder();
 
+                $this->lockFailure = "Another backup is still running [{$holder}] - this run was skipped";
+
                 $this->log(
                     'error',
                     "Another backup is still running [{$holder}] - skipping this run",
@@ -55,6 +65,8 @@ trait LocksBackups
         }
         catch (\RuntimeException $e)
         {
+            $this->lockFailure = $e->getMessage();
+
             $this->log('error', $e->getMessage(), $e->getMessage(), ['lock' => $lock->path()]);
 
             return false;

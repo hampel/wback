@@ -1,6 +1,12 @@
 <?php
 
 use Carbon\Carbon;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
+use Hampel\SlackMessage\SlackWebhook;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -116,4 +122,56 @@ function shellCommand(string $command): string
     }
 
     return str_replace("'\\''", "'", substr($command, strlen($prefix) + 1, -1));
+}
+
+/**
+ * Answer for Slack without a network, and keep what was sent.
+ *
+ * The sender builds the payload itself, so faking at the HTTP client rather than at the
+ * sender leaves the thing under test in place.
+ */
+function fakeSlack(int $status = 200, string $body = 'ok'): void
+{
+    $GLOBALS['wback_slack'] = [];
+
+    $stack = HandlerStack::create(new MockHandler([new Response($status, [], $body)]));
+    $stack->push(Middleware::history($GLOBALS['wback_slack']));
+
+    app()->instance(SlackWebhook::class, new SlackWebhook(new Client([
+        'handler' => $stack,
+        'http_errors' => false,
+    ])));
+}
+
+/**
+ * The payloads posted to Slack, decoded.
+ */
+function slackPayloads(): array
+{
+    return array_map(
+        fn ($sent) => json_decode((string) $sent['request']->getBody(), true),
+        $GLOBALS['wback_slack'] ?? []
+    );
+}
+
+/**
+ * The one payload posted to Slack.
+ */
+function slackPayload(): array
+{
+    $payloads = slackPayloads();
+
+    expect($payloads)->toHaveCount(1);
+
+    return $payloads[0];
+}
+
+/**
+ * An attachment's fields, as a label => value map.
+ */
+function slackFields(array $payload): array
+{
+    return collect($payload['attachments'][0]['fields'] ?? [])
+        ->mapWithKeys(fn ($field) => [$field['title'] => $field['value']])
+        ->all();
 }

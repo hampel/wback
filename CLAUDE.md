@@ -127,6 +127,17 @@ lives in the `LogsToConsole` trait, used by everything that reports. Context is
 worth passing: Slack renders context and extra as fields, which is what tells one
 site's failure from another's.
 
+**The run summary is a notification, not a log record.** `App\Support\RunSummary`
+is a container singleton — for the same reason `BackupLock` is, since the stages
+`cron` runs are separate command objects — that collects what a run did:
+`BaseCommand` records each backup written and each site that failed, `Cron`
+records the stages. `App\Support\SlackSummary` renders it and posts it with
+`hampel/slack-message`, which needs only a PSR-18 client (Guzzle is already a
+`laravel-zero/framework` dependency, so it costs one package, not the 25 that
+`illuminate/notifications` would). Sending happens *after* the lock is released
+and can never fail the run. The `slack` log channel stays as the backstop; the
+two are complementary, and `config/backup.php` says why.
+
 `app/Logging/StampHostname` is a **tap** that pushes `HostnameProcessor` onto the
 `single`, `daily` and `slack` channels, stamping every record with
 `logging.hostname` so one webhook can serve a fleet. It has to be a tap — the

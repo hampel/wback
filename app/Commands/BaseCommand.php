@@ -2,8 +2,10 @@
 
 use App\Support\LocksBackups;
 use App\Support\LogsToConsole;
+use App\Support\RunSummary;
 use App\Support\SiteInventory;
 use Carbon\Carbon;
+use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +16,14 @@ use Yosymfony\Toml\Exception\ParseException;
 abstract class BaseCommand extends Command
 {
     use LocksBackups, LogsToConsole;
+
+    /**
+     * The site being worked on, for the benefit of anything further down that reports
+     * on what it did - a backup file knows its own name and not whose it is
+     *
+     * @var string|null
+     */
+    protected $currentSite = null;
 
     /**
      * Execute the console command.
@@ -132,6 +142,8 @@ abstract class BaseCommand extends Command
      */
     protected function runSite(array $site, string $name) : bool
     {
+        $this->currentSite = $name;
+
         try
         {
             $this->processSite($site, $name);
@@ -146,10 +158,42 @@ abstract class BaseCommand extends Command
                 'stage' => $this->getName(),
             ]);
 
+            app(RunSummary::class)->recordFailure($name, (string) $this->getName(), $this->failureReason($e));
+
             return false;
+        }
+        finally
+        {
+            $this->currentSite = null;
         }
 
         return true;
+    }
+
+    /**
+     * What to put in front of someone who is reading a one line summary
+     *
+     * A failed process reports itself as the whole command line and an exit code, with
+     * the thing that actually went wrong several lines further down under "Error
+     * Output". That is the right amount of detail for the log and the wrong line to
+     * quote, so the process output is preferred over the exception's own message.
+     *
+     * @param \RuntimeException $e the failure
+     * @return string
+     */
+    protected function failureReason(\RuntimeException $e) : string
+    {
+        if ($e instanceof ProcessFailedException)
+        {
+            $output = trim($e->result->errorOutput() ?: $e->result->output());
+
+            if ($output !== '')
+            {
+                return $output;
+            }
+        }
+
+        return $e->getMessage();
     }
 
     protected function processSite(array $site, string $name) : void
@@ -334,6 +378,13 @@ abstract class BaseCommand extends Command
             "Backed up {$file} - {$size}",
             "Backup written",
             ['file' => $file, 'bytes' => $bytes, 'size' => $size]
+        );
+
+        app(RunSummary::class)->recordBackup(
+            (string) $this->currentSite,
+            (string) $this->getName(),
+            $file,
+            $bytes
         );
     }
 

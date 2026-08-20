@@ -4,7 +4,9 @@ namespace App\Commands;
 
 use App\Support\BackupLock;
 use App\Support\LogsToConsole;
+use App\Support\ReadsCommandOutput;
 use App\Support\SiteInventory;
+use App\Support\SlackSummary;
 use Hampel\ConsoleReport\RendersChecks;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -23,6 +25,7 @@ use Yosymfony\Toml\Exception\ParseException;
 class Validate extends Command
 {
     use LogsToConsole;
+    use ReadsCommandOutput;
     use RendersChecks;
 
     /**
@@ -58,6 +61,9 @@ class Validate extends Command
 
         $this->section('Logging');
         $this->checkLogging();
+
+        $this->section('Summary');
+        $this->checkSummary();
 
         $this->newLine();
 
@@ -348,28 +354,31 @@ class Validate extends Command
     }
 
     /**
-     * The line worth reporting from a command that failed
-     *
-     * Tools warn before they fail - mysqldump leads with a note about ssl verification
-     * before telling you the connection was refused - so the first line of the output is
-     * often not the reason for the failure.
-     *
-     * @param string $output output of a failed command
-     * @return string the first line that is not a warning, if there is one
+     * Post the test message, because a webhook that has stopped working says nothing
+     * about it at this end - the summary simply never arrives, which looks the same as
+     * a backup that never ran
      */
-    protected function firstLine(string $output) : string
+    protected function checkSummary() : void
     {
-        $lines = array_values(array_filter(array_map('trim', explode("\n", $output)), fn ($line) => $line !== ''));
+        $summary = app(SlackSummary::class);
 
-        foreach ($lines as $line)
+        if (!$summary->isConfigured())
         {
-            if (!preg_match('/^warning\b/i', $line))
-            {
-                return $line;
-            }
+            $this->checkSkip('run summary', 'nothing is sent - set BACKUP_SUMMARY_SLACK_WEBHOOK');
+            return;
         }
 
-        return $lines[0] ?? '(no output)';
+        try
+        {
+            $summary->sendTest();
+        }
+        catch (\Throwable $e)
+        {
+            $this->checkFail('run summary', $this->firstLine($e->getMessage()));
+            return;
+        }
+
+        $this->checkOk('run summary', 'test message delivered, sent on ' . config('backup.summary.notify'));
     }
 
     /**

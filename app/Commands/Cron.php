@@ -4,6 +4,8 @@ namespace App\Commands;
 
 use App\Support\LocksBackups;
 use App\Support\LogsToConsole;
+use App\Support\RunSummary;
+use App\Support\SlackSummary;
 use LaravelZero\Framework\Commands\Command;
 
 class Cron extends Command
@@ -60,20 +62,73 @@ class Cron extends Command
             $this->comment("Dry run only - no action will be taken");
         }
 
+        $summary = app(RunSummary::class);
+
+        $summary->start((bool) $this->option('dry-run'));
+
         // one lock for the whole run, so tonight's backups cannot start over the top of
         // last night's - the stages themselves see that it is held and leave it alone
         if (!$this->acquireLock())
         {
+            // a backup that did not happen is the failure worth hearing about most, and
+            // the one that otherwise leaves nothing behind but a single log line
+            $summary->block((string) $this->lockFailure);
+
+            $this->notify($summary);
+
             return Command::FAILURE;
         }
 
         try
         {
-            return $this->runStages();
+            $result = $this->runStages();
         }
         finally
         {
             $this->releaseLock();
+        }
+
+        // after the lock, not inside it: a Slack endpoint that has gone slow should not
+        // hold tomorrow's run off
+        $this->notify($summary);
+
+        return $result;
+    }
+
+    /**
+     * Post the run summary, if this installation asked for one
+     *
+     * Nothing here can fail the run. The backups have already happened by this point,
+     * and a webhook that would not answer does not change whether they worked - but it
+     * is worth a line in the log, because a summary nobody receives is indistinguishable
+     * from a run that never started.
+     *
+     * @param RunSummary $summary what the run did
+     * @return void
+     */
+    protected function notify(RunSummary $summary) : void
+    {
+        $notifier = app(SlackSummary::class);
+
+        if (!$notifier->shouldSend($summary))
+        {
+            return;
+        }
+
+        try
+        {
+            $notifier->send($summary);
+
+            $this->log('info', "Sent the run summary to Slack", "Sent the run summary");
+        }
+        catch (\Throwable $e)
+        {
+            $this->log(
+                'warning',
+                "Could not send the run summary - {$e->getMessage()}",
+                "Could not send the run summary",
+                ['error' => $e->getMessage()]
+            );
         }
     }
 
@@ -91,6 +146,8 @@ class Cron extends Command
 
         $failed = false;
 
+        $summary = app(RunSummary::class);
+
         foreach ($this->stages as $stage)
         {
             // a stage nobody has configured yet - cloud storage on a server still being
@@ -104,10 +161,14 @@ class Cron extends Command
                     ['stage' => $stage]
                 );
 
+                $summary->stageSkipped($stage);
+
                 continue;
             }
 
             $this->section($stage);
+
+            $summary->stageRan($stage);
 
             // a stage that fails does not stop the ones after it: a database that will
             // not dump should not cost us the file backups as well
@@ -121,6 +182,8 @@ class Cron extends Command
                     "Backup stage failed",
                     ['stage' => $stage]
                 );
+
+                $summary->stageFailed($stage);
             }
         }
 

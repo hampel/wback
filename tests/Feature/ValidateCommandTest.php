@@ -155,3 +155,31 @@ it('reports the lock being held rather than waiting for it', function () {
 
     fclose($lock);
 });
+
+it('skips the summary check when there is nowhere to send one', function () {
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('BACKUP_SUMMARY_SLACK_WEBHOOK')
+        ->assertSuccessful();
+});
+
+it('posts a test message, because a dead webhook says nothing at this end', function () {
+    config()->set('backup.summary.slack_webhook', 'https://hooks.slack.com/services/T000/B000/xxx');
+
+    fakeSlack();
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('test message delivered')
+        ->assertSuccessful();
+
+    expect(slackPayload()['text'])->toContain('Test message from app:validate');
+});
+
+it('fails validation when Slack will not take the test message', function () {
+    config()->set('backup.summary.slack_webhook', 'https://hooks.slack.com/services/T000/B000/xxx');
+
+    fakeSlack(404, 'no_service');
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('Slack refused the message')
+        ->assertFailed();
+});

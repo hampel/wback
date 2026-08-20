@@ -160,4 +160,33 @@ return [
      */
     'keepleast_days' => env('BACKUP_KEEPLEAST_DAYS', 3),
 
+    /**
+     * One message a run, saying whether the backup worked
+     *
+     * Separate from the slack log channel and complementary to it. The log channel
+     * posts a message per record at or above a level, so it can only ever report
+     * trouble - a run where nothing failed produces nothing, which is the same silence
+     * as a cron entry that was never installed. This is raised once, by the run, and
+     * says what the run did.
+     */
+    'summary' => [
+
+        /**
+         * Slack incoming webhook to post the summary to
+         *
+         * Leave empty and nothing is sent. It can be the same webhook the log channel
+         * uses - the summary is a different kind of message, not a duplicate one.
+         */
+        'slack_webhook' => env('BACKUP_SUMMARY_SLACK_WEBHOOK', ''),
+
+        /**
+         * When to send: 'always' or 'failure'
+         *
+         * 'failure' is for an installation that would rather have silence than a
+         * nightly all-clear. The cost is that silence stops meaning anything: a working
+         * backup and an uninstalled one look identical.
+         */
+        'notify' => env('BACKUP_SUMMARY_NOTIFY', 'always'),
+    ],
+
 ];

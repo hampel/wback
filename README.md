@@ -468,8 +468,12 @@ describing it:
 - the backup destination exists, is writable and has room, and the lock can be
   taken and released
 - a message is written at every log level, so you can confirm where they land
+- the run summary webhook is **posted to**, so a mistyped or revoked one is found
+  now rather than on the night it matters
 
-It exits non-zero if anything failed, so it works as a post-deploy check.
+It exits non-zero if anything failed, so it works as a post-deploy check. Note
+the last two: running it puts messages in whatever channel this installation
+reports to.
 
 ## Where backups end up
 
@@ -608,10 +612,76 @@ an app-based webhook ignores the posting name unless the Slack app holds
 `php wback app:config --only=logging` and `app:validate` both report the label, so
 a new installation can be checked without waiting for something to fail.
 
-What this cannot tell you is that a backup **did not run at all** — a broken
-crontab, a machine that was off, a lock left behind by a killed run. Nothing in
-the log can report a run that never started, so pair the Slack alerts with a
-dead-man's switch if that matters:
+### The run summary
+
+Logging to Slack can only ever report trouble. It posts a record at a time, at or
+above a level, so a run where five sites fail is five walls of exception text —
+and a run where nothing fails produces nothing at all, which is the same silence
+as a cron entry nobody ever installed.
+
+The run summary is the other half: **one message per `cron` run**, raised by the
+run, saying what the run did.
+
+```
+BACKUP_SUMMARY_SLACK_WEBHOOK=https://hooks.slack.com/services/...
+BACKUP_SUMMARY_NOTIFY=always
+```
+
+```
+Backup completed on web01
+
+  Sites      12          Backups   24
+  Written    3.42 GB     Duration  47m 12s
+  Stages     database, files, cloud, sync, clean
+
+  Website Backup 7.3.0 on web01
+```
+
+On a bad night it arrives in red, with the failures named by site and stage so
+they can be acted on without opening the log first:
+
+```
+Backup failed on web01
+
+  example (database): mysqldump: Got error: 1049 Unknown database 'example'
+  acme (cloud): directory not found
+
+  Sites      11          Backups   22
+  Written    3.11 GB     Duration  44m 03s
+  Stages     database, files, cloud, sync, clean
+  Failures   2
+```
+
+`BACKUP_SUMMARY_NOTIFY=failure` sends only the bad nights. That buys quiet at the
+cost of the thing the summary was for: silence stops meaning anything again,
+because a working backup and an uninstalled one look identical.
+
+It is a different kind of message from a log record rather than a duplicate of
+one, so it can share the webhook the log channel uses. Keep the log channel as
+the backstop — it catches anything that goes wrong somewhere nobody thought to
+summarise.
+
+Three things worth knowing:
+
+- **A run that never started still reports.** If the lock is held by a run that
+  never finished, the summary says `Backup did not run` and names the holder.
+  That is the failure that otherwise leaves nothing behind but one log line.
+- **`app:validate` posts a test message** when a webhook is configured, and fails
+  validation if Slack refuses it. A mistyped or revoked webhook is otherwise
+  invisible until the night it matters.
+- **A dry run posts too, marked `[Dry run]`**, which makes `wback cron -d` the
+  way to check the channel is wired up. It reports nothing written, because a dry
+  run writes nothing.
+
+Sending never fails a backup: if Slack will not take the message the run logs a
+warning and keeps its own exit code.
+
+### A backup that never started
+
+The summary covers a run blocked by the lock, but not a run that was never
+attempted — a broken crontab, a machine that was off, a `wback` that is not
+installed any more. Nothing running on the machine can report that, so pair the
+Slack messages with a dead-man's switch if it matters:
 
 ```
 0 3 * * * root wback cron --quiet && curl -fsS -m 10 https://hc-ping.com/<uuid>

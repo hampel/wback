@@ -113,6 +113,15 @@ class Config extends Command
                 'Stack Channels' => implode(',', config('logging.channels.stack.channels')),
                 'Single Path' => $this->path(config('logging.channels.single.path')),
                 'Single Level' => config('logging.channels.single.level'),
+                // a webhook url is a credential: anyone holding it can post to the
+                // channel, and this output is what gets pasted into a support ticket
+                'Slack Webhook' => $this->secretStatus(config('logging.channels.slack.url')),
+                'Slack Level' => config('logging.channels.slack.level'),
+            ],
+
+            'Summary' => [
+                'Slack Webhook' => $this->secretStatus(config('backup.summary.slack_webhook')),
+                'Notify' => config('backup.summary.notify'),
             ],
         ];
     }

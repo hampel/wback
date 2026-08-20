@@ -10,6 +10,20 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A run summary: one Slack message per `cron` run, saying what the run did — sites,
+  backups, bytes written, how long it took, which stages ran, and any failures
+  named by site and stage. Set `BACKUP_SUMMARY_SLACK_WEBHOOK`, and
+  `BACKUP_SUMMARY_NOTIFY=failure` if only the bad nights are wanted. This is what
+  a log channel structurally cannot do: logging posts a record at a time, so it
+  can only ever report trouble, and a run where nothing fails is silent in exactly
+  the way an uninstalled cron entry is. The log channel stays as the backstop.
+- A run blocked by the lock reports too — `Backup did not run`, naming the holder
+  — which used to leave nothing behind but a single log line.
+- `app:validate` posts a test message to the summary webhook and fails if Slack
+  refuses it. A mistyped or revoked webhook is otherwise invisible until it
+  matters.
+- `app:config` reports the summary settings and whether the log channel's Slack
+  webhook is set. Both webhooks are reported as set or not set, never printed.
 - Every log record is stamped with the machine it came from, so one Slack webhook
   can serve a whole fleet instead of one per installation to tell the alerts
   apart. `LOG_HOSTNAME` sets the label and defaults to the system hostname; an
