@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Support\BackupLock;
 use App\Support\RunSummary;
+use App\Support\SlackSummary;
 use GuzzleHttp\Client;
 use Hampel\SlackMessage\SlackWebhook;
 use Illuminate\Support\ServiceProvider;
@@ -53,5 +54,16 @@ class AppServiceProvider extends ServiceProvider
             'connect_timeout' => 5,
             'timeout' => 15,
         ])));
+
+        // the reporter is handed what it needs rather than reading it, so that the same
+        // class works somewhere config() and app() do not exist - reading configuration
+        // is this application's job, reporting is its own
+        $this->app->singleton(SlackSummary::class, fn () => new SlackSummary(
+            $this->app->make(SlackWebhook::class),
+            (string) config('backup.summary.slack_webhook'),
+            (string) config('backup.summary.notify'),
+            config('app.name') . ' ' . $this->app->version(),
+            (string) (config('logging.hostname') ?: gethostname())
+        ));
     }
 }

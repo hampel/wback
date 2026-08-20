@@ -5,7 +5,6 @@ namespace App\Support;
 use Hampel\SlackMessage\SlackAttachment;
 use Hampel\SlackMessage\SlackMessage;
 use Hampel\SlackMessage\SlackWebhook;
-use Illuminate\Support\Carbon;
 
 /**
  * The one message a night that says whether the backup worked
@@ -18,6 +17,12 @@ use Illuminate\Support\Carbon;
  *
  * The log channel stays as the backstop for anything that goes wrong somewhere nobody
  * thought to summarise. The two are complementary, not alternatives.
+ *
+ * Everything it needs from the application arrives through the constructor, and nothing
+ * in here reads config, resolves out of the container or reaches for a facade. That is
+ * deliberate: the same class has to work under XenForo, where all three of those are
+ * spelled differently and none of Laravel is available. AppServiceProvider does the
+ * reading; this only does the reporting.
  */
 class SlackSummary
 {
@@ -35,7 +40,20 @@ class SlackSummary
      */
     protected const MAX_MESSAGE = 300;
 
-    public function __construct(protected SlackWebhook $slack)
+    /**
+     * @param SlackWebhook $slack transport
+     * @param string $webhook incoming webhook url, empty to send nothing
+     * @param string $notify 'failure' for the bad nights only, anything else for all of them
+     * @param string $application what to sign the message with, name and version
+     * @param string $hostname what this machine calls itself
+     */
+    public function __construct(
+        protected SlackWebhook $slack,
+        protected string $webhook,
+        protected string $notify,
+        protected string $application,
+        protected string $hostname
+    )
     {
     }
 
@@ -44,14 +62,14 @@ class SlackSummary
      */
     public function shouldSend(RunSummary $summary) : bool
     {
-        if (empty($this->webhook()))
+        if (empty($this->webhook))
         {
             return false;
         }
 
         // "failure" is for an installation that would rather have silence than a nightly
         // all-clear - at the cost of not being able to tell working from uninstalled
-        return config('backup.summary.notify') === 'failure' ? $summary->failed() : true;
+        return $this->notify === 'failure' ? $summary->failed() : true;
     }
 
     /**
@@ -59,7 +77,7 @@ class SlackSummary
      */
     public function isConfigured() : bool
     {
-        return !empty($this->webhook());
+        return !empty($this->webhook);
     }
 
     /**
@@ -86,13 +104,13 @@ class SlackSummary
         $this->post($this->slack->message(function (SlackMessage $message) {
             $message
                 ->success()
-                ->content('Test message from app:validate on ' . $this->host())
+                ->content('Test message from app:validate on ' . $this->hostname)
                 ->attachment(function (SlackAttachment $attachment) {
                     $attachment
-                        ->fallback('Test message from app:validate on ' . $this->host())
+                        ->fallback('Test message from app:validate on ' . $this->hostname)
                         ->content('The run summary is configured and this webhook works.')
-                        ->footer(config('app.name') . ' ' . app()->version() . ' on ' . $this->host())
-                        ->timestamp(Carbon::now());
+                        ->footer($this->application . ' on ' . $this->hostname)
+                        ->timestamp(new \DateTimeImmutable());
                 });
         }));
     }
@@ -102,7 +120,7 @@ class SlackSummary
      */
     protected function post(SlackMessage $message) : void
     {
-        $response = $this->slack->send($this->webhook(), $message);
+        $response = $this->slack->send($this->webhook, $message);
 
         if (!$this->slack->accepted($response))
         {
@@ -121,8 +139,8 @@ class SlackSummary
                 $attachment
                     ->fallback($this->headline($summary))
                     ->fields($this->fields($summary))
-                    ->footer(config('app.name') . ' ' . app()->version() . ' on ' . $this->host())
-                    ->timestamp(Carbon::now());
+                    ->footer($this->application . ' on ' . $this->hostname)
+                    ->timestamp(new \DateTimeImmutable());
 
                 $body = $this->body($summary);
 
@@ -147,7 +165,7 @@ class SlackSummary
             default => 'completed',
         };
 
-        return "{$prefix}Backup {$outcome} on " . $this->host();
+        return "{$prefix}Backup {$outcome} on " . $this->hostname;
     }
 
     /**
@@ -276,17 +294,4 @@ class SlackSummary
         return sprintf('%dh %dm', intdiv($minutes, 60), $minutes % 60);
     }
 
-    /**
-     * @return string the machine this ran on, which is the whole point of a fleet
-     *                reporting to one webhook
-     */
-    protected function host() : string
-    {
-        return (string) (config('logging.hostname') ?: gethostname());
-    }
-
-    protected function webhook() : string
-    {
-        return (string) config('backup.summary.slack_webhook');
-    }
 }

@@ -7,18 +7,21 @@ use Psr\Http\Client\ClientInterface;
 /**
  * How long the run took, as a person reads it.
  *
- * Instantiated directly - formatting a number of seconds needs no application, and no
+ * Instantiated directly, which the reporter now allows for: it reads no config and
+ * resolves nothing, so a plain `new` with five arguments is the whole of its setup. No
  * request is ever made, so the client is a stub that would fail loudly if one were.
  */
 function duration(float $seconds): string
 {
-    $summary = new class (new SlackWebhook(new class implements ClientInterface
+    $slack = new SlackWebhook(new class implements ClientInterface
     {
         public function sendRequest(\Psr\Http\Message\RequestInterface $request): \Psr\Http\Message\ResponseInterface
         {
             throw new \RuntimeException('the formatter should not be sending anything');
         }
-    })) extends SlackSummary
+    });
+
+    $summary = new class ($slack, '', 'always', 'Test 1.0.0', 'web01') extends SlackSummary
     {
         public function readable(float $seconds): string
         {

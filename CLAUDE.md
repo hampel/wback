@@ -135,7 +135,14 @@ records the stages. `App\Support\SlackSummary` renders it and posts it with
 `hampel/slack-message`, which needs only a PSR-18 client (Guzzle is already a
 `laravel-zero/framework` dependency, so it costs one package, not the 25 that
 `illuminate/notifications` would). Sending happens *after* the lock is released
-and can never fail the run. The `slack` log channel stays as the backstop; the
+and can never fail the run.
+
+**`SlackSummary` reads no config and resolves nothing.** Webhook, notify policy,
+application string and hostname all arrive through its constructor, and
+`AppServiceProvider` does the reading. Keep it that way: the same class has to
+work under XenForo, where `config()`, `app()` and facades do not exist. If you
+need a new setting in a message, add a constructor argument and bind it — do not
+reach for `config()` inside the class. The `slack` log channel stays as the backstop; the
 two are complementary, and `config/backup.php` says why.
 
 `app/Logging/StampHostname` is a **tap** that pushes `HostnameProcessor` onto the
