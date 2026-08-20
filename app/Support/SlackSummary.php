@@ -252,6 +252,13 @@ class SlackSummary
 
     protected function duration(float $seconds) : string
     {
+        // a run that took a fraction of a second is a real answer, and "0s" reads as a
+        // duration nobody measured
+        if ($seconds < 1)
+        {
+            return '<1s';
+        }
+
         $seconds = (int) round($seconds);
 
         if ($seconds < 60)

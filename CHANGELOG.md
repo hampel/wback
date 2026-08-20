@@ -17,6 +17,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   a log channel structurally cannot do: logging posts a record at a time, so it
   can only ever report trouble, and a run where nothing fails is silent in exactly
   the way an uninstalled cron entry is. The log channel stays as the backstop.
+- A run that finished in under a second reports `<1s` rather than `0s`, which read
+  as a duration nobody measured.
 - A run blocked by the lock reports too — `Backup did not run`, naming the holder
   — which used to leave nothing behind but a single log line.
 - `app:validate` posts a test message to the summary webhook and fails if Slack

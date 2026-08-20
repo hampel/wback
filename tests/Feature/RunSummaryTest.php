@@ -77,7 +77,8 @@ it('says the backup completed, and what it produced', function () {
         ->and($fields['Backups'])->toBe('2')
         ->and($fields['Stages'])->toBe('database, files, cloud, sync, clean')
         ->and($fields)->toHaveKey('Written')
-        ->and($fields)->toHaveKey('Duration')
+        // a faked run takes no measurable time, which is the case "0s" read wrongly
+        ->and($fields['Duration'])->toBe('<1s')
         ->and($fields)->not->toHaveKey('Failures');
 });
 
