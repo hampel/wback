@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": "^8.3.0",
-        "hampel/console-report": "^1.0",
+        "hampel/console-report": "^1.0.1",
         "hampel/slack-message": "^2.2",
         "illuminate/log": "^13.0",
         "laravel-zero/framework": "^13.0",

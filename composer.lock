@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aa180bbffe1941717ccba78ffd410b40",
+    "content-hash": "d7ead02e87321325ee045fb01d48ae6b",
     "packages": [
         {
             "name": "brick/math",
@@ -754,26 +754,28 @@
         },
         {
             "name": "hampel/console-report",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hampel/console-report.git",
-                "reference": "b242a90716dff18e7e8b63fae735ec08187c1d22"
+                "reference": "3d39e130f6d687d8e9980658b65fb69061005228"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hampel/console-report/zipball/b242a90716dff18e7e8b63fae735ec08187c1d22",
-                "reference": "b242a90716dff18e7e8b63fae735ec08187c1d22",
+                "url": "https://api.github.com/repos/hampel/console-report/zipball/3d39e130f6d687d8e9980658b65fb69061005228",
+                "reference": "3d39e130f6d687d8e9980658b65fb69061005228",
                 "shasum": ""
             },
             "require": {
                 "ext-mbstring": "*",
                 "illuminate/console": "^12.0|^13.0",
-                "php": ">=8.3"
+                "php": ">=8.3",
+                "symfony/console": "^7.2|^8.0"
             },
             "require-dev": {
+                "hampel/rig": "^0.1.2",
                 "laravel/pint": "^1.30",
-                "phpstan/phpstan": "^2.0",
+                "phpstan/phpstan": "^2.1.22",
                 "phpunit/phpunit": "^12.0"
             },
             "type": "library",
@@ -805,7 +807,7 @@
                 "issues": "https://github.com/hampel/console-report/issues",
                 "source": "https://github.com/hampel/console-report"
             },
-            "time": "2026-08-19T07:58:11+00:00"
+            "time": "2026-08-20T03:09:53+00:00"
         },
         {
             "name": "hampel/slack-message",

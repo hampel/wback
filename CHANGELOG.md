@@ -63,6 +63,12 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   the system shell" — is reported as `none` by `app:config`. It used to render as
   a line of dots indistinguishable from a section heading.
 - A check row in `app:validate` with no detail no longer ends in trailing spaces.
+- `app:config` no longer reports a `phar://` path as relative to the working
+  directory. A stream wrapper URI locates a resource outright, so there is nothing
+  for it to be relative to — and inside a built binary `base_path()` is one, which
+  is where the environment file lands when none of the places wback looks for it
+  has one. Fixed upstream in `hampel/console-report` 1.0.1, which is now the
+  minimum.
 
 ### Documentation
 

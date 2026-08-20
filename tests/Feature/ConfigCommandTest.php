@@ -124,3 +124,14 @@ it('says the pipeline shell is unset rather than drawing it as a heading', funct
         ->expectsOutputToContain('none')
         ->assertSuccessful();
 });
+
+it('does not call a stream wrapper path relative', function () {
+    // inside a built binary base_path() is a phar:// URI, and a URI locates a resource
+    // outright - there is no working directory for it to resolve against, so saying
+    // what it is relative to would be inventing an answer
+    config()->set('backup.sites_path', 'phar:///usr/local/bin/wback/wback.toml');
+
+    $this->artisan('app:config', ['--only' => 'backup'])
+        ->doesntExpectOutputToContain('relative to')
+        ->assertSuccessful();
+});
