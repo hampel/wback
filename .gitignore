@@ -8,3 +8,6 @@ builds/
 storage/
 storage/wback.toml
 .box_dump/
+
+# session notes and audit state - local to this clone, never published
+CLAUDE.local.md
