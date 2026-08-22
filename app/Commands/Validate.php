@@ -47,6 +47,9 @@ class Validate extends Command
      */
     public function handle()
     {
+        // see Config::handle() - console-report 2.0 needs to be told where to write
+        $this->setReportOutput($this->getOutput());
+
         $this->section('Binaries');
         $this->checkBinaries();
 

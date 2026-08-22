@@ -43,7 +43,10 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 - `app:config` and `app:validate` draw their output with
   [hampel/console-report](https://github.com/hampel/console-report) rather than
   with private copies of the same renderers. The output is unchanged, byte for
-  byte, apart from the last two fixes below.
+  byte, apart from the last two fixes below. The minimum is `^2.0`, whose only
+  break is that the renderers are handed the command's output rather than calling
+  back into it — which is what lets the same package serve consoles that are not
+  Laravel.
 
 ### Fixed
 
@@ -67,8 +70,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   directory. A stream wrapper URI locates a resource outright, so there is nothing
   for it to be relative to — and inside a built binary `base_path()` is one, which
   is where the environment file lands when none of the places wback looks for it
-  has one. Fixed upstream in `hampel/console-report` 1.0.1, which is now the
-  minimum.
+  has one. Fixed upstream in `hampel/console-report` 1.0.1, and carried forward
+  unchanged in the 2.0 this now requires.
 
 ### Documentation
 

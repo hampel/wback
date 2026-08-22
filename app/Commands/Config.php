@@ -44,6 +44,11 @@ class Config extends Command
      */
     public function handle()
     {
+        // console-report 2.0 writes to a Symfony OutputInterface it is handed rather than
+        // calling line() on the command, so that it can serve consoles that are not
+        // Laravel. getOutput() returns an Illuminate\Console\OutputStyle, which is one.
+        $this->setReportOutput($this->getOutput());
+
         $this->reportSettings($this->settings(), $this->option('only'));
 
         return Command::SUCCESS;

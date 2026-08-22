@@ -90,6 +90,12 @@ traits are strict about their argument types — an `int` from config has to be
 cast at the call site, which is why `Keep Only Days` carries a `(string)`. What
 to report stays here; only the drawing moved.
 
+Since 2.0 the package imports no Illuminate symbol, so it has to be handed
+somewhere to write before it renders anything: `setReportOutput($this->getOutput())`
+at the top of `handle()`, which is what both commands do. Forget it in a third
+consumer and the first render throws a `LogicException` naming the missing call —
+loud, and the feature tests catch it.
+
 `Sites`, `Config` and `Validate` extend Laravel Zero's `Command` directly and are
 namespaced `app:` to keep the backup verbs at the top level. `Validate` exercises
 the real thing — it runs each binary, dumps each schema to /dev/null, lists each
