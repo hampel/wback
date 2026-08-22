@@ -158,6 +158,17 @@ either way (`null == 0`). The `schedule()` methods are commented out in place
 rather than deleted. Ordering lives in `Cron::$stages` instead; a new backup
 command goes in that list.
 
+**A mistyped command exits 1, which took an override.** `App\Kernel` narrows
+`LaravelZero\Framework\Kernel::ensureDefaultCommand()` so only a bare invocation
+or an options-only one is proxied to the default command; a first argument naming
+nothing reaches Symfony and fails. Stock behaviour proxies it, so `wback
+app:validte` prints the command list and exits 0 — the same silent success as the
+scheduler above, in a tool whose exit code is the whole of what cron reads. It has
+to be rebound in `bootstrap/app.php` over the binding `Application::configure()`
+makes, or the class sits there doing nothing. `tests/Feature/UnknownCommandTest.php`
+drives `Kernel::handle()` directly, because `$this->artisan()` calls the command and
+never passes through the proxying.
+
 **One lock covers a whole run.** `App\Support\BackupLock` is a container
 singleton wrapping an `flock`, taken by whichever command starts first — `cron`
 for a scheduled run — with the commands it calls seeing `isHeld()` and leaving it

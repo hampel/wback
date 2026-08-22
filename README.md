@@ -479,6 +479,11 @@ It exits non-zero if anything failed, so it works as a post-deploy check. Note
 the last two: running it puts messages in whatever channel this installation
 reports to.
 
+A gate is only as good as the spelling of the command in it, so a name `wback`
+does not recognise — `app:validte` — is an error that exits non-zero and suggests
+the nearest match. Laravel Zero would otherwise print the command list and exit 0,
+which reads to a deploy script as a validation that passed.
+
 ## Where backups end up
 
 ```
