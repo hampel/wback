@@ -158,7 +158,7 @@ with the rest of the system's, with nothing to pass at all:
 sudo install -m 755 wback-7.1.0 /usr/local/bin/wback
 sudo install -d /etc/wback
 sudo install -m 640 .env /etc/wback/.env
-wback app:config          # reports which file it read
+wback app:config          # reports which file it read, or where it looked
 ```
 
 Note the first entry: a `.env` beside the binary is loaded last by the framework

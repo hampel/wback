@@ -50,6 +50,17 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `app:config` no longer reports an environment file it never opened. With no
+  `.env` in any of the places wback looks, it used to print the framework's guess
+  — which inside a built binary is a `phar://` path into the read-only archive,
+  indistinguishable from a real answer on the one line an operator reads first
+  when a setting is not taking effect. It now names the file it actually read, or
+  says `none found` and lists where it looked.
+- A command name wback does not recognise is now an error that exits non-zero and
+  suggests the nearest match. Laravel Zero proxies an unrecognised name to the
+  default command, so `wback app:validte` printed the command list and exited 0 —
+  which reads as a passing check to cron, to a deploy script, and to anything else
+  that gates on `app:validate`.
 - `app:config` printed every path with the project directory silently removed —
   the environment file as `.env`, the backup destination as `storage/backup` —
   because Laravel's two-column component runs its values through a mutator that

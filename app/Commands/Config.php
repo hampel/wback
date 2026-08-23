@@ -55,6 +55,40 @@ class Config extends Command
     }
 
     /**
+     * The environment file that was read, or where it was looked for
+     *
+     * Not environmentFilePath(), which answers with base_path().'/.env' whether or not
+     * anything is there - and inside a compiled binary that names a file in the phar,
+     * which has never been opened and cannot be. It reads exactly like a real answer,
+     * which is the one thing this line must not do: it is where someone goes first when
+     * a setting is not taking effect.
+     *
+     * bootstrap/app.php records the outcome of its own search, so when nothing was found
+     * this can say where it looked - which is the whole of what a reader needs to fix it.
+     *
+     * @return string
+     */
+    protected function environmentFile() : string
+    {
+        $loaded = $this->laravel->bound('wback.env.loaded')
+            ? $this->laravel->make('wback.env.loaded')
+            : null;
+
+        if ($loaded !== null)
+        {
+            return $this->path($loaded);
+        }
+
+        $candidates = $this->laravel->bound('wback.env.candidates')
+            ? $this->laravel->make('wback.env.candidates')
+            : [];
+
+        return empty($candidates)
+            ? $this->notSet()
+            : '<fg=yellow>none found</> - looked in ' . implode(', ', $candidates);
+    }
+
+    /**
      * @return array<string, array<string, string>> settings to report, by section
      */
     protected function settings() : array
@@ -71,7 +105,7 @@ class Config extends Command
             ],
 
             'Backup' => [
-                'Environment File' => $this->path($this->laravel->environmentFilePath()),
+                'Environment File' => $this->environmentFile(),
                 'Sites Path' => $this->path(config('backup.sites_path')),
                 // binaries are left as written: a bare name is found on the PATH, so it
                 // is not relative to anything the way a path would be

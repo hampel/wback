@@ -43,6 +43,8 @@ $candidates = array_filter([
     DIRECTORY_SEPARATOR . 'etc' . DIRECTORY_SEPARATOR . 'wback' . DIRECTORY_SEPARATOR . '.env',
 ]);
 
+$loaded = null;
+
 foreach ($candidates as $envFile)
 {
     if (is_file($envFile))
@@ -52,9 +54,20 @@ foreach ($candidates as $envFile)
 
         Dotenv::createMutable(dirname($envFile), basename($envFile))->safeLoad();
 
+        $loaded = $envFile;
+
         break;
     }
 }
+
+/*
+ * Recorded so app:config can report the file that was actually read, and say where it
+ * looked when there was none. Left to the framework, environmentFilePath() answers with
+ * base_path().'/.env' whether or not anything is there - which inside a phar names a
+ * file in the archive that has never been opened, and reads exactly like a real answer.
+ */
+$app->instance('wback.env.loaded', $loaded);
+$app->instance('wback.env.candidates', array_values($candidates));
 
 if ($phar)
 {

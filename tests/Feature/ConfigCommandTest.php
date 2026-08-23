@@ -135,3 +135,33 @@ it('does not call a stream wrapper path relative', function () {
         ->doesntExpectOutputToContain('relative to')
         ->assertSuccessful();
 });
+
+/*
+ * The environment file is the line someone reads first when a setting is not taking
+ * effect, and the framework's own answer to "which file" is a guess: environmentFilePath()
+ * returns base_path().'/.env' whether or not anything is there. Inside a compiled binary
+ * that is a phar:// path into the read-only archive - a file that has never been opened,
+ * reported in the same words as one that has. bootstrap/app.php records what its search
+ * actually found so this command can tell the two apart.
+ */
+
+it('reports where it looked when there is no environment file', function () {
+    $this->app->instance('wback.env.loaded', null);
+    $this->app->instance('wback.env.candidates', ['/etc/wback/.env']);
+
+    $this->artisan('app:config', ['--only' => 'backup'])
+        ->expectsOutputToContain('none found - looked in /etc/wback/.env')
+        ->assertSuccessful();
+});
+
+it('does not fall back to the path the framework would have guessed', function () {
+    // environmentFilePath() is that guess, and in a built binary it is a phar:// path
+    // into the archive - which cannot be asserted on from a source checkout, so what is
+    // guarded here is that the guess is not consulted at all
+    $this->app->instance('wback.env.loaded', null);
+    $this->app->instance('wback.env.candidates', ['/etc/wback/.env']);
+
+    $this->artisan('app:config', ['--only' => 'backup'])
+        ->doesntExpectOutputToContain($this->app->environmentFilePath())
+        ->assertSuccessful();
+});
