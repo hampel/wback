@@ -214,3 +214,27 @@ is a short name, and the defaulting rules matter:
 - The code uses Allman braces and its own spacing, which is **not** Laravel/PSR-12.
   Pint is installed but there is no `pint.json`, so running it would reformat the
   entire codebase — don't run it across existing files.
+- `composer test` runs the suite. There is deliberately no `format`, `lint` or
+  `check` script, unlike the other tools here: those run Pint, and Pint would
+  reformat this codebase for the reason above.
+
+## Releasing
+
+**Tag first, then build.** `config/app.php` has `'version' => app('git.version')`,
+and `app:build` evaluates that file on the build machine and compiles the result
+in as a literal — so the binary reports whatever `git describe` said at build
+time. Build before tagging and it ships announcing the previous release, which
+nothing downstream will contradict.
+
+1. CHANGELOG: move `Unreleased` to the new version, checked against
+   `git log $(git describe --tags --abbrev=0)..HEAD` rather than against memory.
+2. Update the version in the README's installation block.
+3. Tag.
+4. `php wback app:build wback` → `builds/wback`.
+5. `./builds/wback --version` — confirm it says what you just tagged.
+6. Rename the artefact to `wback-<version>`; that name is what the checksum file
+   and the install instructions both refer to. Publish `SHA256SUMS` beside it:
+   provisioning pins the checksum, so a release without one cannot be installed
+   the documented way.
+7. Then the smoke run — `wback app:validate` on each box that has it. That is the
+   only verification this tool gets, and it is the reason the command exists.

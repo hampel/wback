@@ -28,6 +28,9 @@
         "mockery/mockery": "^1.6.12",
         "pestphp/pest": "^3.8.4|^4.1.2"
     },
+    "scripts": {
+        "test": "pest"
+    },
     "autoload": {
         "psr-4": {
             "App\\": "app/",
