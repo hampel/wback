@@ -73,6 +73,54 @@ it('carries on after a stage fails, and fails the run', function () {
     expect(collect(ranCommands())->contains(fn ($command) => str_contains($command, 'zip')))->toBeTrue();
 });
 
+it('sends the sites that worked offsite, even though another site failed', function () {
+    // the blast radius question, and the one worth a standing test: a placeholder with
+    // an empty docroot must not cost the real site beside it its offsite copy. Reported
+    // from ap1 on 2026-08-24 as though it did - it does not, and this says so.
+    useSource('example.com', ['index.php']);
+    useSource('placeholder.example', []);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+
+        [placeholder]
+        domain = 'placeholder.example'
+        TOML);
+
+    $this->artisan('cron')
+        ->expectsOutputToContain('is empty for placeholder')
+        ->expectsOutputToContain('Backup stage [files] failed')
+        ->assertFailed();
+
+    $ran = collect(ranCommands());
+
+    // the good site was archived, and that archive was sent to cloud storage
+    expect($ran->contains(fn ($command) => str_contains($command, 'zip')
+        && str_contains($command, 'example.20260813.zip')))->toBeTrue()
+        ->and($ran->contains(fn ($command) => str_contains($command, 'copy')
+            && str_contains($command, 'example.com')))->toBeTrue();
+
+    // and the run still fails, so cron mails and the summary fires
+});
+
+it('runs every later stage after a stage fails', function () {
+    recordCommands(fn ($process) => str_contains($process->command, 'zip')
+        ? Process::result(errorOutput: 'zip error: Nothing to do!', exitCode: 12)
+        : Process::result());
+
+    $this->artisan('cron')
+        ->expectsOutputToContain('Backup stage [files] failed')
+        ->doesntExpectOutputToContain('Skipping [cloud]')
+        ->assertFailed();
+
+    // cloud and sync are what a failed files stage was thought to take down with it
+    $ran = collect(ranCommands());
+
+    expect($ran->contains(fn ($command) => str_contains($command, ' copy ')))->toBeTrue()
+        ->and($ran->contains(fn ($command) => str_contains($command, ' sync ')))->toBeTrue();
+});
+
 it('skips the stages it is told to', function () {
     // a server still being built has no remotes yet, and every site would otherwise
     // fail the cloud stage for want of one

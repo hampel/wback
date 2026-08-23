@@ -535,6 +535,16 @@ The stages run in the order they depend on each other — `database`, `files`,
 finished. A stage that fails does not stop the ones after it, and the command
 exits non-zero if any of them failed.
 
+Nor does one site stop another. A site that fails is recorded and skipped, the
+remaining sites in that stage are still processed, and every later stage still
+runs for the sites that worked — so a single broken site costs you that site's
+backup, not the host's. An empty docroot on a placeholder site does not keep the
+real site beside it from reaching cloud storage. The run still exits non-zero,
+which is what the alerting reads.
+
+That makes `Skipping [cloud]` in a log worth reading precisely: it is only ever
+`--no-cloud`, never the consequence of an earlier failure.
+
 Each stage can be turned off: `--no-database`, `--no-files`, `--no-cloud`,
 `--no-sync`, `--no-clean`. That is how to back up locally on a machine whose
 cloud credentials are not wired up yet, or on one that is never going to have

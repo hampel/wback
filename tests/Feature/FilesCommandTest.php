@@ -78,6 +78,37 @@ it('fails when the source directory does not exist', function () {
     Process::assertNothingRan();
 });
 
+it('fails when the source directory is empty, without leaning on zip to say so', function () {
+    // zip calls this "Nothing to do!" and exits 12, which is a half-finished migration
+    // and a deliberately empty placeholder both described in zip's terms rather than
+    // the site's. CronCommandTest covers the part that matters - the blast radius
+    useSource('example.com', []);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('files', ['site' => 'example'])
+        ->expectsOutputToContain('is empty for example')
+        ->assertFailed();
+
+    Process::assertNothingRan();
+});
+
+it('backs up a site whose only content is a dot file', function () {
+    // zip -r . takes dot files, so an empty directory means empty to zip too - the
+    // check has to agree with the command it is standing in front of
+    useSource('example.com', ['.htaccess']);
+
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    $this->artisan('files', ['site' => 'example'])->assertSuccessful();
+});
+
 it('escapes wildcards in exclude patterns', function () {
     useSource('example.com');
 

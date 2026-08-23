@@ -43,6 +43,10 @@ uses(Tests\TestCase::class)
             'backup.rclone.sync_backup_dir' => '',
             'backup.keeponly_days' => 7,
             'backup.keepleast_days' => 3,
+            // a developer whose .env carries a real webhook would otherwise have the
+            // suite take the send path - and app:validate posts a test message on it
+            'backup.summary.slack_webhook' => '',
+            'backup.summary.notify' => 'always',
         ]);
 
         Storage::fake('files');

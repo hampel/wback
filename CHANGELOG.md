@@ -8,6 +8,15 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- A file backup of an empty source directory now fails as an empty source
+  directory, rather than as `zip` exit code 12 and "Nothing to do!". An
+  unexpectedly empty docroot is worth failing over — it is what a half-finished
+  migration looks like at 03:17 — but it should say so in the site's terms and
+  name the site it belongs to. A site that deliberately has nothing to archive
+  still opts out with `files = ''`.
+
 ### Documentation
 
 - The installation section no longer promises a `SHA256SUMS` on every release

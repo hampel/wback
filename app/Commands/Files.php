@@ -39,6 +39,19 @@ class Files extends BaseCommand
             throw new \RuntimeException("Source path [{$files}] not found for {$name}");
         }
 
+        // zip reports an empty directory as "Nothing to do!" and exit code 12, which
+        // describes zip's predicament rather than the site's. An unexpectedly empty
+        // docroot is worth failing over - it is what a half-finished migration looks
+        // like - but it should be recognisable as that, and a site with deliberately
+        // nothing to archive says so with files = '' rather than being discovered.
+        if (File::isEmptyDirectory($files))
+        {
+            throw new \RuntimeException(
+                "Source path [{$files}] is empty for {$name}"
+                . " - set files = '' for this site if it has nothing to back up"
+            );
+        }
+
         $this->backupFiles($site, $name, $files);
     }
 
