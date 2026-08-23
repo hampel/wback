@@ -89,16 +89,18 @@ but PHP itself, so a server needs nothing else installed — no composer, no
 vendor directory:
 
 ```bash
-curl -L -o wback https://github.com/hampel/wback/releases/download/7.1.0/wback-7.1.0
-chmod +x wback
-sudo mv wback /usr/local/bin/wback
-```
+WBACK_VERSION=7.3.0
+BASE=https://github.com/hampel/wback/releases/download/$WBACK_VERSION
 
-Each release also has a `SHA256SUMS` file, so the download can be checked before
-you trust it with your backups:
+curl -LO $BASE/wback-$WBACK_VERSION
+curl -LO $BASE/SHA256SUMS
 
-```bash
-sha256sum -c SHA256SUMS
+# check it before trusting it with your backups - it is 30MB of executable from
+# a URL, and the names in SHA256SUMS are the release asset names, so keep the
+# downloaded file called wback-<version> until this has passed
+sha256sum --ignore-missing -c SHA256SUMS
+
+sudo install -m 755 wback-$WBACK_VERSION /usr/local/bin/wback
 ```
 
 Which release you want depends on the PHP on the server: **7.1.0 and later need
@@ -155,7 +157,7 @@ Which means the binary can go somewhere on the path and its configuration can si
 with the rest of the system's, with nothing to pass at all:
 
 ```bash
-sudo install -m 755 wback-7.1.0 /usr/local/bin/wback
+sudo install -m 755 wback-<version> /usr/local/bin/wback
 sudo install -d /etc/wback
 sudo install -m 640 .env /etc/wback/.env
 wback app:config          # reports which file it read, or where it looked
