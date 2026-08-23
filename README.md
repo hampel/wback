@@ -83,10 +83,10 @@ setting; where that is the case it is noted.
 
 ### From a release
 
-Each release publishes a single-file executable on the
-[releases page](https://github.com/hampel/wback/releases). It carries everything
-but PHP itself, so a server needs nothing else installed — no composer, no
-vendor directory:
+Each release publishes a single-file executable and a `SHA256SUMS` to check it
+against, on the [releases page](https://github.com/hampel/wback/releases). It
+carries everything but PHP itself, so a server needs nothing else installed — no
+composer, no vendor directory:
 
 ```bash
 WBACK_VERSION=7.3.0
@@ -103,8 +103,9 @@ sha256sum --ignore-missing -c SHA256SUMS
 sudo install -m 755 wback-$WBACK_VERSION /usr/local/bin/wback
 ```
 
-Which release you want depends on the PHP on the server: **7.1.0 and later need
-PHP 8.3**, and **7.0.0 runs on PHP 8.2**.
+Set `WBACK_VERSION` to the release you want: **7.1.0 and later need PHP 8.3**,
+and **7.0.0 runs on PHP 8.2**. The block above works unchanged for any of them —
+every 7.x release has both files, under the same names.
 
 Then give it a `.env` — beside the binary, or at `/etc/wback/.env`, or wherever
 `WBACK_ENV` points. See [Configuration](#configuration), and note that the

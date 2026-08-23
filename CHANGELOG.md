@@ -6,6 +6,15 @@ only.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Documentation
+
+- The installation section no longer promises a `SHA256SUMS` on every release
+  without one existing. 7.0.0, 7.1.0 and 7.2.0 have been given one after the
+  fact — checked against the published assets rather than against a local build
+  — so the documented check now works for every 7.x release, not just the newest.
+
 ## [7.3.0] - 2026-08-23
 
 ### Added

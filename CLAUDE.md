@@ -232,9 +232,10 @@ nothing downstream will contradict.
 3. Tag.
 4. `php wback app:build wback` → `builds/wback`.
 5. `./builds/wback --version` — confirm it says what you just tagged.
-6. Rename the artefact to `wback-<version>`; that name is what the checksum file
-   and the install instructions both refer to. Publish `SHA256SUMS` beside it:
-   provisioning pins the checksum, so a release without one cannot be installed
-   the documented way.
+6. Rename the artefact to `wback-<version>` and check it in:
+   `sha256sum wback-<version> > SHA256SUMS`. That name is what the checksum file
+   and the install instructions both refer to, so renaming after this breaks the
+   check. Attach **both** files to the release: provisioning pins the checksum,
+   and a release without one cannot be installed the documented way.
 7. Then the smoke run — `wback app:validate` on each box that has it. That is the
    only verification this tool gets, and it is the reason the command exists.
