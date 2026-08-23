@@ -6,7 +6,7 @@ only.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [7.3.0] - 2026-08-23
 
 ### Added
 
@@ -89,6 +89,26 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 - What happens when `cloud` and `sync` share one rclone remote: the branches they
   write to, and the single case where a directory of your own in a site's backup
   root ends up inside the sync destination and is deleted by the next sync.
+- The run summary: how to read one, when it is sent, and what a run that never
+  started looks like.
+- The installation instructions no longer name one particular release, and the
+  checksum step now works. It downloaded the binary under a different name from
+  the one `SHA256SUMS` lists, so `sha256sum -c` could not find the file it was
+  meant to be checking — and it ran after the install rather than before it.
+
+### Upgrading
+
+- **Nothing is required.** Every change below is either invisible or opt-in.
+- **To turn the run summary on**, set `BACKUP_SUMMARY_SLACK_WEBHOOK`. It is off
+  until you do, and the `slack` log channel is unaffected either way — the two
+  are complementary, and `config/backup.php` says why.
+- **`app:validate` now posts.** It writes a message at every log level and, if a
+  summary webhook is configured, sends a test message to it. That is deliberate —
+  a revoked webhook is otherwise invisible from the sending end — but it means
+  running it puts messages in whatever channel this installation reports to.
+- **A mistyped command now fails.** `wback app:validte` used to print the command
+  list and exit 0. Anything that gates on an exit code will start seeing a typo it
+  had been passing.
 
 ## [7.2.0] - 2026-08-14
 
