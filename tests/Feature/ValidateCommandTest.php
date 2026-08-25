@@ -31,6 +31,32 @@ it('reports a binary that will not run', function () {
         ->assertFailed();
 });
 
+it('checks the rest of the binaries after one cannot be started at all', function () {
+    // a working directory the invoking user cannot traverse fails every spawn, not
+    // just the first - this happened on ap1 running from /root, and the run ended at
+    // mysqldump with the paths, sites, remotes and logging never looked at
+    Process::fake(function ($process) {
+        if (str_contains($process->command, 'mysqldump --version')) {
+            throw new \RuntimeException(
+                'The command "/usr/bin/mysqldump --version" failed.'
+                . "\n\nWorking directory: /root"
+                . "\n\nError: proc_open(): posix_spawn() failed: Permission denied"
+            );
+        }
+
+        return Process::result();
+    });
+
+    $this->artisan('app:validate')
+        // the cause and the cwd, not the "command failed" line the label already says
+        ->expectsOutputToContain('posix_spawn() failed: Permission denied (working directory: /root)')
+        // the binaries after it, and the sections after those, are still reported
+        ->expectsOutputToContain('gzip')
+        ->expectsOutputToContain('rclone')
+        ->expectsOutputToContain('sites file')
+        ->assertFailed();
+});
+
 it('reports a database it cannot dump', function () {
     Process::fake(fn ($process) => str_contains($process->command, '--no-data')
         ? Process::result(errorOutput: 'mysqldump: Got error: 1049: Unknown database', exitCode: 2)

@@ -9,6 +9,7 @@ use App\Support\SiteInventory;
 use App\Support\SlackSummary;
 use Hampel\ConsoleReport\RendersChecks;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
@@ -88,6 +89,69 @@ class Validate extends Command
     }
 
     /**
+     * Run one of the checks, reporting a command that could not be started at all as
+     * a failed check rather than letting it end the report
+     *
+     * Everything here runs an external command to find out whether it works, so one
+     * that will not start is this command's subject matter and not an accident that
+     * should stop it. On ap1 an unreadable working directory threw at the very first
+     * binary and the run ended there - the paths, sites, remotes, logging and summary
+     * were never looked at, by the one command whose whole job is to look at them.
+     *
+     * @param string $label check to report the failure against
+     * @param string $command command to run
+     * @param int $timeout seconds to allow it
+     * @return mixed the process result, or null if it could not be started
+     */
+    protected function runCheck(string $label, string $command, int $timeout = 60)
+    {
+        try
+        {
+            return Process::timeout($timeout)->run($command);
+        }
+        catch (\Throwable $e)
+        {
+            // the console half of this is the check row below, so this is the one place
+            // in the app that writes to the log directly rather than through log().
+            // It does need writing: the whole message is what made this diagnosable on
+            // ap1 after the fact, and a check row has room for one line of it
+            Log::error("Check command could not be started", [
+                'check' => $label,
+                'command' => $command,
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->checkFail($label, $this->startFailure($e));
+
+            return null;
+        }
+    }
+
+    /**
+     * The one line worth showing from a command that would not start
+     *
+     * Symfony puts the useful part last. The first line only says the command failed,
+     * which the check's own label has already said, while the cause and the working
+     * directory - and on ap1 the working directory was the whole of what was wrong -
+     * are several lines further down.
+     *
+     * @param \Throwable $e the failure
+     * @return string one line, cause first
+     */
+    protected function startFailure(\Throwable $e) : string
+    {
+        $message = $e->getMessage();
+
+        $reason = preg_match('/^Error: (.+)$/m', $message, $matches)
+            ? trim($matches[1])
+            : $this->firstLine($message);
+
+        return preg_match('/^Working directory: (.+)$/m', $message, $matches)
+            ? "{$reason} (working directory: " . trim($matches[1]) . ")"
+            : $reason;
+    }
+
+    /**
      * Run each configured binary, which proves it exists, that it runs, and that a
      * setting carrying options of its own still resolves to something executable
      */
@@ -111,7 +175,12 @@ class Validate extends Command
                 continue;
             }
 
-            $result = Process::timeout(10)->run("{$binary} --version");
+            $result = $this->runCheck($name, "{$binary} --version", 10);
+
+            if ($result === null)
+            {
+                continue;
+            }
 
             if (!$result->successful())
             {
@@ -277,7 +346,12 @@ class Validate extends Command
         $cmd = "{$mysqldump} --no-data --skip-lock-tables{$hostname}{$port}{$options} "
             . escapeshellarg($database) . " > /dev/null";
 
-        $result = Process::timeout(60)->run($cmd);
+        $result = $this->runCheck("{$name} database", $cmd);
+
+        if ($result === null)
+        {
+            return;
+        }
 
         $result->successful()
             ? $this->checkOk("{$name} database", $database)
@@ -301,7 +375,12 @@ class Validate extends Command
 
             $rclone = config('backup.rclone.binary');
 
-            $result = Process::timeout(60)->run("{$rclone} lsd " . escapeshellarg($remote));
+            $result = $this->runCheck($name, "{$rclone} lsd " . escapeshellarg($remote));
+
+            if ($result === null)
+            {
+                continue;
+            }
 
             if ($result->successful())
             {

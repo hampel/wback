@@ -8,6 +8,21 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `app:validate` no longer stops at the first check whose command will not start.
+  A command that cannot be spawned at all — an unreadable working directory does
+  this to every one of them — is now a failed check like any other, so the
+  remaining binaries, and the paths, sites, remotes, logging and summary after
+  them, are still reported. This happened on ap1: one run ended at `mysqldump`
+  and looked at nothing else, which is the worst moment to stop talking for a
+  command whose whole job is to say what is wrong.
+- A check that cannot start now reports the cause rather than the first line of
+  the exception. `proc_open(): posix_spawn() failed: Permission denied (working
+  directory: /root)` says what to fix; `The command "…" failed.` repeats the
+  check's own label. The whole message still goes to the log, with the check and
+  the command as context.
+
 ### Changed
 
 - A file backup of an empty source directory now fails as an empty source
