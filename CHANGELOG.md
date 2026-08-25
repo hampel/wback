@@ -8,6 +8,28 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.4.1] - 2026-08-25
+
+### Fixed
+
+- The released binary no longer carries the development dependencies. `app:build`
+  never runs Composer and `box.json` takes `vendor/` wholesale, so building from a
+  dev checkout compiled Pint, PHPUnit, Pest and Mockery into the artefact — Pint
+  alone was 21 MB of it. **The download drops from 29 MB to 6 MB**, and a
+  production server stops being handed a code formatter and a test framework it
+  will never run. No behaviour changes: same code, same command strings, same
+  exit codes.
+- 7.0.0 through 7.4.0 are all affected and are left as published, since their
+  checksums are pinned and a release whose bytes change under a fixed version is
+  the thing checksums exist to prevent. Upgrade to get the smaller one.
+
+### Added
+
+- `composer build`, which installs `--no-dev`, compiles, restores the dev
+  dependencies, and then fails if `laravel/pint` is still findable in the
+  artefact. That last grep is the whole guard — nothing else noticed for five
+  releases.
+
 ## [7.4.0] - 2026-08-25
 
 ### Added

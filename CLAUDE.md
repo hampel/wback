@@ -31,7 +31,8 @@ php wback clean    <site> [-a] [-d]   # delete backups older than keeponly_days
 vendor/bin/pest                          # all tests
 vendor/bin/pest tests/Feature/CronCommandTest.php   # single file
 vendor/bin/pest --filter='dry run'                  # single test
-php wback app:build wback                # compile a PHAR into builds/ (box.json)
+composer build                           # compile a release PHAR into builds/ (box.json)
+php wback app:build wback                # compile in place - includes dev deps, see Releasing
 ```
 
 `-a|--all` iterates every site and takes precedence over a site named on the
@@ -230,7 +231,13 @@ nothing downstream will contradict.
    `git log $(git describe --tags --abbrev=0)..HEAD` rather than against memory.
 2. Update the version in the README's installation block.
 3. Tag.
-4. `php wback app:build wback` → `builds/wback`.
+4. `composer build` → `builds/wback`. **Not `php wback app:build` on its own.**
+   `app:build` never runs Composer and `box.json` takes `vendor/` wholesale, so on
+   a dev checkout it compiles the dev dependencies in too — Pint alone is 21 MB of
+   a 29 MB binary, against 6 MB built properly. `composer build` installs
+   `--no-dev`, builds, restores, and then greps the artefact for `laravel/pint`
+   and fails if it finds it. That grep is the whole guard: nothing else notices,
+   and 7.0.0 through 7.4.0 all shipped fat because nothing was looking.
 5. `./builds/wback --version` — confirm it says what you just tagged.
 6. Rename the artefact to `wback-<version>` and check it in:
    `sha256sum wback-<version> > SHA256SUMS`. That name is what the checksum file

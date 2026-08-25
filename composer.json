@@ -29,7 +29,16 @@
         "pestphp/pest": "^3.8.4|^4.1.2"
     },
     "scripts": {
-        "test": "pest"
+        "test": "pest",
+        "build": [
+            "@composer install --no-dev --no-interaction",
+            "@php wback app:build wback",
+            "@composer install --no-interaction",
+            "if grep -aq 'laravel/pint' builds/wback; then echo 'ERROR: the build contains dev dependencies - do not release it'; exit 1; fi"
+        ]
+    },
+    "scripts-descriptions": {
+        "build": "Compile the phar without dev dependencies, then restore them"
     },
     "autoload": {
         "psr-4": {
