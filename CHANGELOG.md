@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.4.0] - 2026-08-25
+
 ### Added
 
 - `app:validate` now warns when a site's file source exists but is empty. The
