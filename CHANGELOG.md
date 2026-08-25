@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.3.1] - 2026-08-25
+
 ### Fixed
 
 - `app:validate` no longer stops at the first check whose command will not start.
@@ -34,6 +36,11 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Documentation
 
+- The README now says that one site failing does not stop the others, which was
+  the undocumented half — a failed *stage* not stopping the ones after it was
+  already written down. A `Skipping [cloud]` line is only ever `--no-cloud`,
+  never the consequence of an earlier failure, and that is now stated where
+  someone reading a bad night's log will find it.
 - The installation section no longer promises a `SHA256SUMS` on every release
   without one existing. 7.0.0, 7.1.0 and 7.2.0 have been given one after the
   fact — checked against the published assets rather than against a local build
