@@ -8,6 +8,17 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `app:validate` now warns when a site's file source exists but is empty. The
+  nightly refuses an empty source, so validate said `[ ok ]` about a site that
+  was guaranteed to fail — `test.hampelgroup.net` was green in validate for as
+  long as it existed, and the 03:17 run is what found it. What validate warns
+  about mirrors what the stage refuses, which is how the sync check beside it
+  already worked; files simply never got the same treatment. It is a warning and
+  not a failure, so the exit code is unchanged and a deploy gating on
+  `app:validate` cannot start failing because of it.
+
 ## [7.3.1] - 2026-08-25
 
 ### Fixed

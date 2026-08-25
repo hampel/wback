@@ -298,7 +298,18 @@ class Validate extends Command
             return;
         }
 
-        $this->checkOk("{$name} files", $source);
+        // what validate warns about mirrors what the stage refuses, which is how the
+        // sync branch below is derived too - and files refuses an empty source
+        // unconditionally, there being no files_allow_empty to weigh
+        if (File::isEmptyDirectory($source))
+        {
+            $this->checkWarn("{$name} files", "source is empty, so backing it up would fail: {$source}"
+                . " - set files = '' if this site has nothing to back up");
+        }
+        else
+        {
+            $this->checkOk("{$name} files", $source);
+        }
 
         $sync = $site['sync'] ?? [];
         $sync = is_array($sync) ? $sync : [$sync];

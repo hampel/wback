@@ -131,6 +131,24 @@ it('reports a file source that is not there', function () {
         ->assertFailed();
 });
 
+it('warns rather than fails when a file source exists but is empty', function () {
+    // the nightly refuses an empty source, so validate says so at provisioning time
+    // instead of leaving it to 03:17 - but exit-code-neutral, because pyinfra runs
+    // this as a deploy gate and reads nothing but the status
+    useSource('empty.example.com', []);
+
+    useSites(<<<'TOML'
+        [empty]
+        domain = 'empty.example.com'
+        database = ''
+        TOML);
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('source is empty, so backing it up would fail')
+        ->expectsOutputToContain('Validated, with warnings')
+        ->assertSuccessful();
+});
+
 it('warns rather than fails when a remote path is not there yet', function () {
     Process::fake(fn ($process) => str_contains($process->command, 'lsd')
         ? Process::result(errorOutput: 'directory not found', exitCode: 3)
