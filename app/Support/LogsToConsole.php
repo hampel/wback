@@ -41,7 +41,10 @@ trait LogsToConsole
 	    ];
 
     	$logMessage = $logMessage ?? $message;
-    	$verbosity = $verbosityMap[$level] ?? 'warning';
+    	// the fallback has to be a VERBOSITY_* constant, not the name of a level: line()
+    	// puts an unrecognised string through parseVerbosity(), which knows v/vv/vvv/quiet/
+    	// normal and nothing else, and falls back to whatever setVerbosity() last set
+    	$verbosity = $verbosityMap[$level] ?? OutputInterface::VERBOSITY_NORMAL;
     	$style = $styleMap[$level] ?? null;
 
 		Log::log($level, $logMessage, $context);

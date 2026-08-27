@@ -8,6 +8,25 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `app:validate` draws its six group headings through `hampel/console-report`'s
+  new `checkSection()` (2.1.0) rather than the app's own `section()`. They move
+  to the two-column margin, so a heading now lines up with the `[ ok ]` markers
+  beneath it instead of hanging to their left, and the rule under it goes. The
+  check rows themselves are unchanged.
+- Backup runs keep the ruled cyan heading: `section()` stays in `LogsToConsole`
+  for `cron` and the per-site headings, where a rule across a scrolling run log
+  is doing a different job to a heading over a report you read top to bottom.
+
+### Fixed
+
+- An unrecognised log level passed to `log()` now renders at normal verbosity as
+  intended. The fallback was the string `'warning'` where a `VERBOSITY_*` integer
+  belongs, which `line()` does not recognise and quietly replaces with whatever
+  verbosity was last set. Latent — every current caller passes a level the map
+  knows.
+
 ## [7.4.1] - 2026-08-25
 
 ### Fixed
