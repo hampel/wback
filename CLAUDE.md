@@ -86,16 +86,28 @@ external command arrives the same way, since Illuminate's
 cannot be opted out of, so absolute paths print as convincing relative ones.
 `hampel/console-report` exists for this reason and `Config` and `Validate` use
 it: `ReportsSettings` + `FormatsValues` draw the settings dump, `RendersChecks`
-draws the `[ ok ]` / `[warn]` / `[fail]` rows and owns the exit code. Those
-traits are strict about their argument types — an `int` from config has to be
-cast at the call site, which is why `Keep Only Days` carries a `(string)`. What
-to report stays here; only the drawing moved.
+draws the `[ ok ]` / `[warn]` / `[fail]` rows, their `checkSection()` headings, and
+owns the exit code. Those traits are strict about their argument types — an `int`
+from config has to be cast at the call site, which is why `Keep Only Days` carries
+a `(string)`. What to report stays here; only the drawing moved.
 
 Since 2.0 the package imports no Illuminate symbol, so it has to be handed
 somewhere to write before it renders anything: `setReportOutput($this->getOutput())`
 at the top of `handle()`, which is what both commands do. Forget it in a third
 consumer and the first render throws a `LogicException` naming the missing call —
 loud, and the feature tests catch it.
+
+**Two heading styles, deliberately.** `app:validate` heads its groups with
+`checkSection()` — green, at the two-column margin so it lines up with the `[ ok ]`
+markers, no rule. Backup runs head theirs with `LogsToConsole::section()` — cyan,
+unmargined, with a rule and air on both sides. They are not an inconsistency to
+tidy up: a rule across a scrolling run log marks a stage boundary, which is what
+you scan a cron log for; a heading over a report you read top to bottom just
+groups rows. Converting the rest would also mean putting `RendersChecks` — and
+`checkFail()`, `$checkFailed`, `checkExitCode()` and the rest — on every command
+extending `BaseCommand`, none of which check anything.
+`tests/Feature/ValidateCommandTest.php` has one assertion on the validate margin;
+nothing else in the suite is structural.
 
 `Sites`, `Config` and `Validate` extend Laravel Zero's `Command` directly and are
 namespaced `app:` to keep the backup verbs at the top level. `Validate` exercises

@@ -51,22 +51,22 @@ class Validate extends Command
         // see Config::handle() - console-report 2.0 needs to be told where to write
         $this->setReportOutput($this->getOutput());
 
-        $this->section('Binaries');
+        $this->checkSection('Binaries');
         $this->checkBinaries();
 
-        $this->section('Paths');
+        $this->checkSection('Paths');
         $this->checkPaths();
 
-        $this->section('Sites');
+        $this->checkSection('Sites');
         $this->checkSites();
 
-        $this->section('Remotes');
+        $this->checkSection('Remotes');
         $this->checkRemotes();
 
-        $this->section('Logging');
+        $this->checkSection('Logging');
         $this->checkLogging();
 
-        $this->section('Summary');
+        $this->checkSection('Summary');
         $this->checkSummary();
 
         $this->newLine();

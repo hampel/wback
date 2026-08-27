@@ -21,6 +21,20 @@ it('passes when everything checks out', function () {
         ->assertSuccessful();
 });
 
+it('heads each group of checks at the same margin as the check rows', function () {
+    // the only assertion in this file on the shape of the report rather than its
+    // content - console-report draws the headings, so a package change is what would
+    // move them, and nothing else here would notice
+    $this->artisan('app:validate')
+        ->expectsOutput('  Binaries')
+        ->expectsOutput('  Paths')
+        ->expectsOutput('  Sites')
+        ->expectsOutput('  Remotes')
+        ->expectsOutput('  Logging')
+        ->expectsOutput('  Summary')
+        ->assertSuccessful();
+});
+
 it('reports a binary that will not run', function () {
     Process::fake(fn ($process) => str_contains($process->command, 'mysqldump --version')
         ? Process::result(errorOutput: 'sh: 1: /usr/bin/mysqldump: not found', exitCode: 127)
