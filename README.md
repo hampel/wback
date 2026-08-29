@@ -1,5 +1,7 @@
 # wback
 
+[![ci](https://github.com/hampel/wback/actions/workflows/ci.yml/badge.svg)](https://github.com/hampel/wback/actions/workflows/ci.yml)
+
 Website backup for a server hosting many sites. Each site is an entry in a TOML
 inventory; `wback` dumps its database, archives its files, ships the results to
 cloud storage and expires the old backup files.
