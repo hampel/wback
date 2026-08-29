@@ -8,6 +8,22 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Continuous integration, and with it an automated release. `.github/workflows/ci.yml`
+  runs the test suite and compiles the binary on every push and pull request; pushing
+  a tag builds the artefact, generates `SHA256SUMS` and publishes the GitHub release
+  with that version's changelog section as its notes. The asset names are unchanged —
+  `wback-<version>` and `SHA256SUMS` — so the documented install and the pyinfra
+  checksum pin both keep working.
+- The two release traps are now structural rather than remembered. A tag-triggered
+  build cannot compile a stale `git describe`, and the release job refuses to publish
+  a binary whose `--version` does not equal the tag; the build runs `composer build`
+  from a clean checkout, so a fat artefact like 7.0.0–7.4.0's cannot be produced by
+  forgetting a step. The compiled binary is also smoke-tested — it runs, reports its
+  own version, and exits non-zero on a mistyped command, which is the one behaviour
+  the suite cannot check on the artefact that actually ships.
+
 ### Changed
 
 - `app:validate` draws its six group headings through `hampel/console-report`'s

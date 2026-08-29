@@ -233,28 +233,44 @@ is a short name, and the defaulting rules matter:
 
 ## Releasing
 
-**Tag first, then build.** `config/app.php` has `'version' => app('git.version')`,
-and `app:build` evaluates that file on the build machine and compiles the result
-in as a literal — so the binary reports whatever `git describe` said at build
-time. Build before tagging and it ships announcing the previous release, which
-nothing downstream will contradict.
+**A tag push is the release.** `.github/workflows/ci.yml` runs the suite and
+compiles the binary on every push and pull request; a tag additionally builds the
+artefact, names the assets, writes `SHA256SUMS` and creates the GitHub release
+with this file's CHANGELOG section as the notes. Nothing is compiled or uploaded
+by hand any more, and the two things that used to go wrong cannot:
+
+- **Tag first, then build.** `config/app.php` has `'version' => app('git.version')`,
+  and `app:build` evaluates that file on the build machine and compiles the result
+  in as a literal — so the binary reports whatever `git describe` said at build
+  time. Building before tagging ships a binary announcing the previous release,
+  which nothing downstream will contradict. A tag-triggered build cannot get the
+  order wrong, and the release job asserts `--version` equals the tag before it
+  publishes anything.
+- **`composer build`, not `php wback app:build`.** `app:build` never runs Composer
+  and `box.json` takes `vendor/` wholesale, so on a dev checkout it compiles the
+  dev dependencies in too — Pint alone is 21 MB of a 29 MB binary, against 6 MB
+  built properly. `composer build` installs `--no-dev`, builds, restores, and then
+  greps the artefact for `laravel/pint` and fails if it finds it. That grep is the
+  whole guard: nothing else notices, and 7.0.0 through 7.4.0 all shipped fat
+  because nothing was looking. CI runs the same script, from a clean checkout.
+
+So the release is:
 
 1. CHANGELOG: move `Unreleased` to the new version, checked against
    `git log $(git describe --tags --abbrev=0)..HEAD` rather than against memory.
+   The release job lifts that section verbatim into the release notes, matching
+   on the `## [<tag>]` heading — get the heading wrong and it quietly falls back
+   to generated notes rather than failing.
 2. Update the version in the README's installation block.
-3. Tag.
-4. `composer build` → `builds/wback`. **Not `php wback app:build` on its own.**
-   `app:build` never runs Composer and `box.json` takes `vendor/` wholesale, so on
-   a dev checkout it compiles the dev dependencies in too — Pint alone is 21 MB of
-   a 29 MB binary, against 6 MB built properly. `composer build` installs
-   `--no-dev`, builds, restores, and then greps the artefact for `laravel/pint`
-   and fails if it finds it. That grep is the whole guard: nothing else notices,
-   and 7.0.0 through 7.4.0 all shipped fat because nothing was looking.
-5. `./builds/wback --version` — confirm it says what you just tagged.
-6. Rename the artefact to `wback-<version>` and check it in:
-   `sha256sum wback-<version> > SHA256SUMS`. That name is what the checksum file
-   and the install instructions both refer to, so renaming after this breaks the
-   check. Attach **both** files to the release: provisioning pins the checksum,
-   and a release without one cannot be installed the documented way.
-7. Then the smoke run — `wback app:validate` on each box that has it. That is the
-   only verification this tool gets, and it is the reason the command exists.
+3. Tag, and push the tag. Simon pushes; that push is the trigger.
+4. Watch the run. It publishes `wback-<version>` and `SHA256SUMS`, and those two
+   names are load-bearing — the README's `sha256sum --ignore-missing -c
+   SHA256SUMS` only matches because the name inside the sums file is the
+   downloaded filename, and pyinfra's `operations/wback.py` builds the same URL.
+   Renaming either breaks provisioning and the documented install alike.
+5. The smoke run — `wback app:validate` on each box that has it. CI cannot do
+   this one: it needs the real binaries, databases and remotes. It is the only
+   verification this tool gets, and it is the reason the command exists.
+6. Bump `wback_version` and `wback_sha256` in `~/build`'s `data/hosts.yml`, which
+   pins the checksum CI generated. That repo belongs to its own session — hand it
+   over rather than editing it.
