@@ -230,6 +230,16 @@ is a short name, and the defaulting rules matter:
 - `composer test` runs the suite. There is deliberately no `format`, `lint` or
   `check` script, unlike the other tools here: those run Pint, and Pint would
   reformat this codebase for the reason above.
+- **The repo is public, and the CHANGELOG is the part of it a stranger reads.**
+  An entry is read by someone deciding whether to upgrade, so it says what
+  changed and what that means for them, not which box the bug turned up on.
+  Fleet hostnames belong in the commit message and in code comments, where the
+  reader is a maintainer who needs to know the failure was real rather than
+  hypothetical — `Validate.php` names `ap1` three times and each one earns its
+  place. The 7.4.0 and 7.3.1 entries each narrate an incident and are left
+  alone: the published release notes carry the same text word for word, and
+  nothing on this box can edit those, so a file-only fix would just make the two
+  records disagree.
 
 ## Releasing
 
