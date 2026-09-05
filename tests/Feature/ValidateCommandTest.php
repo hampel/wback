@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -240,4 +241,103 @@ it('fails validation when Slack will not take the test message', function () {
     $this->artisan('app:validate')
         ->expectsOutputToContain('Slack refused the message')
         ->assertFailed();
+});
+
+/*
+|--------------------------------------------------------------------------
+| The log sweep, and --unattended
+|--------------------------------------------------------------------------
+|
+| The sweep is what proves LOG_SLACK_LEVEL and the webhook - neither can be
+| checked from the sending end, and the records arriving check both. So the
+| flag suppresses it rather than the code bounding it by channel.
+|
+*/
+
+/** Point the log stack at a slack channel that will accept everything from $level up. */
+function useSlackLog(string $level = 'error'): void
+{
+    config()->set([
+        'logging.default' => 'stack',
+        'logging.channels.stack.channels' => ['single', 'slack'],
+        'logging.channels.slack.url' => 'https://hooks.slack.com/services/T000/B000/xxx',
+        'logging.channels.slack.level' => $level,
+    ]);
+}
+
+it('says how many records the sweep posted, so the count can be checked against the channel', function () {
+    // the facade, so the sweep cannot reach Monolog's own curl - which Http::fake()
+    // does not intercept, and which would post to a real webhook
+    Log::spy();
+
+    useSlackLog('error');
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('posted 4 records at error and above: error, critical, alert, emergency')
+        ->assertSuccessful();
+
+    Log::shouldHaveReceived('log')->with('emergency', 'Validation test message [emergency]', [])->once();
+});
+
+it('counts from whatever the threshold is set to', function () {
+    Log::spy();
+
+    useSlackLog('warning');
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('posted 5 records at warning and above: warning, error, critical, alert, emergency')
+        ->assertSuccessful();
+});
+
+it('does not post the sweep under --unattended', function () {
+    Log::spy();
+
+    useSlackLog('error');
+
+    $this->artisan('app:validate', ['--unattended' => true])
+        ->expectsOutputToContain('nothing was posted - --unattended')
+        ->assertSuccessful();
+
+    Log::shouldNotHaveReceived('log', ['emergency', 'Validation test message [emergency]', []]);
+});
+
+it('still reports the logging configuration under --unattended', function () {
+    Log::spy();
+
+    useSlackLog('error');
+
+    // the flag turns off the sends, not the section - a quiet run still has to say
+    // where the logs go, or it has stopped validating the thing it was asked about
+    $this->artisan('app:validate', ['--unattended' => true])
+        ->expectsOutputToContain('single,slack')
+        ->assertSuccessful();
+});
+
+it('does not send the run summary test message under --unattended', function () {
+    config()->set('backup.summary.slack_webhook', 'https://hooks.slack.com/services/T000/B000/xxx');
+
+    fakeSlack();
+
+    $this->artisan('app:validate', ['--unattended' => true])
+        ->expectsOutputToContain('configured, but nothing was sent - --unattended')
+        ->assertSuccessful();
+
+    expect(slackPayloads())->toBeEmpty();
+});
+
+it('warns when the slack channel is in the stack with no webhook to post to', function () {
+    Log::spy();
+
+    useSlackLog('error');
+    config()->set('logging.channels.slack.url', '');
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('no webhook, so nothing was posted')
+        ->assertSuccessful();
+});
+
+it('skips the delivery report when nothing in the stack posts to slack', function () {
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('nothing in the log stack posts to slack')
+        ->assertSuccessful();
 });

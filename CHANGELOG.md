@@ -8,6 +8,26 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `app:validate --unattended`, for a run nobody is watching. Two of the checks
+  are only worth their cost when someone looks at where the message landed — the
+  sweep that writes a record at every log level, and the run summary test post —
+  and a deploy gate fires both into an operations channel with nobody having
+  asked. The flag suppresses those two and nothing else: the `rclone` remote
+  checks still go out, because a remote that has stopped responding is what an
+  automated gate exists to surface. Both report as skips rather than
+  disappearing, and the flag is never the default — forgetting it costs some
+  channel noise you can delete, whereas defaulting it on would cost every future
+  run its proof of delivery, silently.
+- The logging section now says how many records the Slack channel should have
+  taken, and at which levels — `posted 3 records at critical and above: critical,
+  alert, emergency`. The sweep is the only thing that proves the webhook URL and
+  `LOG_SLACK_LEVEL` are both right, since neither can be checked from the sending
+  end, and that only works if you know what number to expect. It also reports a
+  slack channel sitting in the stack with no webhook to post to, which previously
+  looked identical to a working one.
+
 ## [7.4.2] - 2026-08-29
 
 ### Added

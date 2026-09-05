@@ -476,13 +476,39 @@ describing it:
   path is there
 - the backup destination exists, is writable and has room, and the lock can be
   taken and released
-- a message is written at every log level, so you can confirm where they land
+- a message is written at every log level, and the report says how many of them
+  the Slack channel should have taken, so you can check the count against it
 - the run summary webhook is **posted to**, so a mistyped or revoked one is found
   now rather than on the night it matters
 
 It exits non-zero if anything failed, so it works as a post-deploy check. Note
 the last two: running it puts messages in whatever channel this installation
 reports to.
+
+### `--unattended`, for when nobody is watching the channel
+
+Those last two checks are worth what they cost only when somebody goes and looks
+at where the messages landed. A `LOG_SLACK_LEVEL` of `error` should produce four
+records and no more; that four arriving is the only proof the threshold and the
+webhook URL are both right, since neither can be checked from the sending end.
+
+Run unattended — from a deploy, a cron gate, a provisioning run — there is nobody
+to check, and the messages are just noise in an operations channel:
+
+```bash
+wback app:validate --unattended
+```
+
+It suppresses **only** the sends whose sole proof is a person seeing them arrive:
+the log sweep and the run summary test message. Everything else still runs, and
+that is the point of the flag rather than an offline switch — a remote that has
+stopped responding is exactly what an automated gate exists to surface, so the
+`rclone` checks still go out over the network.
+
+Both suppressed checks report as skips rather than vanishing, so a quiet run still
+says what it did not do. **It is never the default**: forgetting the flag costs
+some channel noise, which you can delete, while defaulting it on would cost every
+future run its proof of delivery, silently.
 
 A gate is only as good as the spelling of the command in it, so a name `wback`
 does not recognise — `app:validte` — is an error that exits non-zero and suggests
@@ -608,7 +634,9 @@ scheduled run still logs at full detail.
 or keep the default `stack` option and 
 set `LOG_STACK=single,slack` to write a file and raise critical failures in
 Slack. `php wback app:validate` writes one message at every level so you can
-confirm where they land.
+confirm where they land, and tells you how many of them to expect in Slack —
+[`--unattended`](#--unattended-for-when-nobody-is-watching-the-channel) turns
+that off for a run nobody is watching.
 
 Reporting has two halves and they answer different questions. The **log** says
 what happened, in order, and raises trouble as it happens. The
@@ -744,7 +772,9 @@ Three cases worth knowing:
 - **`app:validate` posts a test message** when a webhook is configured, and fails
   validation if Slack refuses it. A mistyped or revoked webhook is otherwise
   invisible from this end: the summary simply never arrives, which looks exactly
-  like a backup that never ran.
+  like a backup that never ran. Pass
+  [`--unattended`](#--unattended-for-when-nobody-is-watching-the-channel) to skip
+  it when the run is automated.
 
 Sending cannot fail a backup. It happens after the lock is released, so a Slack
 endpoint that has gone slow cannot hold the next run off, and it gives up after

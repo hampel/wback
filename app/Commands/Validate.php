@@ -34,7 +34,8 @@ class Validate extends Command
      *
      * @var string
      */
-    protected $signature = 'app:validate';
+    protected $signature = 'app:validate
+                                {--unattended : Do not send the messages whose only proof is a person seeing them arrive}';
 
     /**
      * The console command description.
@@ -412,9 +413,12 @@ class Validate extends Command
     {
         $levels = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
 
-        foreach ($levels as $level)
+        if (!$this->option('unattended'))
         {
-            $this->log($level, "Validation test message [{$level}]");
+            foreach ($levels as $level)
+            {
+                $this->log($level, "Validation test message [{$level}]");
+            }
         }
 
         $channel = config('logging.default');
@@ -443,13 +447,86 @@ class Validate extends Command
             ? $this->checkOk('log hostname', $hostname)
             : $this->checkSkip('log hostname', 'records are not stamped with a hostname - set LOG_HOSTNAME');
 
-        $this->line('  A message was written at every level - check that your logs received them');
+        $this->checkDelivery($levels);
+    }
+
+    /**
+     * Say what the sweep just posted, because a count nobody was given is not one
+     * anybody can check
+     *
+     * The sweep above is the only thing that proves the Slack threshold: the webhook URL
+     * and LOG_SLACK_LEVEL are both unprovable from this end, and the records arriving
+     * prove them at once. That only works if the operator knows how many to expect -
+     * four is right for a level of `error`, three means the threshold is not what the
+     * configuration says.
+     *
+     * @param array $levels every level the sweep writes at, lowest first
+     */
+    protected function checkDelivery(array $levels) : void
+    {
+        $channel = config('logging.default');
+
+        $channels = $channel === 'stack'
+            ? config('logging.channels.stack.channels')
+            : [$channel];
+
+        // only the slack channel is reported on: it is the one whose threshold cannot be
+        // checked from here. Note that a driver test is the wrong way to BOUND the sweep
+        // - papertrail is driver => monolog and would leave the machine either way - but
+        // for saying what to go and look for, the channel is exactly the question
+        $slack = array_values(array_filter(
+            $channels,
+            fn ($name) => config("logging.channels.{$name}.driver") === 'slack'
+        ));
+
+        if (empty($slack))
+        {
+            $this->checkSkip('log delivery', 'nothing in the log stack posts to slack');
+            return;
+        }
+
+        foreach ($slack as $name)
+        {
+            if (!config("logging.channels.{$name}.url"))
+            {
+                $this->checkWarn($name . ' delivery', 'no webhook, so nothing was posted - set LOG_SLACK_WEBHOOK_URL');
+                continue;
+            }
+
+            $threshold = config("logging.channels.{$name}.level");
+            $index = array_search(strtolower((string) $threshold), $levels, true);
+
+            if ($index === false)
+            {
+                // an unrecognised level is Monolog's to reject, not ours to guess at
+                $this->checkWarn($name . ' delivery', "cannot tell what was posted - '{$threshold}' is not a log level");
+                continue;
+            }
+
+            if ($this->option('unattended'))
+            {
+                $this->checkSkip($name . ' delivery', 'nothing was posted - --unattended');
+                continue;
+            }
+
+            $posted = array_slice($levels, $index);
+
+            $this->checkOk(
+                $name . ' delivery',
+                'posted ' . count($posted) . ' ' . str('record')->plural(count($posted))
+                    . ' at ' . $threshold . ' and above: ' . implode(', ', $posted)
+                    . ' - check they arrived'
+            );
+        }
     }
 
     /**
      * Post the test message, because a webhook that has stopped working says nothing
      * about it at this end - the summary simply never arrives, which looks the same as
      * a backup that never ran
+     *
+     * Under --unattended it is skipped for the same reason the log sweep is: the message
+     * is only worth sending when somebody is going to look at where it lands.
      */
     protected function checkSummary() : void
     {
@@ -458,6 +535,14 @@ class Validate extends Command
         if (!$summary->isConfigured())
         {
             $this->checkSkip('run summary', 'nothing is sent - set BACKUP_SUMMARY_SLACK_WEBHOOK');
+            return;
+        }
+
+        // the same reasoning as the log sweep: the webhook is proved by the message
+        // arriving, so there is no point spending one on a channel nobody is reading
+        if ($this->option('unattended'))
+        {
+            $this->checkSkip('run summary', 'configured, but nothing was sent - --unattended');
             return;
         }
 

@@ -18,7 +18,7 @@ framework, not this app.
 php wback                       # default: summary list of all commands
 php wback app:config            # resolved config (paths, binaries, remotes, disks, logging)
 php wback app:sites [site]      # dump the parsed TOML inventory
-php wback app:validate          # run the binaries, connect to the databases, list the remotes
+php wback app:validate [--unattended]   # run the binaries, connect to the databases, list the remotes
 
 php wback cron [-d]                  # every backup in turn, what cron calls
 
@@ -114,6 +114,21 @@ namespaced `app:` to keep the backup verbs at the top level. `Validate` exercise
 the real thing — it runs each binary, dumps each schema to /dev/null, lists each
 remote and takes the lock — so it is the command to extend when a new dependency
 on the environment appears.
+
+**`app:validate --unattended` suppresses sends, not probes, and the distinction is
+the whole flag.** Two of the checks are only worth their cost when somebody looks
+at where the message landed: the eight-level log sweep and the run summary test
+post. Neither is provable at this end — a webhook URL and `LOG_SLACK_LEVEL` are
+both unverifiable from the sending side, and four records arriving at a threshold
+of `error` proves both at once, which is why `checkDelivery()` prints the count to
+compare against. Run from a deploy there is nobody to compare it, so the flag drops
+those two and leaves everything else, including the `rclone` remote checks — a dead
+remote is what an automated gate exists to surface, so an `--offline` flag would
+throw away the reason for running it. Three rules if this is extended: never make it
+the default (forgetting it costs recoverable noise, defaulting it costs every future
+run its proof, silently); report skips rather than omitting rows; and do not bound
+the sweep by channel instead — `driver !== 'slack'` looks like the test and is not,
+since `papertrail` is `driver => monolog` and would send all eight off the box.
 
 **Two storage disks** (`config/filesystems.php`):
 - `files` — source root, `FILES_ROOT`, default `/srv/www`
