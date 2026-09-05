@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.5.0] - 2026-09-06
+
 ### Added
 
 - `app:validate --unattended`, for a run nobody is watching. Two of the checks

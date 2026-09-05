@@ -91,13 +91,13 @@ carries everything but PHP itself, so a server needs nothing else installed — 
 composer, no vendor directory:
 
 ```bash
-WBACK_VERSION=7.4.2
+WBACK_VERSION=7.5.0
 BASE=https://github.com/hampel/wback/releases/download/$WBACK_VERSION
 
 curl -LO $BASE/wback-$WBACK_VERSION
 curl -LO $BASE/SHA256SUMS
 
-# check it before trusting it with your backups - it is 30MB of executable from
+# check it before trusting it with your backups - it is 6MB of executable from
 # a URL, and the names in SHA256SUMS are the release asset names, so keep the
 # downloaded file called wback-<version> until this has passed
 sha256sum --ignore-missing -c SHA256SUMS
