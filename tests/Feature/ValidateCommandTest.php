@@ -254,13 +254,21 @@ it('fails validation when Slack will not take the test message', function () {
 |
 */
 
-/** Point the log stack at a slack channel that will accept everything from $level up. */
+/**
+ * Point the log stack at a slack channel that will accept everything from $level up.
+ *
+ * The URL is `.test` on purpose, as LoggingTest's is: Monolog's SlackWebhookHandler
+ * runs its own curl rather than the PSR-18 client the container holds, so fakeSlack()
+ * is not in its path and cannot stand in for a real webhook here. Every caller also
+ * spies the Log facade so the handler is never built - but caller discipline is what
+ * fails quietly, and a reserved TLD that cannot resolve is what fails loudly.
+ */
 function useSlackLog(string $level = 'error'): void
 {
     config()->set([
         'logging.default' => 'stack',
         'logging.channels.stack.channels' => ['single', 'slack'],
-        'logging.channels.slack.url' => 'https://hooks.slack.com/services/T000/B000/xxx',
+        'logging.channels.slack.url' => 'https://hooks.slack.test/nothing-is-sent',
         'logging.channels.slack.level' => $level,
     ]);
 }

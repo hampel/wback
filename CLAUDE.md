@@ -59,6 +59,17 @@ a real stat, so there is no in-memory option. `CreatesApplication` therefore
 points the test application's storage path at a per-process directory in the
 system temp dir that is removed on exit, keeping the project's `storage/` clean.
 
+**Nothing in the suite may send.** `tests/Pest.php` pins `logging.default` to `null`
+and `backup.summary.slack_webhook` to `''` so a developer whose `.env` carries a real
+webhook does not have the suite post to it, and `tests/Feature/NoLiveSendsTest.php`
+fails if either pin is deleted. A test that deliberately sets a live-looking summary
+webhook calls `fakeSlack()`, which swaps the PSR-18 client in the container. That does
+**not** cover a log channel: Monolog's slack driver builds its own curl, so
+`fakeSlack()` is not in that path at all and a `hooks.slack.com` URL on
+`logging.channels.slack.url` would reach the real internet. Use `hooks.slack.test`
+there — a reserved TLD that cannot resolve — which `NoLiveSendsTest` also enforces.
+Sibling tools have leaked this way; the failure is silent, because nothing throws.
+
 Two gotchas when adding tests:
 
 - `expectsOutputToContain()` is greedy — a short substring expectation will
