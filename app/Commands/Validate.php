@@ -30,6 +30,25 @@ class Validate extends Command
     use RendersChecks;
 
     /**
+     * The most severe level anything in this application logs at.
+     *
+     * Every real failure is an ERROR record - a site that threw, a command that could
+     * not start, a lock already held - and nothing anywhere logs at critical or above
+     * except the sweep below, which writes one of each on purpose. So a Slack channel
+     * thresholded above this can only ever catch that sweep: it looks configured, it
+     * passes every check, and it stays silent on the night it was installed for.
+     *
+     * Raise this only when something actually starts logging higher.
+     */
+    protected const HIGHEST_LOGGED_LEVEL = 'error';
+
+    /** @return string the constant above, for the test that keeps it honest */
+    public static function highestLoggedLevel() : string
+    {
+        return self::HIGHEST_LOGGED_LEVEL;
+    }
+
+    /**
      * The name and signature of the console command.
      *
      * @var string
@@ -503,6 +522,22 @@ class Validate extends Command
                 continue;
             }
 
+            // deliberately BEFORE the --unattended return: a threshold set above
+            // anything this application logs is a static fact about the configuration,
+            // not something the sweep discovers, so a deploy gate should surface it
+            // even on a run that posts nothing
+            $ceiling = array_search(self::HIGHEST_LOGGED_LEVEL, $levels, true);
+
+            if ($index > $ceiling)
+            {
+                $this->checkWarn(
+                    $name . ' threshold',
+                    "{$threshold} is above " . self::HIGHEST_LOGGED_LEVEL . ', which nothing here logs at'
+                        . ' - the channel can only catch this command\'s own test message'
+                        . ' - set LOG_SLACK_LEVEL=' . self::HIGHEST_LOGGED_LEVEL
+                );
+            }
+
             if ($this->option('unattended'))
             {
                 $this->checkSkip($name . ' delivery', 'nothing was posted - --unattended');
@@ -511,10 +546,20 @@ class Validate extends Command
 
             $posted = array_slice($levels, $index);
 
+            // the run summary posts separately and may well share this webhook, in which
+            // case the operator counts one more than the sweep sent. An arrival count
+            // that does not say so is what made four look like a pass under a threshold
+            // of error AND a threshold of critical
+            $shared = config('backup.summary.slack_webhook')
+                && config('backup.summary.slack_webhook') === config("logging.channels.{$name}.url");
+
             $this->checkOk(
                 $name . ' delivery',
                 'posted ' . count($posted) . ' ' . str('record')->plural(count($posted))
                     . ' at ' . $threshold . ' and above: ' . implode(', ', $posted)
+                    . ($shared
+                        ? ', plus the run summary test on the same webhook - expect ' . (count($posted) + 1)
+                        : '')
                     . ' - check they arrived'
             );
         }

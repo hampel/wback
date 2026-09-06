@@ -98,12 +98,18 @@ return [
 
         // the username also lands in the footer of the Slack attachment, which is
         // shown whether or not the webhook is allowed to override the posting name
+        //
+        // The level defaults to `error`, NOT to Laravel's stock `critical`. Every
+        // failure this application reports is an ERROR record and nothing logs above
+        // one, so a threshold of critical configures a channel that cannot fire - it
+        // looks configured, passes every check, and stays silent on the night it was
+        // installed for. `app:validate` warns when the threshold is set above `error`.
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
             'username' => env('LOG_SLACK_USERNAME', $hostname ?: 'wback'),
             'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
-            'level' => env('LOG_SLACK_LEVEL', 'critical'),
+            'level' => env('LOG_SLACK_LEVEL', 'error'),
             'replace_placeholders' => true,
             'tap' => [StampHostname::class],
         ],

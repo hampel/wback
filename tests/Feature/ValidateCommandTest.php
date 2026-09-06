@@ -349,3 +349,121 @@ it('skips the delivery report when nothing in the stack posts to slack', functio
         ->expectsOutputToContain('nothing in the log stack posts to slack')
         ->assertSuccessful();
 });
+
+/*
+|--------------------------------------------------------------------------
+| The threshold, which can be set where nothing will ever reach it
+|--------------------------------------------------------------------------
+|
+| Nothing in this application logs above `error`. A slack channel thresholded
+| higher therefore cannot fire, and looks identical to a quiet night - which is
+| what the fleet was running on until someone asked why it was set to critical.
+|
+*/
+
+it('warns when the slack threshold is above anything the application logs at', function () {
+    Log::spy();
+
+    useSlackLog('critical');
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('which nothing here logs at')
+        ->assertSuccessful();
+});
+
+it('does not warn at the level failures are actually logged at', function () {
+    Log::spy();
+
+    useSlackLog('error');
+
+    $this->artisan('app:validate')
+        ->doesntExpectOutputToContain('which nothing here logs at')
+        ->assertSuccessful();
+});
+
+it('warns about the threshold even under --unattended, since it is a configuration fact', function () {
+    Log::spy();
+
+    useSlackLog('emergency');
+
+    // the sweep discovers nothing here - the threshold is wrong whether or not
+    // anything was sent, so a deploy gate should still surface it
+    $this->artisan('app:validate', ['--unattended' => true])
+        ->expectsOutputToContain('which nothing here logs at')
+        ->assertSuccessful();
+});
+
+it('counts the run summary too when it shares the log channel webhook', function () {
+    Log::spy();
+
+    useSlackLog('error');
+    config()->set('backup.summary.slack_webhook', config('logging.channels.slack.url'));
+
+    fakeSlack();
+
+    // four from the sweep plus the summary test: the operator counts five, and a line
+    // saying four would send them looking for a fault that is not there
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('plus the run summary test on the same webhook - expect 5')
+        ->assertSuccessful();
+});
+
+it('does not add the summary to the count when it posts somewhere else', function () {
+    Log::spy();
+
+    useSlackLog('error');
+    config()->set('backup.summary.slack_webhook', 'https://hooks.slack.com/services/T000/B000/other');
+
+    fakeSlack();
+
+    $this->artisan('app:validate')
+        ->doesntExpectOutputToContain('same webhook')
+        ->assertSuccessful();
+});
+
+/*
+ * HIGHEST_LOGGED_LEVEL is a claim about the rest of the application, and the whole
+ * threshold warning rests on it. Add one log('critical', ...) anywhere and the claim
+ * is false: the warning starts telling people to lower a threshold that is now
+ * correct. Nothing else would notice, so this does.
+ */
+it('keeps HIGHEST_LOGGED_LEVEL true of the code it describes', function () {
+    $levels = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
+    $ceiling = array_search(App\Commands\Validate::highestLoggedLevel(), $levels, true);
+
+    $above = implode('|', array_slice($levels, $ceiling + 1));
+    $offenders = [];
+
+    // scanned over the WHOLE file rather than line by line: most call sites here put
+    // the level on the line after `$this->log(`, and a per-line regex silently passes
+    // every one of them. Verified by injecting a real multi-line critical call
+    $pattern = "/(?:->log|Log::log)\s*\(\s*'({$above})'|Log::({$above})\s*\(/";
+
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path()));
+
+    foreach ($files as $file)
+    {
+        if ($file->getExtension() !== 'php' || $file->getFilename() === 'Validate.php')
+        {
+            continue;
+        }
+
+        $source = file_get_contents($file->getPathname());
+
+        if (!preg_match_all($pattern, $source, $matches, PREG_OFFSET_CAPTURE))
+        {
+            continue;
+        }
+
+        foreach ($matches[0] as [$text, $offset])
+        {
+            $line = substr_count(substr($source, 0, $offset), "\n") + 1;
+            $offenders[] = basename($file->getPathname()) . ':' . $line;
+        }
+    }
+
+    expect($offenders)->toBe([],
+        'Something now logs above ' . App\Commands\Validate::highestLoggedLevel() . ': '
+        . implode(', ', $offenders) . ' - raise Validate::HIGHEST_LOGGED_LEVEL to match,'
+        . ' or the threshold warning will tell people to lower a threshold that is correct.');
+});

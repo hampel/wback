@@ -209,7 +209,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `LOG_HOSTNAME` | system hostname | what this machine calls itself in logs and alerts |
 | `LOG_SLACK_WEBHOOK_URL` | — | webhook for the log channel — raises failures as they happen |
 | `LOG_SLACK_USERNAME` | `LOG_HOSTNAME` | name log posts are made under |
-| `LOG_SLACK_LEVEL` | `critical` | |
+| `LOG_SLACK_LEVEL` | `error` | anything higher silences the channel — every failure here is an ERROR record |
 | `BACKUP_SUMMARY_SLACK_WEBHOOK` | — | webhook for the [run summary](#the-run-summary) — one message a run |
 | `BACKUP_SUMMARY_NOTIFY` | `always` | `always`, or `failure` for the bad nights only |
 
@@ -488,9 +488,11 @@ reports to.
 ### `--unattended`, for when nobody is watching the channel
 
 Those last two checks are worth what they cost only when somebody goes and looks
-at where the messages landed. A `LOG_SLACK_LEVEL` of `error` should produce four
-records and no more; that four arriving is the only proof the threshold and the
-webhook URL are both right, since neither can be checked from the sending end.
+at where the messages landed. The default `LOG_SLACK_LEVEL` of `error` should produce
+four records and no more; that four arriving is the only proof the threshold and the
+webhook URL are both right, since neither can be checked from the sending end. The
+report prints the number to expect — and says when the run summary shares the same
+webhook, since then it is one more than the sweep sent.
 
 Run unattended — from a deploy, a cron gate, a provisioning run — there is nobody
 to check, and the messages are just noise in an operations channel:
@@ -639,8 +641,13 @@ scheduled run still logs at full detail.
 
 **Out of the box nothing is written.** Set `LOG_CHANNEL=single` or `daily` for a file, 
 or keep the default `stack` option and 
-set `LOG_STACK=single,slack` to write a file and raise critical failures in
-Slack. `php wback app:validate` writes one message at every level so you can
+set `LOG_STACK=single,slack` to write a file and raise failures in Slack.
+
+**Every failure wback reports is an `error` record**, and nothing logs above one, so
+`LOG_SLACK_LEVEL` above `error` configures a channel that cannot fire — it looks
+configured, passes every check, and stays silent on the night you installed it for.
+Laravel's stock value is `critical`, which is why the default here is not.
+`app:validate` warns if the threshold is set above what anything logs at. `php wback app:validate` writes one message at every level so you can
 confirm where they land, and tells you how many of them to expect in Slack —
 [`--unattended`](#--unattended-for-when-nobody-is-watching-the-channel) turns
 that off for a run nobody is watching.

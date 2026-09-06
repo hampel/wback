@@ -8,6 +8,33 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **`LOG_SLACK_LEVEL` now defaults to `error`, not `critical`.** Every failure
+  wback reports is an `error` record — a site that threw, a command that could
+  not start, a lock already held — and nothing logs above one. So the old
+  default configured a Slack channel whose only possible traffic was
+  `app:validate`'s own test message: it looked configured, passed every check,
+  and would have stayed silent on the night it was installed for. `critical` is
+  Laravel's stock value for that channel and was inherited rather than chosen.
+  **If you set `LOG_SLACK_LEVEL` explicitly you are unaffected**; if you relied
+  on the default, a channel that was silent will start reporting failures, which
+  is what it was for.
+
+### Added
+
+- `app:validate` warns when `LOG_SLACK_LEVEL` is above the level anything
+  actually logs at, so the misconfiguration above is visible rather than
+  indistinguishable from a quiet night. It warns rather than fails, and it warns
+  under `--unattended` too — the threshold is a fact about the configuration, not
+  something the sweep discovers, so a deploy gate should surface it even on a run
+  that posts nothing.
+- The delivery line now says when the run summary test shares the log channel's
+  webhook, and gives the total to expect. The two post to the same place in the
+  common setup, so the count in the channel is one more than the sweep sent —
+  and a bare four matched both a threshold of `error` and one of `critical`,
+  which is how a channel nobody had configured on purpose passed a smoke test.
+
 ## [7.5.0] - 2026-09-06
 
 ### Added
