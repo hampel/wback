@@ -304,9 +304,18 @@ So the release is:
    SHA256SUMS` only matches because the name inside the sums file is the
    downloaded filename, and pyinfra's `operations/wback.py` builds the same URL.
    Renaming either breaks provisioning and the documented install alike.
-5. The smoke run — `wback app:validate` on each box that has it. CI cannot do
-   this one: it needs the real binaries, databases and remotes. It is the only
-   verification this tool gets, and it is the reason the command exists.
-6. Bump `wback_version` and `wback_sha256` in `~/build`'s `data/hosts.yml`, which
-   pins the checksum CI generated. That repo belongs to its own session — hand it
+5. The smoke run — `wback app:validate` on each box that has it, **without
+   `--unattended`**. CI cannot do this one: it needs the real binaries, databases
+   and remotes. It is the only verification this tool gets, and it is the reason
+   the command exists. Run it unflagged deliberately: since 7.5.0 the pyinfra
+   deploy passes `--unattended` on `env: cloud` hosts, so **the deploy no longer
+   proves the webhook works** — a suppressed send and a broken one look identical
+   from the sending end, and an operator's unflagged run is now the only thing
+   that checks it. Dev is deployed unflagged for the same reason, which keeps the
+   send path exercised somewhere.
+6. Bump `wback_version` and `wback_sha256` in `~/build` — **two files, not one**:
+   `pyinfra/data/hosts.yml` for the fleet and `pyinfra/config.yml` for this dev
+   box. They pin the checksum CI generated, so take it from the published
+   `SHA256SUMS` rather than computing it locally; a local build is not guaranteed
+   byte-identical to the runner's. That repo belongs to its own session — hand it
    over rather than editing it.

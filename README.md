@@ -510,6 +510,13 @@ says what it did not do. **It is never the default**: forgetting the flag costs
 some channel noise, which you can delete, while defaulting it on would cost every
 future run its proof of delivery, silently.
 
+**Know what you give up.** Once a deploy gate runs with the flag, that gate has
+stopped being evidence the webhook works — a suppressed send and a webhook that
+has been revoked look identical from this end, which is the whole reason the sends
+exist. An unflagged run then becomes the only thing that checks it, so keep one:
+either run `app:validate` by hand after a version bump, or leave one machine
+deploying unflagged into a channel that exists to receive it.
+
 A gate is only as good as the spelling of the command in it, so a name `wback`
 does not recognise — `app:validte` — is an error that exits non-zero and suggests
 the nearest match. Laravel Zero would otherwise print the command list and exit 0,
