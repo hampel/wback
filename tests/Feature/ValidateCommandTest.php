@@ -427,22 +427,31 @@ it('does not add the summary to the count when it posts somewhere else', functio
  * is false: the warning starts telling people to lower a threshold that is now
  * correct. Nothing else would notice, so this does.
  */
-it('keeps HIGHEST_LOGGED_LEVEL true of the code it describes', function () {
+
+/**
+ * Every log call in app/ that names its level as a literal, as level => [file:line].
+ *
+ * Scanned over the WHOLE file rather than line by line: most call sites here put the
+ * level on the line after `$this->log(`, and a per-line regex silently passes every
+ * one of them - verified by injecting a real multi-line critical call.
+ *
+ * `Log::` is required before a bare level name on purpose. `$this->alert()` is
+ * Laravel's console BANNER, not a log call, and a pattern that matched any method
+ * named for a level would raise a false alarm the day somebody used one - permanently,
+ * and in the direction that teaches people to ignore the test.
+ */
+function loggedLevels(): array
+{
     $levels = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
-    $ceiling = array_search(App\Commands\Validate::highestLoggedLevel(), $levels, true);
+    $names = implode('|', $levels);
+    $pattern = "/(?:->log|Log::log)\s*\(\s*'({$names})'|Log::({$names})\s*\(/";
 
-    $above = implode('|', array_slice($levels, $ceiling + 1));
-    $offenders = [];
-
-    // scanned over the WHOLE file rather than line by line: most call sites here put
-    // the level on the line after `$this->log(`, and a per-line regex silently passes
-    // every one of them. Verified by injecting a real multi-line critical call
-    $pattern = "/(?:->log|Log::log)\s*\(\s*'({$above})'|Log::({$above})\s*\(/";
-
+    $found = [];
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path()));
 
     foreach ($files as $file)
     {
+        // Validate.php holds the sweep's own level list, which is not a call site
         if ($file->getExtension() !== 'php' || $file->getFilename() === 'Validate.php')
         {
             continue;
@@ -450,15 +459,33 @@ it('keeps HIGHEST_LOGGED_LEVEL true of the code it describes', function () {
 
         $source = file_get_contents($file->getPathname());
 
-        if (!preg_match_all($pattern, $source, $matches, PREG_OFFSET_CAPTURE))
+        if (!preg_match_all($pattern, $source, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER))
         {
             continue;
         }
 
-        foreach ($matches[0] as [$text, $offset])
+        foreach ($matches as $match)
         {
-            $line = substr_count(substr($source, 0, $offset), "\n") + 1;
-            $offenders[] = basename($file->getPathname()) . ':' . $line;
+            $level = ($match[1][0] ?? '') !== '' ? $match[1][0] : ($match[2][0] ?? '');
+            $line = substr_count(substr($source, 0, $match[0][1]), "\n") + 1;
+            $found[$level][] = basename($file->getPathname()) . ':' . $line;
+        }
+    }
+
+    return $found;
+}
+
+it('keeps HIGHEST_LOGGED_LEVEL true of the code it describes', function () {
+    $levels = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
+    $ceiling = array_search(App\Commands\Validate::highestLoggedLevel(), $levels, true);
+
+    $offenders = [];
+
+    foreach (loggedLevels() as $level => $sites)
+    {
+        if (array_search($level, $levels, true) > $ceiling)
+        {
+            $offenders = array_merge($offenders, array_map(fn ($s) => "{$s} ({$level})", $sites));
         }
     }
 
@@ -466,4 +493,62 @@ it('keeps HIGHEST_LOGGED_LEVEL true of the code it describes', function () {
         'Something now logs above ' . App\Commands\Validate::highestLoggedLevel() . ': '
         . implode(', ', $offenders) . ' - raise Validate::HIGHEST_LOGGED_LEVEL to match,'
         . ' or the threshold warning will tell people to lower a threshold that is correct.');
+});
+
+/*
+ * The guard on the guard. A scanner that silently stops matching anything passes
+ * forever and reports nothing - it would look exactly like a codebase with no log
+ * calls above the ceiling, which is the answer it is supposed to be proving.
+ */
+it('still finds the log calls it is scanning for', function () {
+    $found = loggedLevels();
+    $total = array_sum(array_map('count', $found));
+
+    expect($total)->toBeGreaterThan(20)
+        ->and(array_keys($found))->toContain('error', 'warning', 'notice', 'debug');
+});
+
+/*
+ * The one hole in a literal scan: a call site that picks its level at runtime is
+ * invisible to it. Both of wback's are pass-throughs - the sweep iterating its own
+ * list, and the trait handing whatever it was given to Monolog - so nothing CHOOSES
+ * a level dynamically and the scan above is complete. This fails if that changes.
+ */
+it('has no call site choosing a log level at runtime', function () {
+    $passthroughs = ['Validate.php:439', 'LogsToConsole.php:50'];
+    $dynamic = [];
+
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path()));
+
+    foreach ($files as $file)
+    {
+        if ($file->getExtension() !== 'php')
+        {
+            continue;
+        }
+
+        $source = file_get_contents($file->getPathname());
+
+        if (!preg_match_all('/(?:->log|Log::log)\s*\(\s*(\$\w+)/', $source, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER))
+        {
+            continue;
+        }
+
+        foreach ($m as $match)
+        {
+            $line = substr_count(substr($source, 0, $match[0][1]), "\n") + 1;
+            $site = basename($file->getPathname()) . ':' . $line;
+
+            if (!in_array($site, $passthroughs, true))
+            {
+                $dynamic[] = $site . ' (' . $match[1][0] . ')';
+            }
+        }
+    }
+
+    expect($dynamic)->toBe([],
+        'A log call now takes its level from a variable: ' . implode(', ', $dynamic)
+        . ' - a literal scan cannot see what level that resolves to, so check by hand'
+        . ' whether it can exceed Validate::HIGHEST_LOGGED_LEVEL, then add it to'
+        . ' $passthroughs here if it cannot.');
 });
