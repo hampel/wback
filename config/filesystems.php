@@ -37,7 +37,7 @@ return [
 
         'files' => [
             'driver' => 'local',
-            'root' => env('FILES_ROOT', '/srv/www'),
+            'root' => env('FILES_ROOT', '/var/www'),
         ],
 
         'backup' => [
