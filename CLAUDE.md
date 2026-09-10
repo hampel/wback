@@ -67,6 +67,9 @@ part in a run. It matters beyond tidiness: the project `.env` is loaded with a
 *mutable* loader, so a test that `putenv()`s a value and calls
 `refreshApplication()` has it overwritten by anything the developer's `.env` sets.
 `NoLiveSendsTest` fails on every machine if the fixture stops being what loaded.
+It is not `.env.testing`, on purpose: Laravel only loads that from its own
+immutable loader, after `bootstrap/app.php` has already put the developer's values
+in place, so it cannot override them — tried, with `APP_ENV=testing` forced.
 
 **Nothing in the suite may send.** `tests/Pest.php` pins `logging.default` to `null`
 and `backup.summary.slack_webhook` to `''` so a developer whose `.env` carries a real
