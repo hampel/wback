@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.6.0] - 2026-09-10
+
 ### Changed
 
 - **`LOG_SLACK_LEVEL` now defaults to `error`, not `critical`.** Every failure
