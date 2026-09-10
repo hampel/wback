@@ -76,6 +76,16 @@ it('names the machine itself unless told otherwise', function () {
         ->and(config('logging.channels.slack.username'))->toBe('backups.example.com');
 })->after(fn () => putenv('LOG_HOSTNAME'));
 
+it('posts under the application name when there is no hostname to post under', function () {
+    putenv('LOG_HOSTNAME=');
+    $this->refreshApplication();
+
+    // not a second literal 'wback' to keep in step: app.name is where the name is set
+    expect(config('logging.hostname'))->toBe('')
+        ->and(config('logging.channels.slack.username'))->not->toBeEmpty()
+        ->and(config('logging.channels.slack.username'))->toBe(config('app.name'));
+})->after(fn () => putenv('LOG_HOSTNAME'));
+
 it('says which site and which stage failed', function () {
     Process::fake(fn () => Process::result(errorOutput: 'mysqldump: Got error: 1049', exitCode: 2));
 

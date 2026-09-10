@@ -208,7 +208,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `LOG_LEVEL` | `debug` | |
 | `LOG_HOSTNAME` | system hostname | what this machine calls itself in logs and alerts |
 | `LOG_SLACK_WEBHOOK_URL` | — | webhook for the log channel — raises failures as they happen |
-| `LOG_SLACK_USERNAME` | `LOG_HOSTNAME` | name log posts are made under |
+| `LOG_SLACK_USERNAME` | `LOG_HOSTNAME`, else the app name | name log posts are made under |
 | `LOG_SLACK_LEVEL` | `error` | anything higher silences the channel — every failure here is an ERROR record |
 | `BACKUP_SUMMARY_SLACK_WEBHOOK` | — | webhook for the [run summary](#the-run-summary) — one message a run |
 | `BACKUP_SUMMARY_NOTIFY` | `always` | `always`, or `failure` for the bad nights only |

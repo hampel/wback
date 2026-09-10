@@ -97,7 +97,9 @@ return [
         ],
 
         // the username also lands in the footer of the Slack attachment, which is
-        // shown whether or not the webhook is allowed to override the posting name
+        // shown whether or not the webhook is allowed to override the posting name.
+        // With no hostname it falls back to app.name, the one place the tool's name
+        // is set - config/app.php is loaded before this file, so it is there to read
         //
         // The level defaults to `error`, NOT to Laravel's stock `critical`. Every
         // failure this application reports is an ERROR record and nothing logs above
@@ -107,7 +109,7 @@ return [
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => env('LOG_SLACK_USERNAME', $hostname ?: 'wback'),
+            'username' => env('LOG_SLACK_USERNAME', $hostname ?: config('app.name')),
             'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
             'level' => env('LOG_SLACK_LEVEL', 'error'),
             'replace_placeholders' => true,
