@@ -15,7 +15,9 @@ return [
      * is frozen at build time and no .env beside the binary can change it. This file is
      * compiled as written, so the setting still works in a built binary.
      *
-     * AppServiceProvider applies it over app.timezone as the application boots.
+     * Read it as backup.timezone. AppServiceProvider mirrors it into app.timezone and
+     * PHP's default as the application boots, for the framework - config/app.php has
+     * no timezone key of its own.
      */
     'timezone' => env('APP_TIMEZONE', 'UTC'),
 

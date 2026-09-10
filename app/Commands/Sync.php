@@ -122,7 +122,7 @@ class Sync extends BaseCommand
             return '';
         }
 
-        $date = Carbon::today(new \DateTimeZone(config('app.timezone')))->format('Ymd');
+        $date = Carbon::today(new \DateTimeZone(config('backup.timezone')))->format('Ymd');
 
         $archivePath = rtrim(config('backup.rclone.sync_remote'), '/')
             . "/{$site['domain']}/{$archive}/{$date}/{$path}";

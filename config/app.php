@@ -43,22 +43,12 @@ return [
     'env' => 'development',
 
     /*
-    |--------------------------------------------------------------------------
-    | Application Timezone
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. We have gone
-    | ahead and set this to a sensible default for you out of the box.
-    |
-    */
-
-    /*
-     * Set from config/backup.php as the application boots - app:build compiles this
-     * file in as literals, so an env() call here would be frozen at build time. Change
-     * the timezone with APP_TIMEZONE, or the default in config/backup.php.
+     * There is deliberately no 'timezone' key. app:build compiles this file in as
+     * literals, so anything set here would be frozen at build time. The timezone is
+     * backup.timezone in config/backup.php, set with APP_TIMEZONE; AppServiceProvider
+     * mirrors it into app.timezone for the framework as the application boots, and the
+     * framework falls back to UTC until it does. Read backup.timezone, not the copy.
      */
-    'timezone' => 'UTC',
 
     /*
     |--------------------------------------------------------------------------

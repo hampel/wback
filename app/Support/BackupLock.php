@@ -57,7 +57,7 @@ class BackupLock
             "pid %d, %s, started %s",
             getmypid(),
             $command,
-            Carbon::now(new \DateTimeZone(config('app.timezone')))->toDateTimeString()
+            Carbon::now(new \DateTimeZone(config('backup.timezone')))->toDateTimeString()
         ));
         fflush($handle);
 

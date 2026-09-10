@@ -53,7 +53,7 @@ uses(Tests\TestCase::class)
         Storage::fake('backup');
 
         // destination filenames are datestamped in the application timezone
-        Carbon::setTestNow(Carbon::parse('2026-08-13 12:00:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-08-13 12:00:00', config('backup.timezone')));
     })
     ->in('Feature');
 

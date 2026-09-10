@@ -101,7 +101,7 @@ class Config extends Command
                 'PHP Version' => phpversion(),
                 'Environment' => $this->laravel->environment(),
                 'Debug Mode' => config('app.debug') ? '<fg=yellow;options=bold>ENABLED</>' : 'OFF',
-                'Timezone' => config('app.timezone'),
+                'Timezone' => config('backup.timezone'),
             ],
 
             'Backup' => [

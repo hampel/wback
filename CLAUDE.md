@@ -228,8 +228,12 @@ are the traits shared between `BaseCommand` and `Cron`.
 on the build machine and rewrites it as a literal array before compiling
 (`BuildCommand::prepare()`), so the value is frozen at build time and no `.env`
 beside the binary can change it. That is why the timezone lives in
-`config/backup.php` as `backup.timezone`, applied over `app.timezone` by
-`AppServiceProvider::boot()`. Every other config file is compiled as written.
+`config/backup.php` as `backup.timezone`, and why `config/app.php` has no
+`timezone` key at all. **Read `backup.timezone`, never `app.timezone`.**
+`AppServiceProvider::boot()` mirrors it into `app.timezone` for the framework,
+but only once, at boot — so a later `config()->set()`, which is how
+`tests/Pest.php` pins it, never reaches a read of the copy. `TimezoneTest` holds
+both halves. Every other config file is compiled as written.
 
 ## The TOML site inventory
 

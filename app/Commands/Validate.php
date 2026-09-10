@@ -240,7 +240,7 @@ class Validate extends Command
 
         $this->checkLock();
 
-        $this->checkOk('timezone', config('app.timezone'));
+        $this->checkOk('timezone', config('backup.timezone'));
         $this->checkOk('storage path', storage_path());
     }
 

@@ -104,7 +104,7 @@ class Clean extends BaseCommand
 
     protected function backupDate(int $timestamp) : string
     {
-        return Carbon::createFromTimestamp($timestamp, config('app.timezone'))->toDateString();
+        return Carbon::createFromTimestamp($timestamp, config('backup.timezone'))->toDateString();
     }
 
     protected function deleteFile(string $path) : void

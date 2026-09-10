@@ -267,7 +267,7 @@ abstract class BaseCommand extends Command
         // a dry run reports where the backup would go without building the tree to put it in
         $basePath = $this->getDestinationPath($site, $name, $type, !$this->option('dry-run'));
 
-    	$filenameBase = "{$name}." . Carbon::today(new \DateTimeZone(config('app.timezone')))->format("Ymd");
+    	$filenameBase = "{$name}." . Carbon::today(new \DateTimeZone(config('backup.timezone')))->format("Ymd");
 
     	$filename = "{$filenameBase}{$suffix}";
     	$count = 1;
