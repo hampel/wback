@@ -710,7 +710,7 @@ Backup completed on web01
   Written    3.42 GB     Duration  47m 12s
   Stages     database, files, cloud, sync, clean
 
-  Website Backup 7.3.0 on web01
+  wback 7.3.0 on web01
 ```
 
 On a bad night it arrives in red, and the failures come first — named by site and
