@@ -180,7 +180,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 |---|---|---|
 | `SITES_TOML_PATH` | `<storage>/wback.toml` | the site inventory |
 | `APP_TIMEZONE` | `UTC` | timezone for datestamps and reporting |
-| `FILES_ROOT` | `/srv/www` | where site files are looked for |
+| `FILES_ROOT` | `/var/www` | where site files are looked for |
 | `BACKUP_DEST_PATH` | `<storage>/backup` | where backups are written |
 | `BACKUP_KEEPONLY_DAYS` | `7` | how long `clean` keeps local backups |
 | `BACKUP_KEEPLEAST_DAYS` | `3` | days of backups `clean` keeps whatever their age |

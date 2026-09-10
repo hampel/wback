@@ -151,7 +151,7 @@ the sweep by channel instead — `driver !== 'slack'` looks like the test and is
 since `papertrail` is `driver => monolog` and would send all eight off the box.
 
 **Two storage disks** (`config/filesystems.php`):
-- `files` — source root, `FILES_ROOT`, default `/srv/www`
+- `files` — source root, `FILES_ROOT`, default `/var/www`
 - `backup` — destination root, `BACKUP_DEST_PATH`, default `storage_path('backup')`
 
 Backups land at `<backup>/<domain>/{files,database}/<shortname>.<Ymd><suffix>`,
@@ -246,7 +246,7 @@ both halves. Every other config file is compiled as written.
 
 ## The TOML site inventory
 
-`wback.toml` in the repo root is the documented template; the live file lives at
+`wback.toml.example` in the repo root is the documented template; the live file lives at
 `SITES_TOML_PATH` (default `storage_path('wback.toml')`, gitignored). Each table
 is a short name, and the defaulting rules matter:
 
