@@ -20,6 +20,16 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   **If you set `LOG_SLACK_LEVEL` explicitly you are unaffected**; if you relied
   on the default, a channel that was silent will start reporting failures, which
   is what it was for.
+- **`FILES_ROOT` now defaults to `/var/www`**, where it was `/srv/www`. An
+  installation that never set it and keeps its sites under `/srv/www` will fail
+  every file backup after upgrading — `Source path [/var/www/<domain>] not found`
+  — and `app:validate` fails the same check for each site, so a deploy that gates
+  on it finds out before the first night does. See _Upgrading_.
+- **The application is now called `wback`**, where it was `Website Backup`. It is
+  what `--version` prints, what `app:config` reports as the name, and the footer
+  of every run summary. The version is still the last field of `--version`.
+- The sites inventory template in the repository is now `wback.toml.example`,
+  where it was `wback.toml`.
 
 ### Added
 
@@ -34,6 +44,19 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   common setup, so the count in the channel is one more than the sweep sent —
   and a bare four matched both a threshold of `error` and one of `critical`,
   which is how a channel nobody had configured on purpose passed a smoke test.
+
+### Upgrading
+
+- **Set `FILES_ROOT=/srv/www` before upgrading if your sites live there and you
+  never set it.** This is the one change here that stops backups rather than
+  altering them: database backups carry on, but every file backup fails until the
+  root is right. Run `wback app:validate` after upgrading — it fails the file
+  source check for every site if it is not.
+- **If you relied on the `LOG_SLACK_LEVEL` default**, the slack log channel starts
+  posting failures, which is what it was for. Set `LOG_SLACK_LEVEL=critical` to
+  keep it quiet, and `app:validate` will warn that nothing reaches it.
+- **Anything matching `Website Backup` in wback's output** — the `--version`
+  banner, or the footer of a run summary — needs to match `wback` instead.
 
 ## [7.5.0] - 2026-09-06
 
