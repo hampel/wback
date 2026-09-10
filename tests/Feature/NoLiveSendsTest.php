@@ -67,3 +67,17 @@ it('never points a log channel at a slack domain that resolves', function () {
         . ' - use hooks.slack.test, which cannot resolve. Monolog runs its own curl here,'
         . ' so fakeSlack() will not save you and the request goes to the real internet.');
 });
+
+/*
+ * The first layer, of which the pins above are the second: the suite never loads the
+ * developer's .env at all. Unlike the pin guards, which only fail on a machine whose
+ * .env holds a live webhook, this fails on every machine - CI included - the moment
+ * it stops being true.
+ */
+it('boots from the test environment file, never the developer\'s .env', function () {
+    $loaded = app('wback.env.loaded');
+
+    expect($loaded)->not->toBeNull()
+        ->and(realpath((string) $loaded))->toBe(realpath(base_path('tests/testing.env')));
+});
+

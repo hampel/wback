@@ -59,6 +59,15 @@ a real stat, so there is no in-memory option. `CreatesApplication` therefore
 points the test application's storage path at a per-process directory in the
 system temp dir that is removed on exit, keeping the project's `storage/` clean.
 
+**The suite never loads your `.env`.** `tests/Pest.php` points `WBACK_ENV` at
+`tests/testing.env`, a deliberately empty file, before any application is created.
+`bootstrap/app.php` takes the first environment file it finds and looks at
+`WBACK_ENV` before the project's `.env`, so neither that nor `/etc/wback/.env` takes
+part in a run. It matters beyond tidiness: the project `.env` is loaded with a
+*mutable* loader, so a test that `putenv()`s a value and calls
+`refreshApplication()` has it overwritten by anything the developer's `.env` sets.
+`NoLiveSendsTest` fails on every machine if the fixture stops being what loaded.
+
 **Nothing in the suite may send.** `tests/Pest.php` pins `logging.default` to `null`
 and `backup.summary.slack_webhook` to `''` so a developer whose `.env` carries a real
 webhook does not have the suite post to it, and `tests/Feature/NoLiveSendsTest.php`

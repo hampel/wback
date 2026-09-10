@@ -10,6 +10,14 @@ use Hampel\SlackMessage\SlackWebhook;
 use Illuminate\Support\Facades\Storage;
 
 /*
+ * Boot every test from tests/testing.env, never the developer's .env - see that file
+ * for why. WBACK_ENV is looked at first, so this takes the project .env and
+ * /etc/wback/.env out of the run, and NoLiveSendsTest fails if it stops being what
+ * loaded.
+ */
+putenv('WBACK_ENV=' . __DIR__ . '/testing.env');
+
+/*
 |--------------------------------------------------------------------------
 | Test Case
 |--------------------------------------------------------------------------
