@@ -76,7 +76,7 @@ it('carries on after a stage fails, and fails the run', function () {
 it('sends the sites that worked offsite, even though another site failed', function () {
     // the blast radius question, and the one worth a standing test: a placeholder with
     // an empty docroot must not cost the real site beside it its offsite copy. Reported
-    // from ap1 on 2026-08-24 as though it did - it does not, and this says so.
+    // from production on 2026-08-24 as though it did - it does not, and this says so.
     useSource('example.com', ['index.php']);
     useSource('placeholder.example', []);
 

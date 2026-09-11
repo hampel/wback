@@ -147,12 +147,11 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 - `app:validate` now warns when a site's file source exists but is empty. The
   nightly refuses an empty source, so validate said `[ ok ]` about a site that
-  was guaranteed to fail — `test.hampelgroup.net` was green in validate for as
-  long as it existed, and the 03:17 run is what found it. What validate warns
-  about mirrors what the stage refuses, which is how the sync check beside it
-  already worked; files simply never got the same treatment. It is a warning and
-  not a failure, so the exit code is unchanged and a deploy gating on
-  `app:validate` cannot start failing because of it.
+  was guaranteed to fail, and only the nightly run itself would find out. What
+  validate warns about mirrors what the stage refuses, which is how the sync
+  check beside it already worked; files simply never got the same treatment. It
+  is a warning and not a failure, so the exit code is unchanged and a deploy
+  gating on `app:validate` cannot start failing because of it.
 
 ## [7.3.1] - 2026-08-25
 
@@ -162,9 +161,9 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   A command that cannot be spawned at all — an unreadable working directory does
   this to every one of them — is now a failed check like any other, so the
   remaining binaries, and the paths, sites, remotes, logging and summary after
-  them, are still reported. This happened on ap1: one run ended at `mysqldump`
-  and looked at nothing else, which is the worst moment to stop talking for a
-  command whose whole job is to say what is wrong.
+  them, are still reported. This happened in production: one run ended at
+  `mysqldump` and looked at nothing else, which is the worst moment to stop
+  talking for a command whose whole job is to say what is wrong.
 - A check that cannot start now reports the cause rather than the first line of
   the exception. `proc_open(): posix_spawn() failed: Permission denied (working
   directory: /root)` says what to fix; `The command "…" failed.` repeats the

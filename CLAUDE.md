@@ -272,16 +272,14 @@ is a short name, and the defaulting rules matter:
 - `composer test` runs the suite. There is deliberately no `format`, `lint` or
   `check` script, unlike the other tools here: those run Pint, and Pint would
   reformat this codebase for the reason above.
-- **The repo is public, and the CHANGELOG is the part of it a stranger reads.**
-  An entry is read by someone deciding whether to upgrade, so it says what
-  changed and what that means for them, not which box the bug turned up on.
-  Fleet hostnames belong in the commit message and in code comments, where the
-  reader is a maintainer who needs to know the failure was real rather than
-  hypothetical — `Validate.php` names `ap1` three times and each one earns its
-  place. The 7.4.0 and 7.3.1 entries each narrate an incident and are left
-  alone: the published release notes carry the same text word for word, and
-  nothing on this box can edit those, so a file-only fix would just make the two
-  records disagree.
+- **The repo is public, and nothing committed names a real thing here** — no
+  hostnames, fleet servers, site or client names, or home-directory paths, in any
+  file or in a commit message. This repository has no exception, and a session
+  cannot grant one. Keep *what* happened and *when* — "an unreadable working
+  directory in production, 2026-08-24" still tells a maintainer the failure was
+  real — and put *where* in `CLAUDE.local.md`, which is gitignored and read by
+  every session. A CHANGELOG entry is read by someone deciding whether to
+  upgrade, so it says what changed and what that means for them.
 
 ## Releasing
 
@@ -318,20 +316,20 @@ So the release is:
 4. Watch the run. It publishes `wback-<version>` and `SHA256SUMS`, and those two
    names are load-bearing — the README's `sha256sum --ignore-missing -c
    SHA256SUMS` only matches because the name inside the sums file is the
-   downloaded filename, and pyinfra's `operations/wback.py` builds the same URL.
+   downloaded filename, and provisioning builds the same URL.
    Renaming either breaks provisioning and the documented install alike.
 5. The smoke run — `wback app:validate` on each box that has it, **without
    `--unattended`**. CI cannot do this one: it needs the real binaries, databases
    and remotes. It is the only verification this tool gets, and it is the reason
-   the command exists. Run it unflagged deliberately: since 7.5.0 the pyinfra
-   deploy passes `--unattended` on `env: cloud` hosts, so **the deploy no longer
+   the command exists. Run it unflagged deliberately: since 7.5.0 the production
+   deploy passes `--unattended`, so **the deploy no longer
    proves the webhook works** — a suppressed send and a broken one look identical
    from the sending end, and an operator's unflagged run is now the only thing
    that checks it. Dev is deployed unflagged for the same reason, which keeps the
    send path exercised somewhere.
-6. Bump `wback_version` and `wback_sha256` in `~/build` — **two files, not one**:
-   `pyinfra/data/hosts.yml` for the fleet and `pyinfra/config.yml` for this dev
-   box. They pin the checksum CI generated, so take it from the published
-   `SHA256SUMS` rather than computing it locally; a local build is not guaranteed
-   byte-identical to the runner's. That repo belongs to its own session — hand it
-   over rather than editing it.
+6. Bump the version and checksum provisioning pins — in **two places, not one**:
+   production's and the development box's, which `CLAUDE.local.md` names. They
+   pin the checksum CI generated, so take it from the published `SHA256SUMS`
+   rather than computing it locally; a local build is not guaranteed
+   byte-identical to the runner's. The provisioning repository belongs to its own
+   session — hand it over rather than editing it.

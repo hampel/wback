@@ -114,7 +114,7 @@ class Validate extends Command
      *
      * Everything here runs an external command to find out whether it works, so one
      * that will not start is this command's subject matter and not an accident that
-     * should stop it. On ap1 an unreadable working directory threw at the very first
+     * should stop it. In production an unreadable working directory threw at the very first
      * binary and the run ended there - the paths, sites, remotes, logging and summary
      * were never looked at, by the one command whose whole job is to look at them.
      *
@@ -133,8 +133,8 @@ class Validate extends Command
         {
             // the console half of this is the check row below, so this is the one place
             // in the app that writes to the log directly rather than through log().
-            // It does need writing: the whole message is what made this diagnosable on
-            // ap1 after the fact, and a check row has room for one line of it
+            // It does need writing: the whole message is what made this diagnosable
+            // in production after the fact, and a check row has room for one line of it
             Log::error("Check command could not be started", [
                 'check' => $label,
                 'command' => $command,
@@ -152,7 +152,7 @@ class Validate extends Command
      *
      * Symfony puts the useful part last. The first line only says the command failed,
      * which the check's own label has already said, while the cause and the working
-     * directory - and on ap1 the working directory was the whole of what was wrong -
+     * directory - and in production the working directory was the whole of what was wrong -
      * are several lines further down.
      *
      * @param \Throwable $e the failure

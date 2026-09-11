@@ -16,7 +16,7 @@
 | configured has nothing to leak and will stay green either way, which is a limit
 | worth knowing rather than a reason not to have them.
 |
-| blbackup found its own suite posting 41 real messages per run this way. Three
+| A sibling tool found its own suite posting 41 real messages per run this way. Three
 | reasonable decisions lined up: the project .env loads during tests, the sender
 | is a container singleton built from config, and the transport under it is a
 | real PSR-18 client rather than the Http facade. Nothing throws, so nothing said.

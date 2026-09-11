@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 8.3 is the floor composer.json declares and what ap1 runs. Add a
+        # 8.3 is the floor composer.json declares and what production runs. Add a
         # version here when something deploys on one, rather than testing a
         # platform nobody has.
         php: ['8.3']
@@ -49,7 +49,7 @@ jobs:
           php-version: ${{ matrix.php }}
           # intl is not a declared requirement and nothing in the dependency
           # tree asks for it - it is here because the PHP install this tool runs
-          # on has it (pyinfra operations/php.py), and CI testing a leaner
+          # on has it, since provisioning installs it, and CI testing a leaner
           # interpreter than production proves the wrong thing.
           extensions: intl
           coverage: none
@@ -175,7 +175,7 @@ jobs:
           # README's install block fetches wback-<version> and runs
           # `sha256sum --ignore-missing -c SHA256SUMS`, which only matches
           # because the name INSIDE the sums file is the downloaded filename;
-          # pyinfra's operations/wback.py builds the same URL and pins the hash.
+          # Provisioning builds the same URL and pins the hash.
           # Every release back to 7.0.0 uses these names.
           cd builds
           mv wback "wback-$GITHUB_REF_NAME"

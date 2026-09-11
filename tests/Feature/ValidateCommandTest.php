@@ -48,7 +48,7 @@ it('reports a binary that will not run', function () {
 
 it('checks the rest of the binaries after one cannot be started at all', function () {
     // a working directory the invoking user cannot traverse fails every spawn, not
-    // just the first - this happened on ap1 running from /root, and the run ended at
+    // just the first - this happened in production running from /root, and the run ended at
     // mysqldump with the paths, sites, remotes and logging never looked at
     Process::fake(function ($process) {
         if (str_contains($process->command, 'mysqldump --version')) {
@@ -148,7 +148,7 @@ it('reports a file source that is not there', function () {
 
 it('warns rather than fails when a file source exists but is empty', function () {
     // the nightly refuses an empty source, so validate says so at provisioning time
-    // instead of leaving it to 03:17 - but exit-code-neutral, because pyinfra runs
+    // instead of leaving it to 03:17 - but exit-code-neutral, because provisioning runs
     // this as a deploy gate and reads nothing but the status
     useSource('empty.example.com', []);
 

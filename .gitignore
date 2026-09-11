@@ -16,7 +16,7 @@ CLAUDE.local.md
 # nothing here reads these and no public URL is needed. Ignored rather than
 # committed because this repo is public and git history is permanent: a
 # placeholder committed now stays fetchable at that commit forever. Backed up
-# regardless, since dev-backup mirrors ~/cli whether or not git tracks a file.
+# regardless, since the development backups copy the working tree, tracked or not.
 #
 # Delete this line when there is a logo worth publishing - assets/ is where it
 # should live, so that is the only change needed.
