@@ -21,3 +21,4 @@ CLAUDE.local.md
 # Delete this line when there is a logo worth publishing - assets/ is where it
 # should live, so that is the only change needed.
 /assets/
+.env.tpl
