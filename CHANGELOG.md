@@ -10,6 +10,16 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- An environment file that cannot be parsed now reports the file and the line
+  number, and exits 1. It used to escape as an uncaught `InvalidFileException` —
+  a PHP fatal, a stack trace, and exit 255 — and **the message Dotenv throws
+  contains the offending line**, so a `.env` line carrying a credential was
+  printed in full. A line that will not parse is exactly the kind that does: the
+  documented way to give `mysqldump` a password is an option string, and an
+  unquoted space in one is what breaks the parse. Under cron the whole thing was
+  mailed. The line number is recovered by searching for the fragment rather than
+  by printing it.
+
 - `LOG_STACK=null` no longer breaks logging. `env()` converts the literal words
   `null`, `true`, `false` and `(null)` into PHP values before `config/logging.php`
   sees them, so the word `null` — which `.env.example` documented — arrived as PHP

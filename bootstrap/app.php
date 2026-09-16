@@ -2,6 +2,7 @@
 
 use App\Kernel;
 use Dotenv\Dotenv;
+use Dotenv\Exception\InvalidFileException;
 use LaravelZero\Framework\Application;
 
 $app = Application::configure(basePath: dirname(__DIR__))->create();
@@ -52,7 +53,47 @@ foreach ($candidates as $envFile)
         $app->useEnvironmentPath(dirname($envFile));
         $app->loadEnvironmentFrom(basename($envFile));
 
-        Dotenv::createMutable(dirname($envFile), basename($envFile))->safeLoad();
+        /*
+         * safeLoad() swallows a MISSING file, not an unparseable one, so this catch is
+         * the difference between a message and a stack trace. It must never print the
+         * exception: Dotenv puts the offending line INTO the message, and a line that
+         * will not parse is exactly the kind that carries a credential - the documented
+         * way to pass mysqldump a password is an option string, and an unquoted space
+         * in one is what breaks the parse. Under cron the whole thing gets mailed.
+         *
+         * So report WHERE and not WHAT: the file, and the line number recovered by
+         * looking for the fragment rather than by printing it.
+         */
+        try
+        {
+            Dotenv::createMutable(dirname($envFile), basename($envFile))->safeLoad();
+        }
+        catch (InvalidFileException $e)
+        {
+            $line = null;
+
+            if (preg_match('/\[(.+)\]/', $e->getMessage(), $matches))
+            {
+                foreach (file($envFile, FILE_IGNORE_NEW_LINES) ?: [] as $index => $text)
+                {
+                    if (str_contains($text, $matches[1]))
+                    {
+                        $line = $index + 1;
+                        break;
+                    }
+                }
+            }
+
+            fwrite(STDERR, sprintf(
+                'wback: could not parse the environment file %s%s.%s',
+                $envFile,
+                $line ? ", at line {$line}" : '',
+                PHP_EOL
+            ));
+            fwrite(STDERR, 'A value containing spaces has to be quoted.' . PHP_EOL);
+
+            exit(1);
+        }
 
         $loaded = $envFile;
 
