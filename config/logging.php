@@ -75,7 +75,17 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', env('LOG_STACK', 'null')),
+            // env() converts the literal words null, true, false and (null) before
+            // this sees them, so LOG_STACK=null arrives as PHP null rather than the
+            // name of the null channel. Cast and filter, or that leaves one nameless
+            // channel: Laravel cannot build it, falls back to the emergency logger
+            // and writes "Unable to create configured logger" into laravel.log - or
+            // throws, where that path is not writable. The filter also absorbs an
+            // empty value and a stray comma, and trim absorbs "single, slack".
+            'channels' => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('LOG_STACK', 'null'))
+            ))) ?: ['null'],
             'ignore_exceptions' => false,
         ],
 

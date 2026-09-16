@@ -8,6 +8,19 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `LOG_STACK=null` no longer breaks logging. `env()` converts the literal words
+  `null`, `true`, `false` and `(null)` into PHP values before `config/logging.php`
+  sees them, so the word `null` — which `.env.example` documented — arrived as PHP
+  null and left the stack holding a single nameless channel. Laravel cannot build
+  that, so it fell back to its emergency logger and wrote `Unable to create
+  configured logger` into `laravel.log`, or threw outright where that path was not
+  writable, which under cron is a failed backup run rather than a missing log line.
+  Quoting did not help: `"null"`, `'null'`, `NULL` and `(null)` all arrive the same
+  way. An empty `LOG_STACK`, and a stray comma in `single,,slack`, were the same
+  defect and are fixed with it; `single, slack` with a space now works too.
+
 ## [7.6.0] - 2026-09-10
 
 ### Changed
