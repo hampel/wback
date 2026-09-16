@@ -81,7 +81,10 @@ return [
             // channel: Laravel cannot build it, falls back to the emergency logger
             // and writes "Unable to create configured logger" into laravel.log - or
             // throws, where that path is not writable. The filter also absorbs an
-            // empty value and a stray comma, and trim absorbs "single, slack".
+            // empty value and a stray comma. trim is narrower than it looks: an
+            // unquoted "single, slack" in a .env never reaches here, because Dotenv
+            // rejects the whole file on the space and the process dies at bootstrap.
+            // It earns its place on a quoted value and on an exported variable.
             'channels' => array_values(array_filter(array_map(
                 'trim',
                 explode(',', (string) env('LOG_STACK', 'null'))

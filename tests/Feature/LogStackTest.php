@@ -45,6 +45,10 @@ it('keeps a real stack intact', function () {
 });
 
 it('tolerates spaces and stray commas, which would name channels that do not exist', function () {
+    // putenv, so this is the exported-variable path. An unquoted "single, slack" in
+    // a .env file never gets this far - Dotenv rejects the file on the space, and
+    // wback dies at bootstrap with an uncaught InvalidFileException. Quoted, it
+    // parses and arrives here.
     expect(stackChannels('single, slack'))->toBe(['single', 'slack'])
         ->and(stackChannels('single,,slack'))->toBe(['single', 'slack']);
 });

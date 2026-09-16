@@ -19,7 +19,9 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   writable, which under cron is a failed backup run rather than a missing log line.
   Quoting did not help: `"null"`, `'null'`, `NULL` and `(null)` all arrive the same
   way. An empty `LOG_STACK`, and a stray comma in `single,,slack`, were the same
-  defect and are fixed with it; `single, slack` with a space now works too.
+  defect and are fixed with it. A space, as in `single, slack`, now works where the
+  value is quoted or exported; unquoted in a `.env` it never reaches the
+  application, because Dotenv rejects the whole file on the space.
 
 ## [7.6.0] - 2026-09-10
 
