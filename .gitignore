@@ -3,14 +3,28 @@
 /.vscode
 /.vagrant
 .phpunit.result.cache
-.env
 builds/
 storage/
 storage/wback.toml
-.box_dump/
+
+# Compiled binary, and the box.json build's scratch space
+/.box_dump/
 
 # session notes and audit state - local to this clone, never published
 CLAUDE.local.md
+
+# Secrets. Deliberately not anchored with a leading slash, so these match at any depth:
+# an environment file can legitimately sit in a subdirectory rather than at the root.
+# .env.* covers the named variants; a committed .env.example stays tracked.
+.env
+.env.*
+!.env.example
+
+# NTFS alternate data stream left behind when a file is copied from Windows into
+# WSL - it records the zone the download came from and is of no use here. Also
+# covered by ~/.config/git/ignore on this machine, which a clone elsewhere would
+# not have.
+*:Zone.Identifier
 
 # Placeholder branding for the Slack webhook's icon, set in Slack's own UI - so
 # nothing here reads these and no public URL is needed. Ignored rather than
@@ -21,4 +35,4 @@ CLAUDE.local.md
 # Delete this line when there is a logo worth publishing - assets/ is where it
 # should live, so that is the only change needed.
 /assets/
-.env.tpl
+

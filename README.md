@@ -1,4 +1,4 @@
-# wback
+# wback - Website Backup CLI
 
 [![ci](https://github.com/hampel/wback/actions/workflows/ci.yml/badge.svg)](https://github.com/hampel/wback/actions/workflows/ci.yml)
 
