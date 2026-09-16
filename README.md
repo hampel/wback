@@ -91,7 +91,7 @@ carries everything but PHP itself, so a server needs nothing else installed — 
 composer, no vendor directory:
 
 ```bash
-WBACK_VERSION=7.6.0
+WBACK_VERSION=7.6.1
 BASE=https://github.com/hampel/wback/releases/download/$WBACK_VERSION
 
 curl -LO $BASE/wback-$WBACK_VERSION

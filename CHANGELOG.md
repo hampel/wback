@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.6.1] - 2026-09-16
+
 ### Fixed
 
 - An environment file that cannot be parsed now reports the file and the line
