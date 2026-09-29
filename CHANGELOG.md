@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.6.2] - 2026-09-30
+
 ### Fixed
 
 - `zip` is now run with `--quiet` unless the output is a terminal, so a scheduled
