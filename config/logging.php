@@ -1,6 +1,7 @@
 <?php
 
 use App\Logging\StampHostname;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -92,12 +93,29 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        // LOG_SINGLE_FORMAT=json makes this file machine-readable, for a log store
+        // that would otherwise take each line as one unparsed string: level, channel,
+        // context and extra become fields, and the timestamp carries its UTC offset
+        // instead of being a local time the collector has to guess at.
+        //
+        // Unset, the formatter is null, and LogManager::prepareHandler() tests it with
+        // isset() - so null is the same as absent and Laravel's own LineFormatter is
+        // used. Deploying this changes nothing until the variable is set, and a
+        // mistyped value falls back to text rather than failing to boot.
+        //
+        // includeStacktraces is not optional. JsonFormatter defaults it to FALSE while
+        // Laravel's LineFormatter passes true, so leaving it out would keep every
+        // exception's class and message and silently discard every trace - a log that
+        // looks healthy until the first time somebody needs one. formatter_with is
+        // ignored while formatter is null, so it is safe to leave in place.
         'single' => [
             'driver' => 'single',
             'path' => env('LOG_STORAGE_PATH', storage_path('wback.log')),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
             'tap' => [StampHostname::class],
+            'formatter' => env('LOG_SINGLE_FORMAT') === 'json' ? JsonFormatter::class : null,
+            'formatter_with' => ['includeStacktraces' => true],
         ],
 
         'daily' => [

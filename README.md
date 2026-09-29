@@ -206,6 +206,7 @@ Copy `.env.example` and set what you need; every setting has a default.
 | `LOG_STACK` | `null` | channels in the stack, comma separated |
 | `LOG_STORAGE_PATH` | `<storage>/wback.log` | |
 | `LOG_LEVEL` | `debug` | |
+| `LOG_SINGLE_FORMAT` | text | `json` makes the log file machine-readable — fields, and a timestamp with its UTC offset |
 | `LOG_HOSTNAME` | system hostname | what this machine calls itself in logs and alerts |
 | `LOG_SLACK_WEBHOOK_URL` | — | webhook for the log channel — raises failures as they happen |
 | `LOG_SLACK_USERNAME` | `LOG_HOSTNAME`, else the app name | name log posts are made under |

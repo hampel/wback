@@ -8,6 +8,16 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `LOG_SINGLE_FORMAT=json` writes the `single` log channel as JSON, for a log store
+  that would otherwise take each line as one unparsed string and stamp it with the
+  moment it was collected rather than when it was written. Level, channel, context
+  and extra become fields, and the timestamp carries its UTC offset. **Unset, nothing
+  changes** — the text form stays, so `tail -f` is still readable — and any
+  unrecognised value falls back to text rather than failing to boot. Only the
+  `single` channel: the Slack channel formats its own messages.
+
 ### Fixed
 
 - An inventory that parses and lists no sites is no longer a failure. A host whose
