@@ -61,7 +61,7 @@ class Files extends BaseCommand
 
         $zip = config('backup.zip_binary');
 
-        $verbosity = $this->getVerbosity();
+        $verbosity = $this->getArchiveVerbosity();
 
         $outputPath = Storage::disk('backup')->path($destination);
         $exclude = $this->generateExcludes($site['exclude'] ?? []);

@@ -8,6 +8,17 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `zip` is now run with `--quiet` unless the output is a terminal, so a scheduled
+  run no longer prints a line per file archived. `zip` has no log levels, so it
+  listed every file it added: one night across 22 sites produced 26.5 MB of cron
+  output, which the local MTA refused to mail — taking away the channel that
+  carries a crash happening before the log or the run summary starts. `-v` brings
+  the listing back, and errors were never suppressed. `rclone` is deliberately
+  unchanged: its stats are INFO-level records and it defaults to NOTICE, so an
+  ordinary run off a terminal already prints nothing.
+
 ## [7.6.1] - 2026-09-16
 
 ### Fixed

@@ -465,6 +465,35 @@ abstract class BaseCommand extends Command
         };
     }
 
+    /**
+     * The same, for zip, which is quiet off a terminal where the others already are.
+     *
+     * zip has no notion of log levels: it prints `adding: <path> (deflated N%)` for
+     * every file unless told not to, so a cron run of a WordPress or forum tree emits
+     * tens of thousands of lines nobody reads. One night's run across 22 sites produced
+     * 26.5 MB, which the local MTA then refused as too large to mail - taking cron mail
+     * out as a channel, which is the layer below the log and the run summary and the one
+     * that carries a crash happening before either starts.
+     *
+     * rclone needs no equivalent, which is why this is separate rather than folded into
+     * getVerbosity(). Its stats are INFO records and it defaults to NOTICE, so the
+     * --stats flags getProgress() adds print nothing at all unless the run is verbose -
+     * measured 2026-09-29 against rclone here: 0 lines at the default level, 7 with
+     * --verbose. Adding --quiet there would suppress nothing and would read as asking
+     * for stats and silencing them in the same command.
+     *
+     * Errors survive either way: zip --quiet still reports an unwritable destination and
+     * exits 15.
+     */
+    protected function getArchiveVerbosity() : string
+    {
+        return match (true) {
+            $this->output->isVerbose() => ' --verbose',
+            $this->output->isQuiet(), ! $this->output->isDecorated() => ' --quiet',
+            default => '',
+        };
+    }
+
     // Scheduling is not used - Laravel Zero's scheduler cannot run these commands at
     // all, and cron drives them directly instead. See the readme.
     //

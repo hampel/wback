@@ -20,7 +20,7 @@ it('zips the source directory into the backup disk', function () {
     $destination = backupPath('example.com/files/example.20260813.zip');
 
     Process::assertRan(fn ($process) => $process->command ===
-        "/usr/bin/zip -9 --recurse-paths --symlinks '{$destination}' ."
+        "/usr/bin/zip -9 --quiet --recurse-paths --symlinks '{$destination}' ."
         && $process->path === $source);
 });
 
@@ -220,3 +220,73 @@ it('creates nothing on a dry run', function () {
 
     expect(Storage::disk('backup')->exists('example.com'))->toBeFalse();
 });
+
+/*
+|--------------------------------------------------------------------------
+| How loud zip is allowed to be
+|--------------------------------------------------------------------------
+|
+| zip has no log levels, so without being told otherwise it prints a line per
+| file added. Under cron that is tens of thousands of lines nobody reads, and
+| enough of them that the MTA refuses to mail the output at all - which costs
+| the channel that carries a crash occurring before the log or the summary
+| starts.
+|
+| The suite's output is never decorated, so these exercise the cron shape. The
+| interactive branch is the one case a test cannot produce.
+|
+*/
+
+/** The verbosity flag zip was given for a run of the files stage. */
+function zipFlagsFor(array $arguments = []): string
+{
+    useSource('example.com');
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    test()->artisan('files', ['site' => 'example'] + $arguments)->assertSuccessful();
+
+    $command = '';
+    Process::assertRan(function ($process) use (&$command) {
+        if (str_contains($process->command, 'zip')) { $command = $process->command; }
+        return true;
+    });
+
+    preg_match('/-9(\S*|\s--\S+)? --recurse-paths/', $command, $m);
+
+    return trim($m[1] ?? '');
+}
+
+it('tells zip to be quiet when nothing is watching, which is what cron is', function () {
+    expect(zipFlagsFor())->toBe('--quiet');
+});
+
+it('tells zip everything under -v', function () {
+    expect(zipFlagsFor(['-v' => true]))->toBe('--verbose');
+});
+
+it('keeps zip quiet under --quiet', function () {
+    expect(zipFlagsFor(['--quiet' => true]))->toBe('--quiet');
+});
+
+it('leaves rclone alone, because its own default log level is already quiet', function () {
+    // rclone's stats are INFO records and it defaults to NOTICE, so the --stats flags
+    // print nothing unless the run is verbose. --quiet here would suppress nothing and
+    // would read as asking for stats and silencing them in one command.
+    useSites(<<<'TOML'
+        [example]
+        domain = 'example.com'
+        TOML);
+
+    // cloud copies the backup tree, so there has to be something in it
+    Storage::disk('backup')->put('example.com/database/example.20260813.sql.gz', 'dump');
+
+    $this->artisan('cloud', ['site' => 'example'])->assertSuccessful();
+
+    Process::assertRan(fn ($process) => str_contains($process->command, 'rclone')
+        && str_contains($process->command, '--stats-one-line --stats 1m')
+        && ! str_contains($process->command, '--quiet'));
+});
+

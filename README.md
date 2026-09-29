@@ -351,8 +351,14 @@ BACKUP_GZIP_PATH="/bin/gzip -1"       # ~2x faster, ~20% more storage
 Runs from the site's file source, so paths in the archive are relative to it:
 
 ```
-zip -9 --recurse-paths --symlinks <destination> . --exclude <patterns>
+zip -9 --quiet --recurse-paths --symlinks <destination> . --exclude <patterns>
 ```
+
+**`--quiet` off a terminal only.** `zip` has no log levels, so until told otherwise
+it prints `adding: <path> (deflated N%)` for every file — tens of thousands of lines
+for a large site, which under cron is mail nobody reads and which an MTA may refuse
+outright as too large. Run from a terminal the listing is kept; `-v` brings it back
+anywhere, and `-q` was always honoured. Errors are reported either way.
 
 ### `cloud` — copy backups off the machine
 
@@ -368,8 +374,12 @@ rclone commands get `--progress` and draw the usual live display. Anywhere else 
 cron, a log file, a pipe — they get `--stats-one-line --stats 1m` instead,
 because a progress display off a terminal writes the whole thing again every half
 second: 47 lines for a six second transfer, and proportionally more for a real
-one. `BACKUP_CLOUD_OPTIONS` and `BACKUP_SYNC_OPTIONS` are inserted after these,
-so putting `--progress` in one of them forces the display back on.
+one. Note what those stats do *not* do: they are INFO-level records and rclone's
+own default level is NOTICE, so off a terminal an ordinary run prints nothing at
+all, and `-v` is what turns the one-line stats on. That is also why `zip` needs the
+`--quiet` above and rclone does not. `BACKUP_CLOUD_OPTIONS` and
+`BACKUP_SYNC_OPTIONS` are inserted after these, so putting `--progress` in one of
+them forces the display back on.
 
 ### `sync` — mirror live directories
 
