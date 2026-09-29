@@ -75,8 +75,30 @@ abstract class BaseCommand extends Command
 
         if (empty($sites))
         {
-            $this->error("No sites found at: " . $inventory->path());
-            return Command::FAILURE;
+            /*
+             * An inventory that parses and lists nothing is a host with nothing to back
+             * up, which is a state the fleet deliberately has: a server whose sites are
+             * all redirects or placeholders renders an empty file. Failing it made every
+             * stage fail every night - five error records reaching whatever the log
+             * channel raises errors to, on a host where nothing was wrong.
+             *
+             * A file that is not there is different, and still fails: that is the setting
+             * pointing somewhere wrong, or a deploy that has not run.
+             */
+            if (! $inventory->exists())
+            {
+                $this->error("No sites found at: " . $inventory->path());
+                return Command::FAILURE;
+            }
+
+            $this->log(
+                'warning',
+                "No sites configured at: " . $inventory->path() . " - nothing to back up",
+                "No sites configured - nothing to back up",
+                ['sites' => $inventory->path()]
+            );
+
+            return Command::SUCCESS;
         }
 
         if ($this->option('all')) {

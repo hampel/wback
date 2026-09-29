@@ -125,11 +125,24 @@ it('fails when the sites file does not exist', function () {
         ->assertFailed();
 });
 
-it('fails when the sites file is empty', function () {
+it('does nothing, successfully, when the inventory lists no sites', function () {
+    // a host whose sites are all redirects or placeholders renders an empty file, which
+    // is a state the fleet deliberately has. Failing it made every stage of every
+    // nightly run fail on such a host, with nothing wrong
     useSites('');
 
     $this->artisan('database', ['--all' => true])
-        ->expectsOutputToContain('No sites found at:')
+        ->expectsOutputToContain('No sites configured at:')
+        ->assertSuccessful();
+});
+
+it('still fails when the inventory is not there at all', function () {
+    // the setting pointing somewhere wrong, or a deploy that has not run - which is a
+    // fault, and the case the empty file must not be confused with
+    config()->set('backup.sites_path', '/does/not/exist/wback.toml');
+
+    $this->artisan('database', ['--all' => true])
+        ->expectsOutputToContain('No sites found at: /does/not/exist/wback.toml')
         ->assertFailed();
 });
 

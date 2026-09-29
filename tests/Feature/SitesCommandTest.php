@@ -109,11 +109,19 @@ it('fails when the requested site is not configured', function () {
         ->assertFailed();
 });
 
-it('fails when there are no sites configured', function () {
+it('reports an empty inventory without failing', function () {
     useSites('');
 
     $this->artisan('app:sites')
-        ->expectsOutputToContain('No sites found at:')
+        ->expectsOutputToContain('No sites configured at:')
+        ->assertSuccessful();
+});
+
+it('fails when the inventory is not there at all', function () {
+    config()->set('backup.sites_path', '/does/not/exist/wback.toml');
+
+    $this->artisan('app:sites')
+        ->expectsOutputToContain('No sites found at: /does/not/exist/wback.toml')
         ->assertFailed();
 });
 

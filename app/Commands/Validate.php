@@ -283,7 +283,13 @@ class Validate extends Command
 
         if (empty($sites))
         {
-            $this->checkFail('sites', 'none configured at ' . $inventory->path());
+            // a missing file is a fault; one that parses and lists nothing is a host
+            // with nothing to back up. Provisioning gates this command on the inventory
+            // being non-empty precisely because this used to fail - see BaseCommand
+            $inventory->exists()
+                ? $this->checkWarn('sites', 'none configured at ' . $inventory->path())
+                : $this->checkFail('sites', 'no inventory at ' . $inventory->path());
+
             return;
         }
 

@@ -515,7 +515,11 @@ it('still finds the log calls it is scanning for', function () {
  * a level dynamically and the scan above is complete. This fails if that changes.
  */
 it('has no call site choosing a log level at runtime', function () {
-    $passthroughs = ['Validate.php:439', 'LogsToConsole.php:50'];
+    // Pinned by ENCLOSING FUNCTION, not by file and line: a line number moves whenever
+    // anything above it is edited, so the guard fails for a reason that is not the one
+    // it exists for. Both of these hand on a level they were given rather than choosing
+    // one, which is why the literal scan above is complete.
+    $passthroughs = ['Validate.php::checkLogging', 'LogsToConsole.php::log'];
     $dynamic = [];
 
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path()));
@@ -536,8 +540,11 @@ it('has no call site choosing a log level at runtime', function () {
 
         foreach ($m as $match)
         {
-            $line = substr_count(substr($source, 0, $match[0][1]), "\n") + 1;
-            $site = basename($file->getPathname()) . ':' . $line;
+            $before = substr($source, 0, $match[0][1]);
+            preg_match_all('/function\s+(\w+)\s*\(/', $before, $fns);
+            $function = end($fns[1]) ?: '(file scope)';
+
+            $site = basename($file->getPathname()) . '::' . $function;
 
             if (!in_array($site, $passthroughs, true))
             {
@@ -552,3 +559,22 @@ it('has no call site choosing a log level at runtime', function () {
         . ' whether it can exceed Validate::HIGHEST_LOGGED_LEVEL, then add it to'
         . ' $passthroughs here if it cannot.');
 });
+
+it('warns rather than fails when the inventory lists no sites', function () {
+    // provisioning gates this command on the inventory being non-empty precisely
+    // because it used to fail here, on hosts where nothing was wrong
+    useSites('');
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('none configured at')
+        ->assertSuccessful();
+});
+
+it('fails when the inventory is not there at all', function () {
+    config()->set('backup.sites_path', '/does/not/exist/wback.toml');
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('no inventory at /does/not/exist/wback.toml')
+        ->assertFailed();
+});
+

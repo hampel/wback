@@ -58,8 +58,17 @@ class Sites extends Command
         {
             if (empty($sites))
             {
-                $this->error("No sites found at: " . $inventory->path());
-                return Command::FAILURE;
+                // see BaseCommand::process() - an inventory that parses and lists
+                // nothing is a legitimate state, and only a missing file is a fault
+                if (! $inventory->exists())
+                {
+                    $this->error("No sites found at: " . $inventory->path());
+                    return Command::FAILURE;
+                }
+
+                $this->warn("No sites configured at: " . $inventory->path());
+
+                return Command::SUCCESS;
             }
             foreach ($sites as $name => $site)
             {

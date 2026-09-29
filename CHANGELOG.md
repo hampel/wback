@@ -8,6 +8,19 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- An inventory that parses and lists no sites is no longer a failure. A host whose
+  sites are all redirects or placeholders renders an empty file, which is a state
+  worth having rather than a fault — and treating it as one made **every stage of
+  every scheduled run fail, nightly, on a host where nothing was wrong**. Five
+  error records a night, reaching whatever the log channel raises errors to. It now
+  warns and does nothing. `app:sites` and `app:validate` agree: validate warns where
+  it used to fail.
+- **An inventory file that is not there still fails**, in all three commands. That
+  is the setting pointing somewhere wrong, or a deploy that has not run, and it is
+  the case the empty file must not be confused with.
+
 ## [7.6.2] - 2026-09-30
 
 ### Fixed
