@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.7.0] - 2026-09-30
+
 ### Added
 
 - `LOG_SINGLE_FORMAT=json` writes the `single` log channel as JSON, for a log store
