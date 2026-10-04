@@ -40,7 +40,8 @@ class Cloud extends BaseCommand
 
         if (!Storage::disk('backup')->exists($path))
         {
-            $this->log('warning', "Backup path [{$path}] does not exist for {$name}");
+            $this->log('warning', "Backup path [{$path}] does not exist for {$name}",
+                'Backup path does not exist', ['site' => $name, 'path' => $path]);
             return;
         }
 

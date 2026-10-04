@@ -39,7 +39,8 @@ class Database extends BaseCommand
         $database = $site['database'] ?? $name;
         if (empty($database))
         {
-            $this->log('notice', "No database source specified for {$name}");
+            $this->log('notice', "No database source specified for {$name}",
+                'No database source specified', ['site' => $name]);
             return;
         }
 

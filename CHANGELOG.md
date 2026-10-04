@@ -8,6 +8,33 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **`LOG_LEVEL` now defaults to `info`, not `debug`.** `debug` logs the command line
+  of every external process — tens of them per run — which is for tracing a problem
+  rather than for leaving on, and a log store keeps them for months. Set
+  `LOG_LEVEL=debug` while working on something. Laravel's stock value for these
+  channels is `debug`; it was inherited rather than chosen.
+- **Log messages are now constant strings, with the varying parts in context.** A log
+  store groups, counts and alerts on the message text, so `Site backup failed` with
+  the site in context can be counted as one thing where one message per site cannot.
+  What the console prints is unchanged — the detail is still in the line you read.
+- `app:validate`'s level sweep records carry `probe: true` and the level in context,
+  so one exclusion keeps test records out of every alert built over the log.
+
+### Fixed
+
+- **A credential-shaped value in a command line is masked everywhere it comes out** —
+  the console, the log, and the Slack run summary. The binary paths and the `mysqldump`
+  and `rclone` option strings are inserted into commands as written, so a password given
+  to one of them reached all three verbatim, where `app:config` had always masked it.
+  **The failure path was the serious one**: a process that fails puts its whole command
+  line into the exception message, and that message was the console output, the log
+  record and — through the run summary's failure reason — the text sent to Slack.
+- **A failure now logs the exception itself** rather than only its message, so the
+  JSON format records the class and the stack trace. Nothing had been passing one, so
+  `includeStacktraces` had nothing to act on.
+
 ## [7.7.0] - 2026-09-30
 
 ### Added

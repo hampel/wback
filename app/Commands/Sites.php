@@ -39,7 +39,10 @@ class Sites extends Command
         catch (ParseException $e)
         {
             $message = $e->getMessage();
-            Log::error($message);
+            Log::error('Sites inventory could not be parsed', [
+                'sites' => $inventory->path(),
+                'exception' => $e,
+            ]);
             $this->error($message);
             return Command::FAILURE;
         }

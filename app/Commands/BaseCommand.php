@@ -69,7 +69,12 @@ abstract class BaseCommand extends Command
         }
         catch (ParseException $e)
         {
-            $this->log('error', $e->getMessage(), $e->getMessage(), ['sites' => $inventory->path()]);
+            $this->log(
+                'error',
+                $this->withoutSecrets($e->getMessage()),
+                'Sites inventory could not be parsed',
+                ['sites' => $inventory->path(), 'exception' => $this->safeException($e)]
+            );
             return Command::FAILURE;
         }
 
@@ -174,10 +179,11 @@ abstract class BaseCommand extends Command
         {
             // a failed process says which command it was but nothing about whose backup
             // it was, so the site and the stage are what the alert would otherwise lack
-            $this->log('error', $e->getMessage(), $e->getMessage(), [
+            $this->log('error', $this->withoutSecrets($e->getMessage()), 'Site backup failed', [
                 'site' => $name,
                 'domain' => $site['domain'] ?? null,
                 'stage' => $this->getName(),
+                'exception' => $this->safeException($e),
             ]);
 
             app(RunSummary::class)->recordFailure($name, (string) $this->getName(), $this->failureReason($e));
@@ -211,11 +217,11 @@ abstract class BaseCommand extends Command
 
             if ($output !== '')
             {
-                return $output;
+                return $this->withoutSecrets($output);
             }
         }
 
-        return $e->getMessage();
+        return $this->withoutSecrets($e->getMessage());
     }
 
     protected function processSite(array $site, string $name) : void
@@ -313,7 +319,14 @@ abstract class BaseCommand extends Command
     {
     	$prefix = $this->option('dry-run') ? "[Dry run] " : "";
 
-		$this->log('debug', "{$prefix}Executing command [{$command}]", "{$prefix}Executing command", compact('command'));
+		$safe = $this->withoutSecrets($command);
+
+		$this->log(
+			'debug',
+			"{$prefix}Executing command [{$safe}]",
+			'Executing command',
+			['command' => $safe, 'dry_run' => (bool) $this->option('dry-run')]
+		);
 
 		if ($this->option('dry-run') && !$override)
 		{

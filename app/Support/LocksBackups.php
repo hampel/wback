@@ -65,9 +65,14 @@ trait LocksBackups
         }
         catch (\RuntimeException $e)
         {
-            $this->lockFailure = $e->getMessage();
+            $this->lockFailure = $this->withoutSecrets($e->getMessage());
 
-            $this->log('error', $e->getMessage(), $e->getMessage(), ['lock' => $lock->path()]);
+            $this->log(
+                'error',
+                $this->lockFailure,
+                'Could not take the backup lock',
+                ['lock' => $lock->path(), 'exception' => $this->safeException($e)]
+            );
 
             return false;
         }

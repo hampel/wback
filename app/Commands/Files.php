@@ -30,7 +30,8 @@ class Files extends BaseCommand
         $files = $site['files'] ?? Storage::disk('files')->path($site['domain']);
         if (empty($files))
         {
-            $this->log('notice', "No files source specified for {$name}");
+            $this->log('notice', "No files source specified for {$name}",
+                'No files source specified', ['site' => $name]);
             return;
         }
 

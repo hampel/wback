@@ -85,3 +85,26 @@ it('keeps stack traces, which JsonFormatter drops by default', function () {
         ->and($record['context']['exception'])->toHaveKey('trace')
         ->and($record['context']['exception']['trace'])->not->toBeEmpty();
 });
+
+it('defaults the file level to info, because debug is for tracing a problem', function () {
+    // debug adds the command line of every external process - tens per run, kept for
+    // months by a log store. Laravel's stock value here is debug; this is not.
+    putenv('LOG_LEVEL');
+    $config = require base_path('config/logging.php');
+
+    expect($config['channels']['single']['level'])->toBe('info')
+        ->and($config['channels']['daily']['level'])->toBe('info');
+});
+
+it('still honours LOG_LEVEL when a developer sets it', function () {
+    putenv('LOG_LEVEL=debug');
+
+    try
+    {
+        expect((require base_path('config/logging.php'))['channels']['single']['level'])->toBe('debug');
+    }
+    finally
+    {
+        putenv('LOG_LEVEL');
+    }
+});

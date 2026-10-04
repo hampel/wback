@@ -284,7 +284,13 @@ it('says how many records the sweep posted, so the count can be checked against 
         ->expectsOutputToContain('posted 4 records at error and above: error, critical, alert, emergency')
         ->assertSuccessful();
 
-    Log::shouldHaveReceived('log')->with('emergency', 'Validation test message [emergency]', [])->once();
+    // one constant message with the level in context, and probe: true so a single
+    // exclusion keeps these out of every alert built over this log
+    Log::shouldHaveReceived('log')
+        ->withArgs(fn ($level, $message, $context = []) => $level === 'emergency'
+            && $message === 'Validation test message'
+            && $context === ['level' => 'emergency', 'probe' => true])
+        ->once();
 });
 
 it('counts from whatever the threshold is set to', function () {
@@ -306,7 +312,7 @@ it('does not post the sweep under --unattended', function () {
         ->expectsOutputToContain('nothing was posted - --unattended')
         ->assertSuccessful();
 
-    Log::shouldNotHaveReceived('log', ['emergency', 'Validation test message [emergency]', []]);
+    Log::shouldNotHaveReceived('log', ['emergency', 'Validation test message', ['level' => 'emergency', 'probe' => true]]);
 });
 
 it('still reports the logging configuration under --unattended', function () {

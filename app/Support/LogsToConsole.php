@@ -51,6 +51,54 @@ trait LogsToConsole
 		$this->line($message, $style, $verbosity);
     }
 
+    /**
+     * Mask anything that looks like a credential in text on its way out
+     *
+     * The binary paths and the mysqldump and rclone option strings are inserted into
+     * command lines as written, so a command line is the one place in this application
+     * where a password could appear. `app:config` runs those settings through
+     * console-report's redacted() for the same reason.
+     *
+     * It matters beyond the debug line that logs the command, which is the obvious
+     * case: a process that FAILS puts its whole command line into the exception
+     * message, and that message reaches the console, the log and - through
+     * failureReason() - the Slack run summary. Found by running a backup with a
+     * password in BACKUP_MYSQLDUMP_OPTIONS and grepping all three for it.
+     *
+     * Deliberately NOT console-report's redacted(): that one wraps its replacement in
+     * console colour markup, which belongs in a terminal and not in a JSON field.
+     *
+     * @param string $text anything about to be printed, logged or sent
+     * @return string the same, with credential-shaped values masked
+     */
+    protected function withoutSecrets(string $text) : string
+    {
+        return (string) preg_replace(
+            ['/(--[\\w-]*(?:pass|secret|token)[\\w-]*[= ])\\S+/i', '/(^|\\s)(-p)\\S+/'],
+            ['${1}redacted', '${1}${2}redacted'],
+            $text
+        );
+    }
+
+    /**
+     * The same exception, or a masked stand-in when its message carried a credential
+     *
+     * An exception object in log context is what gives the JSON formatter a class and a
+     * trace, so the real one goes in wherever it is safe - which is almost always. When
+     * masking changes the message there IS a credential in it, and no amount of
+     * formatting will take it out again, so a replacement carries the masked text
+     * instead. The trace is lost in that case and the alternative is leaking the value.
+     *
+     * @param \Throwable $e the exception as caught
+     * @return \Throwable it, or a masked stand-in
+     */
+    protected function safeException(\Throwable $e) : \Throwable
+    {
+        $safe = $this->withoutSecrets($e->getMessage());
+
+        return $safe === $e->getMessage() ? $e : new \RuntimeException($safe, $e->getCode());
+    }
+
     protected function section($string, $verbosity = null)
     {
         if (! $this->output->getFormatter()->hasStyle('section')) {

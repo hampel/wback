@@ -30,7 +30,8 @@ class Sync extends BaseCommand
     {
         if (empty($site['sync']))
         {
-            $this->log('notice', "No sync config specified for {$name}");
+            $this->log('notice', "No sync config specified for {$name}",
+                'No sync config specified', ['site' => $name]);
             return;
         }
 
@@ -62,7 +63,8 @@ class Sync extends BaseCommand
 
         if (!File::isDirectory($syncPath))
         {
-            $this->log('warning', "Sync path [{$syncPath}] does not exist for {$name}");
+            $this->log('warning', "Sync path [{$syncPath}] does not exist for {$name}",
+                'Sync path does not exist', ['site' => $name, 'path' => $syncPath]);
             return;
         }
 

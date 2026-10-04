@@ -138,7 +138,7 @@ class Validate extends Command
             Log::error("Check command could not be started", [
                 'check' => $label,
                 'command' => $command,
-                'error' => $e->getMessage(),
+                'error' => $this->withoutSecrets($e->getMessage()),
             ]);
 
             $this->checkFail($label, $this->startFailure($e));
@@ -160,7 +160,7 @@ class Validate extends Command
      */
     protected function startFailure(\Throwable $e) : string
     {
-        $message = $e->getMessage();
+        $message = $this->withoutSecrets($e->getMessage());
 
         $reason = preg_match('/^Error: (.+)$/m', $message, $matches)
             ? trim($matches[1])
@@ -442,7 +442,12 @@ class Validate extends Command
         {
             foreach ($levels as $level)
             {
-                $this->log($level, "Validation test message [{$level}]");
+                $this->log(
+                    $level,
+                    "Validation test message [{$level}]",
+                    'Validation test message',
+                    ['level' => $level, 'probe' => true]
+                );
             }
         }
 

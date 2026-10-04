@@ -87,6 +87,15 @@ Two gotchas when adding tests:
 - `expectsOutputToContain()` is greedy — a short substring expectation will
   swallow a later line that also contains it, and the more specific expectation
   then fails. Keep expectations non-overlapping, or use exact `expectsOutput()`.
+  The mechanism is Mockery: each call registers an expectation on `doWrite`, and
+  **one write satisfies one expectation**, so two expectations matching the same
+  rendered line leave the second unmet and it fails against output that is correct
+  in the terminal. A check row is one dense line — marker, label, detail — so this
+  bites hardest on `app:config` and `app:validate`. `Artisan::call(…)` then
+  `assertStringContainsString(…, Artisan::output())` has no such semantics and is
+  the way out. Note it does not help with the other half: `checkResult()` pads with
+  `mb_str_pad()`, so an assertion spanning the label and the detail matches nothing
+  under either form, because the words are not adjacent.
 - `Process::recorded()` is not public in this version of Illuminate, so a test
   that cares about the order commands ran in has to record them from a closure
   fake — see `recordCommands()` in `tests/Feature/CronCommandTest.php`.
@@ -183,6 +192,27 @@ rather than `$this->info()` / `Log::info()` for anything worth recording. It
 lives in the `LogsToConsole` trait, used by everything that reports. Context is
 worth passing: Slack renders context and extra as fields, which is what tells one
 site's failure from another's.
+
+**The two messages are not duplicates, and the log one is a constant.** The second
+argument is what a person reads, so it interpolates freely; the third is what the
+log stores, and the log is searched rather than read. A store groups, counts and
+alerts on the message text, so `Processing site` with `['site' => …]` is one
+message with a field while `Processing site propertychat` is a message per site
+that no query can count as one thing. Pass the varying parts as context, with
+`snake_case` keys and units in the key (`size_bytes`, `run_time_ms`).
+
+**A failure passes the exception object, as `'exception' => $e`, once, where it is
+handled.** That is what gives the JSON formatter a class, a message and a trace;
+passing `$e->getMessage()` as the log message throws all three away and varies the
+message besides. The console argument still shows the operator what failed.
+
+**Nothing may log a credential, at any level including `debug`.** The one place one
+could appear here is a command line, since the binary paths and the mysqldump and
+rclone option strings are inserted as written — so `executeCommand()` masks
+credential-shaped values with `withoutSecrets()` before either the console or the
+log sees them, which is the same treatment `app:config` gives those settings.
+`LOG_LEVEL` defaults to `info` rather than Laravel's `debug`, because `debug` adds
+one command line per external process and a log store keeps them for months.
 
 **The run summary is a notification, not a log record.** `App\Support\RunSummary`
 is a container singleton — for the same reason `BackupLock` is, since the stages
