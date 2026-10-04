@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.8.0] - 2026-10-05
+
 ### Changed
 
 - **`LOG_LEVEL` now defaults to `info`, not `debug`.** `debug` logs the command line
