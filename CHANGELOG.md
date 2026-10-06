@@ -8,6 +8,24 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Documentation
+
+- **The README said a `.env` "beside the binary" without saying which directory that
+  is.** It is the one holding the *real* executable: the binary resolves its own path,
+  so where `wback` on the path is a symlink, rule one means the directory the link
+  points into and a file beside the link is ignored. That cuts both ways — a stray
+  `.env` in the resolved directory silently outranks `/etc/wback/.env`, including one a
+  deployment put there deliberately.
+- **Nothing said that the environment file beats an exported variable.** It is loaded
+  over the environment rather than under it, which is the opposite of most tools, so
+  `FOO=bar wback …` takes effect only where no `.env` sets `FOO`. Documented with the
+  consequence for anyone rendering the file from configuration management: a setting
+  the file writes cannot be overridden for a single run, while one it omits keeps the
+  built-in default and stays overridable.
+- `.env.example` said of the storage path "Set it here or in the environment; both
+  work", which is true only when one of them is set and misleading in the case an
+  operator hits — both set, and the file quietly winning.
+
 ## [7.8.0] - 2026-10-05
 
 ### Changed

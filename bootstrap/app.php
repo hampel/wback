@@ -27,7 +27,10 @@ $app->singleton(
  *
  * First of these that exists wins:
  *
- *   1. a .env beside the binary, which the framework loads last and so always wins
+ *   1. a .env beside the binary - beside the REAL path, since Phar::running(false)
+ *      resolves a symlink, so a /usr/local/bin link means the lib directory it points
+ *      into and not the bin one (measured). The framework loads this one over the
+ *      environment, so it outranks an exported variable as well as rules 2 to 4
  *   2. WBACK_ENV, naming the file itself, for anywhere else entirely
  *   3. the project's own .env, when running from a source checkout
  *   4. /etc/wback/.env

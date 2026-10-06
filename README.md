@@ -142,7 +142,7 @@ common thing to get wrong when deploying:
 
 | | source checkout | built binary |
 |---|---|---|
-| `.env` | the project root | beside the binary, `WBACK_ENV`, or `/etc/wback/.env` |
+| `.env` | the project root | beside the binary — the real one, if it is a symlink — then `WBACK_ENV`, then `/etc/wback/.env` |
 | storage path — only ever the *default* for the sites file, backup destination and log | `./storage` | the **current working directory**, or `LARAVEL_STORAGE_PATH` |
 
 Because the storage path follows the working directory, set `SITES_TOML_PATH`,
@@ -151,10 +151,27 @@ than relying on the defaults.
 
 The environment file is looked for in this order, first one that exists winning:
 
-1. **beside the binary** — `.env` next to the executable
+1. **beside the binary** — `.env` in the directory holding the executable itself.
+   **If `wback` on your path is a symlink, that is the directory it points into, not
+   the one holding the link.** The binary resolves its own real path, so with
+   `/usr/local/bin/wback` linked to `/usr/local/lib/wback/wback-<version>`, rule one
+   means `/usr/local/lib/wback/.env` and an `.env` in `/usr/local/bin` is ignored.
 2. **`WBACK_ENV`**, naming the file itself, wherever it is
 3. the project's own `.env`, running from a source checkout
 4. **`/etc/wback/.env`**
+
+**Whichever file wins, it beats a variable exported in the environment** — the
+opposite of what most tools do. Laravel Zero loads it with a mutable loader on
+purpose; the framework's own comment on that call reads *"Override environment
+variables with the environment file alongside the Phar file"*. So `FOO=bar wback …`
+sets `FOO` only if no `.env` in the list above sets it too.
+
+That has one consequence worth planning around if you render the file from
+configuration management: **a setting the file writes can never be overridden for a
+single run, while one it leaves out keeps the built-in default and stays
+overridable.** Omitting `LOG_LEVEL`, for instance, leaves `info` in place for
+scheduled runs and still allows `LOG_LEVEL=debug wback cron` for one look at a
+problem.
 
 Which means the binary can go somewhere on the path and its configuration can sit
 with the rest of the system's, with nothing to pass at all:
@@ -166,8 +183,11 @@ sudo install -m 640 .env /etc/wback/.env
 wback app:config          # reports which file it read, or where it looked
 ```
 
-Note the first entry: a `.env` beside the binary is loaded last by the framework
-and so overrides the others. Keep one there only if you mean it to win.
+Note the first entry, and that it wins for two reasons rather than one: it is first
+in the list above, and the framework loads it again over the top of everything else.
+So a file left in that directory outranks the rest silently — including one at
+`/etc/wback/.env` that a deployment put there on purpose. Keep one there only if you
+mean it to win, and remember it is the resolved directory, not the symlink's.
 
 `php wback app:config` prints every resolved path, binary and remote — run it
 first when something is not where you expect.
