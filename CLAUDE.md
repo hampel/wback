@@ -118,10 +118,22 @@ external command arrives the same way, since Illuminate's
 cannot be opted out of, so absolute paths print as convincing relative ones.
 `hampel/console-report` exists for this reason and `Config` and `Validate` use
 it: `ReportsSettings` + `FormatsValues` draw the settings dump, `RendersChecks`
-draws the `[ ok ]` / `[warn]` / `[fail]` rows, their `checkSection()` headings, and
-owns the exit code. Those traits are strict about their argument types — an `int`
-from config has to be cast at the call site, which is why `Keep Only Days` carries
-a `(string)`. What to report stays here; only the drawing moved.
+draws the `[ ok ]` / `[warn]` / `[fail]` rows and their `checkSection()` headings,
+and tracks whether anything failed or warned. Those traits are strict about their
+argument types — an `int` from config has to be cast at the call site, which is why
+`Keep Only Days` carries a `(string)`. What to report stays here; only the drawing
+moved.
+
+**The exit code is `Validate`'s own, and leaving it that way is deliberate.**
+`handle()` reads `checksFailed()` and `checksWarned()` and returns 1, 2 or 0 itself
+rather than calling the package's `checkExitCode()`. Do not tidy that into
+`return $this->checkExitCode((bool) $this->option('strict'));` without first raising
+the `hampel/console-report` constraint to `^2.2`: the `$strict` argument arrived in
+2.2.0, `^2.1` still admits 2.1.0 where the method takes no parameter, and **PHP
+accepts the extra argument in silence** — so `--strict` would parse, do nothing, and
+return 0 on a warning. The exit-code table in the README is the contract; the four
+tests at the end of `ValidateCommandTest` hold it, and they were checked by making
+the flag inert and watching exactly two of them fail.
 
 Since 2.0 the package imports no Illuminate symbol, so it has to be handed
 somewhere to write before it renders anything: `setReportOutput($this->getOutput())`

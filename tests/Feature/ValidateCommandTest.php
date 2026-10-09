@@ -584,3 +584,55 @@ it('fails when the inventory is not there at all', function () {
         ->assertFailed();
 });
 
+
+// --strict, all four cells of the contract's table. Written as four runs on purpose: the
+// failure this guards against is a flag that parses and does nothing, which every one-run
+// test reports as a pass. The warning-only row is the only one --strict changes.
+
+it('exits 0 with --strict when every check passes', function () {
+    $this->artisan('app:validate', ['--strict' => true])
+        ->expectsOutputToContain('Everything checks out')
+        ->assertExitCode(0);
+});
+
+it('exits 2 with --strict when a check warned', function () {
+    useSource('empty.example.com', []);
+
+    useSites(<<<'TOML'
+        [empty]
+        domain = 'empty.example.com'
+        database = ''
+        TOML);
+
+    $this->artisan('app:validate', ['--strict' => true])
+        ->expectsOutputToContain('source is empty, so backing it up would fail')
+        ->assertExitCode(2);
+});
+
+it('still exits 1 with --strict when a check failed, not 2', function () {
+    // 1 means failed with the flag and without it - deliberately not the monitoring-plugin
+    // numbering, where 1 is the warning. A gate that starts passing --strict must not see a
+    // failure change number underneath it
+    config()->set('backup.sites_path', '/does/not/exist/wback.toml');
+
+    $this->artisan('app:validate', ['--strict' => true])
+        ->expectsOutputToContain('no inventory at /does/not/exist/wback.toml')
+        ->assertExitCode(1);
+});
+
+it('changes nothing but the exit code', function () {
+    // the contract says no row, message or log record differs with the flag, so a warning
+    // still reports as a warning and still says the run was validated
+    useSource('empty.example.com', []);
+
+    useSites(<<<'TOML'
+        [empty]
+        domain = 'empty.example.com'
+        database = ''
+        TOML);
+
+    $this->artisan('app:validate', ['--strict' => true])
+        ->expectsOutputToContain('source is empty, so backing it up would fail')
+        ->expectsOutputToContain('Validated, with warnings')
+        ->assertExitCode(2);
+});

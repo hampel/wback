@@ -54,7 +54,8 @@ class Validate extends Command
      * @var string
      */
     protected $signature = 'app:validate
-                                {--unattended : Do not send the messages whose only proof is a person seeing them arrive}';
+                                {--unattended : Do not send the messages whose only proof is a person seeing them arrive}
+                                {--strict : Exit 2 if any check warned, for a monitor that should hear about one}';
 
     /**
      * The console command description.
@@ -100,7 +101,11 @@ class Validate extends Command
         if ($this->checksWarned())
         {
             $this->comment('Validated, with warnings');
-            return Command::SUCCESS;
+
+            // a literal: Symfony's name for 2 is Command::INVALID, which means bad usage, and this
+            // is a warning. 1 stays FAILURE with the flag and without it, so --strict adds an
+            // outcome rather than renumbering the ones a deploy gate already reads.
+            return $this->option('strict') ? 2 : Command::SUCCESS;
         }
 
         $this->info('Everything checks out');

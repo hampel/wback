@@ -8,6 +8,17 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`app:validate --strict` exits 2 when a check warned**, for a monitor that should hear
+  about a warning rather than only about a failure. Without the flag a warning still exits
+  0, unchanged, because provisioning gates a deploy on this command and a warning is not a
+  reason to stop one. A failure is 1 either way — deliberately not the monitoring-plugin
+  numbering, where 1 is the warning, so adding the flag to an existing command line cannot
+  make a failure change number underneath it. Nothing else differs: same rows, same
+  messages, same log records. Note a flag reaches an installed binary when that binary is
+  rebuilt, so check `app:validate --help` on the box before putting it in a monitor there.
+
 ### Documentation
 
 - **The README said a `.env` "beside the binary" without saying which directory that

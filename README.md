@@ -555,6 +555,39 @@ does not recognise — `app:validte` — is an error that exits non-zero and sug
 the nearest match. Laravel Zero would otherwise print the command list and exit 0,
 which reads to a deploy script as a validation that passed.
 
+### `--strict`, for a monitor that should hear about a warning
+
+**A warning exits 0, deliberately, and that is wrong for a monitor.** Provisioning runs
+`app:validate` as a deploy gate and reads nothing but the status, so a warning must not fail it —
+an empty file source or a remote path that does not exist yet is worth knowing about and is not a
+reason to stop a deploy. But something whose job is to watch rather than to gate wants to hear
+about one, and from the exit code alone it cannot:
+
+```bash
+wback app:validate --strict
+```
+
+| | all fine | warnings only | any failure |
+|---|---|---|---|
+| `app:validate` | 0 | 0 | 1 |
+| `app:validate --strict` | 0 | 2 | 1 |
+
+**1 means failed, with the flag and without it.** This is not the monitoring-plugin numbering,
+where 1 is the warning and 2 is the failure — a gate that starts passing `--strict` would
+otherwise find failures changing number underneath it. The flag adds an outcome; it does not
+renumber the two that were already there.
+
+Nothing else differs. The same rows print, the same warning text, the same log records — which is
+what makes it safe to add to a command line that already works.
+
+**It has no relationship to `--unattended`.** Neither flag implies the other, so a monitor that
+should report a warning without posting to the channel passes both, and whoever writes that
+command line decides each separately.
+
+**A flag reaches an installed binary when the binary is rebuilt**, not when this repository
+changes. Check `wback app:validate --help` on the box before putting `--strict` in a monitor
+there.
+
 ## Where backups end up
 
 ```
