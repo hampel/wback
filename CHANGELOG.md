@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.9.0] - 2026-10-10
+
 ### Added
 
 - **`app:validate --strict` exits 2 when a check warned**, for a monitor that should hear
@@ -18,6 +20,13 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   make a failure change number underneath it. Nothing else differs: same rows, same
   messages, same log records. Note a flag reaches an installed binary when that binary is
   rebuilt, so check `app:validate --help` on the box before putting it in a monitor there.
+
+### Changed
+
+- Bundled dependencies are current as at this release: Monolog 3.12.1, the Laravel 13.35
+  components, Symfony 7.4.x, `hampel/console-report` 2.2.0 and `hampel/slack-message` 2.4.0,
+  all within the constraints already declared. Nothing is required of you, but the binary
+  carries its own `vendor/`, so upgrading is how you get them.
 
 ### Documentation
 
