@@ -92,6 +92,38 @@ class BackupLock
         return trim((string) @file_get_contents($this->path()));
     }
 
+    /**
+     * How long the current holder has had the lock, in whole minutes.
+     *
+     * Taken from the lock file's modification time, not from the timestamp acquire()
+     * writes inside it. Both record the same moment, but mtime is an instant while the
+     * text is a local-time string carrying no offset - so if the writing run and the
+     * reading run disagree about backup.timezone, the text is out by that offset and a
+     * lock taken minutes ago reads as hours old. Measured 2026-10-10: a 30-minute-old
+     * lock written under Australia/Sydney and read under UTC reported 10 hours 29
+     * minutes, which is more than enough to call a healthy run stuck.
+     *
+     * Only a successful acquire writes to the file, so its mtime is when the lock was
+     * last taken rather than when it was last looked at.
+     *
+     * @return int|null minutes held, or null if the file has no readable mtime
+     */
+    public function heldFor() : ?int
+    {
+        $path = $this->path();
+
+        clearstatcache(true, $path);
+
+        $mtime = @filemtime($path);
+
+        if ($mtime === false)
+        {
+            return null;
+        }
+
+        return (int) max(0, intdiv(time() - $mtime, 60));
+    }
+
     public function path() : string
     {
         $path = config('backup.lock_file');

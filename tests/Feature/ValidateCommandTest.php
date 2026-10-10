@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\BackupLock;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -200,19 +201,112 @@ it('takes and releases the lock', function () {
     $this->artisan('database', ['site' => 'example'])->assertSuccessful();
 });
 
-it('reports the lock being held rather than waiting for it', function () {
+// A held lock, which is three outcomes rather than one.
+//
+// The age is the lock file's mtime, not the timestamp written inside it, so these fixtures
+// set the mtime and the frozen Carbon clock is irrelevant here. BackupLock::heldFor() says
+// why the written text cannot be used for arithmetic.
+//
+// The skip is the one that matters: flock is released by the kernel when its holder dies, so
+// a failed acquire always means a live run, and the nightly window is the ordinary reason for
+// one. Warning there made --strict exit 2 every night, which is what these tests exist to
+// stop coming back.
+
+function holdLock(string $contents, int $minutesAgo = 0)
+{
     $path = Storage::disk('backup')->path('.wback.lock');
 
     $lock = fopen($path, 'c');
     flock($lock, LOCK_EX | LOCK_NB);
-    fwrite($lock, 'pid 1234, cron, started 2026-08-13 03:00:00');
+    fwrite($lock, $contents);
     fflush($lock);
 
+    // after the write, which would otherwise reset it
+    touch($path, time() - $minutesAgo * 60);
+    clearstatcache(true, $path);
+
+    return $lock;
+}
+
+it('skips the lock check while another run holds it, rather than warning', function () {
+    $lock = holdLock('pid 1234, cron, started 2026-08-13 11:30:00', 30);
+
     $this->artisan('app:validate')
-        ->expectsOutputToContain('held by another run [pid 1234, cron, started 2026-08-13 03:00:00]')
-        ->assertSuccessful();
+        ->expectsOutputToContain('held by another run for 30 minutes, so the lock could not be tested')
+        ->assertExitCode(0);
 
     fclose($lock);
+});
+
+it('still exits 0 under --strict while another run holds the lock', function () {
+    // the whole point: a monitor polling during the nightly window must not see a warning
+    $lock = holdLock('pid 1234, cron, started 2026-08-13 11:30:00', 30);
+
+    $this->artisan('app:validate', ['--strict' => true])
+        ->expectsOutputToContain('so the lock could not be tested')
+        ->assertExitCode(0);
+
+    fclose($lock);
+});
+
+it('warns when the lock has been held longer than the threshold', function () {
+    $lock = holdLock('pid 1234, cron, started 2026-08-13 03:00:00', 9 * 60);
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('held for 9 hours, longer than the 4 hours allowed - the run looks stuck')
+        ->assertExitCode(0);
+
+    fclose($lock);
+});
+
+it('exits 2 under --strict when the lock looks stuck', function () {
+    $lock = holdLock('pid 1234, cron, started 2026-08-13 03:00:00', 9 * 60);
+
+    $this->artisan('app:validate', ['--strict' => true])
+        ->expectsOutputToContain('the run looks stuck')
+        ->assertExitCode(2);
+
+    fclose($lock);
+});
+
+it('respects a changed threshold', function () {
+    config()->set('backup.lock_stale_hours', 12);
+
+    $lock = holdLock('pid 1234, cron, started 2026-08-13 03:00:00', 9 * 60);
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('so the lock could not be tested')
+        ->assertExitCode(0);
+
+    fclose($lock);
+});
+
+it('warns when the age of the lock cannot be read at all', function () {
+    // not reachable through the filesystem - a held lock means the file exists, so its
+    // mtime reads. Driven through the container instead, because the branch is the safe
+    // direction (surface it) and a defensive branch nothing exercises is one nobody knows
+    // is broken
+    app()->instance(BackupLock::class, new class extends BackupLock
+    {
+        public function acquire(string $command) : bool
+        {
+            return false;
+        }
+
+        public function heldFor() : ?int
+        {
+            return null;
+        }
+
+        public function holder() : string
+        {
+            return 'pid 1234, cron';
+        }
+    });
+
+    $this->artisan('app:validate')
+        ->expectsOutputToContain('its age cannot be read')
+        ->assertExitCode(0);
 });
 
 it('skips the summary check when there is nowhere to send one', function () {

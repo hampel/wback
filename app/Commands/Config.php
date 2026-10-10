@@ -137,6 +137,8 @@ class Config extends Command
                 'Lock File' => config('backup.lock_file')
                     ? $this->path(config('backup.lock_file'))
                     : 'backup destination',
+                // cast: an int in config, and the renderer is strict about its arguments
+                'Lock Stale Hours' => (string) config('backup.lock_stale_hours'),
             ],
 
             'Filesystems' => [

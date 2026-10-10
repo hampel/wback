@@ -256,7 +256,7 @@ class Validate extends Command
         {
             if (!$lock->acquire($this->getName()))
             {
-                $this->checkWarn('lock file', 'held by another run [' . $lock->holder() . ']');
+                $this->reportHeldLock($lock);
                 return;
             }
         }
@@ -269,6 +269,70 @@ class Validate extends Command
         $lock->release();
 
         $this->checkOk('lock file', $lock->path());
+    }
+
+    /**
+     * Report a lock somebody else is holding.
+     *
+     * A held lock is a check that could not run rather than one that found something, so
+     * it is a SKIP: flock is released by the kernel when the holder dies, so a failed
+     * acquire always means a live run, and the nightly window is the ordinary reason for
+     * one. Warning there would exit 2 under --strict every night, for a monitor that can
+     * see only the exit code and so cannot tell that case from a real one.
+     *
+     * Past backup.lock_stale_hours it warns instead, because a run holding the lock that
+     * long is stuck rather than busy. That is the case the row exists to surface, and it
+     * was indistinguishable from the ordinary one while both warned.
+     *
+     * The age comes from the lock file's mtime rather than the timestamp written inside
+     * it - see BackupLock::heldFor() for why the text cannot be trusted for arithmetic.
+     * The text is still shown, because it names the pid and the command.
+     */
+    protected function reportHeldLock(BackupLock $lock) : void
+    {
+        $holder = $lock->holder();
+        $held = $lock->heldFor();
+        $hours = (int) config('backup.lock_stale_hours');
+
+        if ($held === null)
+        {
+            $this->checkWarn('lock file', "held by another run, and its age cannot be read [{$holder}]");
+            return;
+        }
+
+        if ($held >= $hours * 60)
+        {
+            $this->checkWarn('lock file', sprintf(
+                'held for %s, longer than the %d hours allowed - the run looks stuck [%s]',
+                $this->describeMinutes($held),
+                $hours,
+                $holder
+            ));
+            return;
+        }
+
+        $this->checkSkip('lock file', sprintf(
+            'held by another run for %s, so the lock could not be tested [%s]',
+            $this->describeMinutes($held),
+            $holder
+        ));
+    }
+
+    /**
+     * A duration a person reads, from minutes.
+     */
+    protected function describeMinutes(int $minutes) : string
+    {
+        if ($minutes < 60)
+        {
+            return $minutes . ($minutes === 1 ? ' minute' : ' minutes');
+        }
+
+        $hours = intdiv($minutes, 60);
+        $rest = $minutes % 60;
+
+        return $hours . ($hours === 1 ? ' hour' : ' hours')
+            . ($rest > 0 ? ' ' . $rest . ($rest === 1 ? ' minute' : ' minutes') : '');
     }
 
     protected function checkSites() : void

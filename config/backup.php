@@ -80,6 +80,21 @@ return [
     'lock_file' => env('BACKUP_LOCK_FILE', ''),
 
     /**
+     * How long a run may hold the lock before app:validate calls it stuck, in hours
+     *
+     * A lock held by another run is normal and app:validate reports it as a skip, not a
+     * warning: flock is released by the kernel when the holder dies, so something has it
+     * right now and this check simply cannot run. The nightly window is the usual reason,
+     * and a monitor passing --strict should not hear about it.
+     *
+     * Past this many hours it is reported as a warning instead, because a run that long
+     * is a stuck one - a wedged database or a transfer that will never finish - and that
+     * is worth hearing about. Set it above the longest legitimate run on the host, which
+     * means the biggest site rather than the average one.
+     */
+    'lock_stale_hours' => env('BACKUP_LOCK_STALE_HOURS', 4),
+
+    /**
      * Shell used to run commands containing a pipe
      *
      * A plain shell reports the exit status of the last command in a pipeline, which

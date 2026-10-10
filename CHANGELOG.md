@@ -8,7 +8,22 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`BACKUP_LOCK_STALE_HOURS`, default 4.** `app:validate` warns when a run has held the
+  backup lock for longer than this, because a run that long is stuck rather than busy.
+  Set it above the longest legitimate run on the host, judged by the biggest site rather
+  than the average one.
+
 ### Changed
+
+- **`app:validate` now reports a lock held by another run as a skip, not a warning.** Taking
+  the lock is a check it cannot perform while a backup is running, and `flock` is released by
+  the kernel when its holder dies, so a lock that will not open is always held by something
+  alive — the nightly run, usually. Warning there meant `app:validate --strict` exited 2 every
+  night for a monitor that can see only the exit code, and so could not tell that from a real
+  fault. Unflagged exit codes are unchanged, since a warning and a skip both exit 0. A run that
+  has held the lock beyond the new threshold still warns, which is the case the row is for.
 
 - `app:validate` now takes its exit code from `hampel/console-report`'s `checkExitCode()`,
   so the three outcomes are defined once for every tool sharing this contract rather than

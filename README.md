@@ -588,6 +588,22 @@ command line decides each separately.
 changes. Check `wback app:validate --help` on the box before putting `--strict` in a monitor
 there.
 
+**A backup already running will not set it off.** `app:validate` takes the lock, so a run in
+progress means the check cannot be performed — and because `flock` is released by the kernel
+when its holder dies, a lock that will not open is always held by something alive. That is
+reported as a skip rather than a warning, so a monitor polling through the nightly window sees
+exit 0:
+
+```text
+[    ] lock file   held by another run for 12 minutes, so the lock could not be tested [pid 2048, cron, started 2026-10-10 12:17:02]
+```
+
+**A run that holds it too long does warn**, because that one is stuck rather than busy — a wedged
+database, or a transfer that will never finish. `BACKUP_LOCK_STALE_HOURS` is the boundary and
+defaults to 4; set it above the longest legitimate run on the host, judged by the biggest site
+rather than the average one. Both cases used to warn, which made the common one
+indistinguishable from the one worth waking up for.
+
 ## Where backups end up
 
 ```
