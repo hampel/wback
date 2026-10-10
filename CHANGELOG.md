@@ -8,6 +8,15 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `app:validate` now takes its exit code from `hampel/console-report`'s `checkExitCode()`,
+  so the three outcomes are defined once for every tool sharing this contract rather than
+  once per tool. No behaviour changes — the exit codes and messages are the same in all six
+  cases. **If you build from source, the requirement is now `hampel/console-report ^2.2`**:
+  the `$strict` argument arrived in 2.2.0 and an older release would accept it silently and
+  return 0 for a warning.
+
 ## [7.9.0] - 2026-10-10
 
 ### Added

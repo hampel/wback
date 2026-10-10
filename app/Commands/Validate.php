@@ -95,22 +95,21 @@ class Validate extends Command
         if ($this->checksFailed())
         {
             $this->error('Validation failed - the backups configured here will not all work');
-            return Command::FAILURE;
         }
-
-        if ($this->checksWarned())
+        elseif ($this->checksWarned())
         {
             $this->comment('Validated, with warnings');
-
-            // a literal: Symfony's name for 2 is Command::INVALID, which means bad usage, and this
-            // is a warning. 1 stays FAILURE with the flag and without it, so --strict adds an
-            // outcome rather than renumbering the ones a deploy gate already reads.
-            return $this->option('strict') ? 2 : Command::SUCCESS;
+        }
+        else
+        {
+            $this->info('Everything checks out');
         }
 
-        $this->info('Everything checks out');
-
-        return Command::SUCCESS;
+        // the package owns the three outcomes, so the contract is defined once for every tool
+        // that uses it rather than once per tool. 1 means failed with the flag and without it;
+        // only the warning-only case differs, which is why --strict adds an outcome instead of
+        // renumbering the ones a deploy gate already reads
+        return $this->checkExitCode((bool) $this->option('strict'));
     }
 
     /**

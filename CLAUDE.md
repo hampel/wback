@@ -119,21 +119,27 @@ cannot be opted out of, so absolute paths print as convincing relative ones.
 `hampel/console-report` exists for this reason and `Config` and `Validate` use
 it: `ReportsSettings` + `FormatsValues` draw the settings dump, `RendersChecks`
 draws the `[ ok ]` / `[warn]` / `[fail]` rows and their `checkSection()` headings,
-and tracks whether anything failed or warned. Those traits are strict about their
-argument types — an `int` from config has to be cast at the call site, which is why
-`Keep Only Days` carries a `(string)`. What to report stays here; only the drawing
-moved.
+tracks whether anything failed or warned, and owns the exit code. Those traits
+are strict about their argument types — an `int` from config has to be cast at
+the call site, which is why `Keep Only Days` carries a `(string)`. What to
+report stays here; only the drawing moved.
 
-**The exit code is `Validate`'s own, and leaving it that way is deliberate.**
-`handle()` reads `checksFailed()` and `checksWarned()` and returns 1, 2 or 0 itself
-rather than calling the package's `checkExitCode()`. Do not tidy that into
-`return $this->checkExitCode((bool) $this->option('strict'));` without first raising
-the `hampel/console-report` constraint to `^2.2`: the `$strict` argument arrived in
-2.2.0, `^2.1` still admits 2.1.0 where the method takes no parameter, and **PHP
-accepts the extra argument in silence** — so `--strict` would parse, do nothing, and
-return 0 on a warning. The exit-code table in the README is the contract; the four
-tests at the end of `ValidateCommandTest` hold it, and they were checked by making
-the flag inert and watching exactly two of them fail.
+**`checkExitCode()` decides the exit, which is why the constraint is `^2.2` and not
+`^2.1`.** `handle()` prints one of the three closing messages and then returns
+`$this->checkExitCode((bool) $this->option('strict'))`, so the three outcomes are
+defined once in the package for every tool that shares the contract rather than once
+per tool. **The constraint is load-bearing, not tidiness.** The `$strict` argument
+arrived in 2.2.0; `^2.1` still admits 2.1.0, whose `checkExitCode()` declares no
+parameter at all, and **PHP accepts the extra argument in silence** — so on an older
+release `--strict` would parse, do nothing, and return 0 on a warning, with no error
+anywhere. Never widen that constraint downwards.
+
+Proved rather than assumed, 2026-10-10: with 2.1.0's `RendersChecks` dropped into
+`vendor/`, exactly two of the four `--strict` tests at the end of
+`ValidateCommandTest` fail. Those four are the guard, and the exit-code table in the
+README is the contract they hold. Note `composer install` will **not** undo such a
+swap — it sees the right version installed and does not re-extract; `composer
+reinstall hampel/console-report` is what restores the file.
 
 Since 2.0 the package imports no Illuminate symbol, so it has to be handed
 somewhere to write before it renders anything: `setReportOutput($this->getOutput())`
