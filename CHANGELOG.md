@@ -8,6 +8,8 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.10.0] - 2026-10-10
+
 ### Added
 
 - **`BACKUP_LOCK_STALE_HOURS`, default 4.** `app:validate` warns when a run has held the
