@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\BackupLock;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -715,8 +716,14 @@ it('still exits 1 with --strict when a check failed, not 2', function () {
 });
 
 it('changes nothing but the exit code', function () {
-    // the contract says no row, message or log record differs with the flag, so a warning
-    // still reports as a warning and still says the run was validated
+    // The contract is that --strict alters the exit code and NOTHING else - no row, message
+    // or log record. Comparing the whole rendered report is the only assertion that holds
+    // that; checking for a couple of expected lines would pass just as well if the flag
+    // added or suppressed a third.
+    //
+    // Artisan::call rather than $this->artisan(): expectsOutputToContain() registers Mockery
+    // expectations on doWrite and cannot hand back the buffer, and two expectations matching
+    // one rendered line fail against output that is correct. See CLAUDE.md.
     useSource('empty.example.com', []);
 
     useSites(<<<'TOML'
@@ -725,8 +732,14 @@ it('changes nothing but the exit code', function () {
         database = ''
         TOML);
 
-    $this->artisan('app:validate', ['--strict' => true])
-        ->expectsOutputToContain('source is empty, so backing it up would fail')
-        ->expectsOutputToContain('Validated, with warnings')
-        ->assertExitCode(2);
+    $plain = Artisan::call('app:validate');
+    $plainOutput = Artisan::output();
+
+    $strict = Artisan::call('app:validate', ['--strict' => true]);
+    $strictOutput = Artisan::output();
+
+    // a warning and no failure, which is the only state where the flag does anything
+    expect($plain)->toBe(0);
+    expect($strict)->toBe(2);
+    expect($strictOutput)->toBe($plainOutput);
 });

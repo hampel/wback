@@ -134,6 +134,13 @@ parameter at all, and **PHP accepts the extra argument in silence** — so on an
 release `--strict` would parse, do nothing, and return 0 on a warning, with no error
 anywhere. Never widen that constraint downwards.
 
+The contract is also asserted whole rather than in fragments: *changes nothing but
+the exit code* captures the entire rendered report with and without the flag and
+compares them, which is the only form that catches a future change adding or
+suppressing a line. It is the one test here using `Artisan::call()` plus
+`Artisan::output()` instead of `expectsOutputToContain()`, because Mockery
+expectations cannot hand the buffer back.
+
 Proved rather than assumed, 2026-10-10: with 2.1.0's `RendersChecks` dropped into
 `vendor/`, exactly two of the four `--strict` tests at the end of
 `ValidateCommandTest` fail. Those four are the guard, and the exit-code table in the
