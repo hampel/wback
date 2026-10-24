@@ -231,11 +231,26 @@ handled.** That is what gives the JSON formatter a class, a message and a trace;
 passing `$e->getMessage()` as the log message throws all three away and varies the
 message besides. The console argument still shows the operator what failed.
 
-**Nothing may log a credential, at any level including `debug`.** The one place one
+**The one exception is an inventory that will not parse**, in `BaseCommand` and
+`Sites`. The parser's message can quote text from the file — an unquoted value comes
+back as `... with value "<the value>"` — and an `error` record reaches the Slack log
+channel in production, so it would carry whatever was typed there off the box. Those
+two log `['sites' => …, 'line' => …]` and no exception; the console keeps the whole
+message, which is what fixing the file needs. The line comes from
+`SiteInventory::errorLine()`, which reads it out of the message because yosymfony
+never fills in `getParsedLine()`. That method is the one place to change when the
+TOML library does. `InventoryParseErrorTest` holds both halves, and scans every
+record including exception messages, since `json_encode()` renders an exception as
+`{}` and would miss the case it exists for.
+
+**Nothing may log a credential, at any level including `debug`.** The usual place one
 could appear here is a command line, since the binary paths and the mysqldump and
 rclone option strings are inserted as written — so `executeCommand()` masks
 credential-shaped values with `withoutSecrets()` before either the console or the
-log sees them, which is the same treatment `app:config` gives those settings.
+log sees them, which is the same treatment `app:config` gives those settings. The
+other was a parse error quoting the inventory, which `withoutSecrets()` cannot catch
+because a typed value has no recognisable shape; that is handled by not logging the
+message at all, as above.
 `LOG_LEVEL` defaults to `info` rather than Laravel's `debug`, because `debug` adds
 one command line per external process and a log store keeps them for months.
 

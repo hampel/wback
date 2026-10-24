@@ -8,6 +8,16 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- **An inventory that will not parse no longer sends text from the file to the log.** The
+  parser's message can quote the offending value — an unquoted value is reported with the value
+  itself — and the log record carried it, including to a Slack log channel set to `error`, which
+  is the documented production threshold. The record now holds the file and the line number
+  only. The console still prints the whole message, since that is what fixing the file needs.
+  wback's inventory has no setting that holds a credential, so this matters only if one was typed
+  into it by mistake.
+
 ## [7.10.0] - 2026-10-10
 
 ### Added

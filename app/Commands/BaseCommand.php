@@ -69,11 +69,16 @@ abstract class BaseCommand extends Command
         }
         catch (ParseException $e)
         {
+            // The parser's message can quote a value from the file. That is the operator's to
+            // read on their own console, and nobody's to receive in a log store or in Slack,
+            // which takes error records - so the log gets the file and the line and
+            // deliberately no exception. The one place that convention is broken; CLAUDE.md
+            // says why.
             $this->log(
                 'error',
                 $this->withoutSecrets($e->getMessage()),
                 'Sites inventory could not be parsed',
-                ['sites' => $inventory->path(), 'exception' => $this->safeException($e)]
+                ['sites' => $inventory->path(), 'line' => SiteInventory::errorLine($e)]
             );
             return Command::FAILURE;
         }

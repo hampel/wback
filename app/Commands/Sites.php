@@ -38,12 +38,13 @@ class Sites extends Command
         }
         catch (ParseException $e)
         {
-            $message = $e->getMessage();
+            // the full message to the console only - it can quote a value from the file. See
+            // the same catch in BaseCommand
             Log::error('Sites inventory could not be parsed', [
                 'sites' => $inventory->path(),
-                'exception' => $e,
+                'line' => SiteInventory::errorLine($e),
             ]);
-            $this->error($message);
+            $this->error($e->getMessage());
             return Command::FAILURE;
         }
 
