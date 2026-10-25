@@ -36,10 +36,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 8.3 is the floor composer.json declares and what production runs. Add a
-        # version here when something deploys on one, rather than testing a
-        # platform nobody has.
-        php: ['8.3']
+        # Every PHP the README's "8.3 or later" promises, not only what our own
+        # servers run. 8.3 is the floor composer.json declares; 8.4 and 8.5 are
+        # here because the tool is public and a stranger may install it on any
+        # current release. Add each new PHP release as it ships - that is what
+        # "or later" commits to.
+        #
+        # The release job needs every leg, so a version listed here gates a
+        # release. And green on a version means wback WORKS there, not that it
+        # is warning-free: Laravel's own error handler routes a deprecation to
+        # the deprecations log channel, which is null, so PHPUnit never sees one
+        # raised from a dependency.
+        php: ['8.3', '8.4', '8.5']
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -71,6 +79,8 @@ jobs:
 
       - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
+          # built once, on the floor: the binary runs on whatever PHP is
+          # installed, and the oldest one it promises is the one to build it on
           php-version: '8.3'
           extensions: intl
           coverage: none
