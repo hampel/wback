@@ -342,9 +342,9 @@ is a short name, and the defaulting rules matter:
 - **CI tests every PHP the README promises, not only the floor.** 8.3, 8.4 and 8.5
   as of 2026-10-25, decided by Simon because the tool is public: "PHP 8.3 or
   later" is a promise to a stranger on any current release, and until then it had
-  only ever been tested on 8.3. This departs on purpose from the audit guidance to
-  test only the floor of a tool that runs on servers we control — do not narrow it
-  back. Add each new PHP as it ships. Green means *works*, not *warning-free*:
+  only ever been tested on 8.3. The audit guidance now says the same for any
+  published tool, having said to test only the floor — so do not narrow it back.
+  Add each new PHP as it ships. Green means *works*, not *warning-free*:
   Laravel routes a dependency's deprecation to the `null` deprecations channel, so
   the suite cannot see one, which is how `yosymfony/toml`'s 8.4 deprecation passes.
 - `composer test` runs the suite. There is deliberately no `format`, `lint` or
