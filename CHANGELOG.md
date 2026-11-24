@@ -8,6 +8,19 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [7.10.1] - 2026-11-24
+
+### Changed
+
+- **Tested on PHP 8.4 and 8.5 as well as 8.3.** "PHP 8.3 or later" had only ever been tested on
+  8.3; the suite now runs on every current release, and passes on all three. Nothing in the
+  binary changed for this. On 8.4 and later the bundled TOML parser raises one deprecation notice,
+  which is silent in normal use and does not affect behaviour — you would see it only with
+  `LOG_DEPRECATIONS_CHANNEL` pointed at a log.
+- **Dependencies updated**, with Composer now resolving them for PHP 8.3, the oldest PHP wback
+  supports, rather than for whichever PHP the release was built on. Nothing about installing or
+  running it changes.
+
 ### Security
 
 - **An inventory that will not parse no longer sends text from the file to the log.** The
@@ -17,6 +30,9 @@ this project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   only. The console still prints the whole message, since that is what fixing the file needs.
   wback's inventory has no setting that holds a credential, so this matters only if one was typed
   into it by mistake.
+- **`symfony/filesystem` 7.4.23**, for GHSA-6prc-h956-hxjq. The affected path handling is
+  bundled but never reached: wback calls none of the methods that lead to it. It is updated so
+  the binary carries no known advisory.
 
 ## [7.10.0] - 2026-10-10
 
