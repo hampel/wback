@@ -347,6 +347,11 @@ is a short name, and the defaulting rules matter:
   Add each new PHP as it ships. Green means *works*, not *warning-free*:
   Laravel routes a dependency's deprecation to the `null` deprecations channel, so
   the suite cannot see one, which is how `yosymfony/toml`'s 8.4 deprecation passes.
+- **`config.platform.php` is pinned to `8.3.0`, the floor `require.php` declares**, since
+  2026-11-24. Composer resolves for the PHP that runs it, so an update on a newer PHP locks
+  packages the floor cannot install — Symfony 8.x needs 8.4.1 — and every check still passes on
+  the PHP that ran it. The pin moves with `require.php`, and only once nothing that runs wback is
+  left on the old floor. CI's 8.3 job is what proves the lock installs there.
 - `composer test` runs the suite. There is deliberately no `format`, `lint` or
   `check` script, unlike the other tools here: those run Pint, and Pint would
   reformat this codebase for the reason above.
